@@ -1,0 +1,13 @@
+/target
+*.class
+*Test.java
+WebRoot/WEB-INF/classes/
+WebRoot/WEB-INF/logs/
+.settings/*
+.classpath
+.project
+Thumbs.db
+/bin
+/build
+/lib
+/src/test/
