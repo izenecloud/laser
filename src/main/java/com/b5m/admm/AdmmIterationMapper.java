@@ -107,7 +107,11 @@ public class AdmmIterationMapper extends MapReduceBase
                         context.getUInitial(),
                         context.getZInitial());
         IOptimizer.Ctx optimizationContext = new IOptimizer.Ctx(context.getXInitial());
-        lbfgs.minimize((DiffFunction)myFunction, 1e-10, context.getXInitial());
+       
+        double[] optimum = lbfgs.minimize((DiffFunction)myFunction, 1e-10, context.getXInitial());
+        for (int d = 0; d < optimum.length ; ++d) {
+        	optimizationContext.m_optimumX[d] = optimum[d];
+        }
         //bfgs.minimize(myFunction, optimizationContext);
         double primalObjectiveValue = myFunction.evaluatePrimalObjective(optimizationContext.m_optimumX);
         return new AdmmReducerContext(context.getUInitial(),
