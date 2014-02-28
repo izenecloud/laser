@@ -4,6 +4,10 @@ import com.b5m.bfgs.optimize.BFGS;
 import com.b5m.bfgs.optimize.IOptimizer;
 import com.b5m.bfgs.optimize.LogisticL2DifferentiableFunction;
 import com.b5m.bfgs.optimize.OptimizerParameters;
+import com.b5m.lbfgs.LogisticL2DiffFunction;
+
+import edu.stanford.nlp.optimization.DiffFunction;
+import edu.stanford.nlp.optimization.QNMinimizer;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -35,7 +39,8 @@ public class AdmmIterationMapper extends MapReduceBase
     private Set<Integer> columnsToExclude;
 
     private OptimizerParameters optimizerParameters = new OptimizerParameters();
-    private BFGS<LogisticL2DifferentiableFunction> bfgs = new BFGS<LogisticL2DifferentiableFunction>(optimizerParameters);
+    private QNMinimizer lbfgs = new QNMinimizer();
+//    private BFGS<LogisticL2DifferentiableFunction> bfgs = new BFGS<LogisticL2DifferentiableFunction>(optimizerParameters);
     private boolean addIntercept;
     private float regularizationFactor;
     private double rho;
@@ -89,14 +94,21 @@ public class AdmmIterationMapper extends MapReduceBase
     }
 
     private AdmmReducerContext localMapperOptimization(AdmmMapperContext context) {
-        LogisticL2DifferentiableFunction myFunction =
+        /*LogisticL2DifferentiableFunction myFunction =
                 new LogisticL2DifferentiableFunction(context.getA(),
+                        context.getB(),
+                        context.getRho(),
+                        context.getUInitial(),
+                        context.getZInitial());*/
+    	LogisticL2DiffFunction myFunction =
+                new LogisticL2DiffFunction(context.getA(),
                         context.getB(),
                         context.getRho(),
                         context.getUInitial(),
                         context.getZInitial());
         IOptimizer.Ctx optimizationContext = new IOptimizer.Ctx(context.getXInitial());
-        bfgs.minimize(myFunction, optimizationContext);
+        lbfgs.minimize((DiffFunction)myFunction, 1e-10, context.getXInitial());
+        //bfgs.minimize(myFunction, optimizationContext);
         double primalObjectiveValue = myFunction.evaluatePrimalObjective(optimizationContext.m_optimumX);
         return new AdmmReducerContext(context.getUInitial(),
                 context.getXInitial(),

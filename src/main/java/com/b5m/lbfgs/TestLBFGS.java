@@ -1,5 +1,4 @@
 package com.b5m.lbfgs;
-import com.intentmedia.lbfgs.*;
 /* copyright 2002 by Robert Dodier
 *
 * This program is free software; you can redistribute it and/or modify
@@ -31,8 +30,8 @@ public class TestLBFGS
 		
 		n=100;
 		m=5;
-		iprint [ 1 -1] = 1;
-		iprint [ 2 -1] = 0;
+		iprint [ 1 -1] = 3;
+		iprint [ 2 -1] = 3;
 		diagco= false;
 		eps= 1.0e-5;
 		xtol= 1.0e-16;
@@ -48,6 +47,7 @@ public class TestLBFGS
 		do
 		{
 			f= 0;
+			System.out.println("\nITER:ICALL TO CHANGE");
 			for ( j = 1 ; j <= n ; j += 2 )
 			{
 				t1 = 1.e0 - x [ j -1];
@@ -66,7 +66,7 @@ public class TestLBFGS
 				System.err.println( "Sdrive: lbfgs failed.\n"+e );
 				return;
 			}
-
+			System.out.println("\nITER:ICALL"+icall);
 			icall += 1;
 		}
 		while ( iflag[0] != 0 && icall <= 200 );

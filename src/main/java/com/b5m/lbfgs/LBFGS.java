@@ -274,7 +274,7 @@ public class LBFGS
 	  *	@throws LBFGS.ExceptionWithIflag 
 	  */
 
-	public static void lbfgs ( int n , int m , double[] x , double f , double[] g , boolean diagco , double[] diag , int[] iprint , double eps , double xtol , int[] iflag ) throws ExceptionWithIflag
+	public static void lbfgs ( int n , int m , double[] x , double f ,  final double[] g , boolean diagco , double[] diag , int[] iprint , double eps , double xtol , int[] iflag ) throws ExceptionWithIflag
 	{
 		boolean execute_entire_while_loop = false;
 
@@ -529,7 +529,7 @@ public class LBFGS
 	  * @param stp Current stepsize.
 	  * @param finish Whether this method should print the ``we're done'' message.
 	  */
-	public static void lb1 ( int[] iprint , int iter , int nfun , double gnorm , int n , int m , double[] x , double f , double[] g , double[] stp , boolean finish )
+	public static void lb1 ( int[] iprint , int iter , int nfun , double gnorm , int n , int m , double[] x , double f , final double[] g , double[] stp , boolean finish )
 	{
 		int i;
 
