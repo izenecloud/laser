@@ -164,7 +164,7 @@ public class AdmmOptimizerDriver extends Configured implements Tool {
         conf.set("columns.to.exclude", columnsToExclude);
         conf.setBoolean("add.intercept", addIntercept);
         conf.setBoolean("regularize.intercept", regularizeIntercept);
-        conf.setFloat("regularization.factor", regularizationFactor);
+        conf.setFloat("regularization.factor", regularizationFactor);     
 
         conf.setMapperClass(AdmmIterationMapper.class);
         conf.setReducerClass(AdmmIterationReducer.class);
@@ -172,6 +172,11 @@ public class AdmmOptimizerDriver extends Configured implements Tool {
         conf.setMapOutputValueClass(Text.class);
         conf.setOutputKeyClass(NullWritable.class);
         conf.setOutputValueClass(Text.class);
+       // conf.setNumMapTasks(2);
+        conf.setInt("mapred.num.map.tasks", 2);
+        long heapSize = (long)1024*1024*128;
+        conf.setLong("mapred.mapper.jvm.heap.size", heapSize);
+
         conf.setInputFormat(SignalInputFormat.class);
         conf.setOutputFormat(TextOutputFormat.class);
 

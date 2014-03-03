@@ -75,7 +75,8 @@ public class AdmmIterationMapper extends MapReduceBase
     public void map(LongWritable key, Text value, OutputCollector<NullWritable, Text> output, Reporter reporter)
             throws IOException {
         FileSplit split = (FileSplit) reporter.getInputSplit();
-        String splitId = key.get() + "@" + split.getPath();
+        
+        String splitId = key.get() + "@" + split.getPath() + ":" + Long.toString(split.getStart()) + " - "+ Long.toString(split.getLength());
         splitId = removeIpFromHdfsFileName(splitId);
 
         double[][] inputSplitData = createMatrixFromDataString(value.toString(), columnsToExclude, addIntercept);
