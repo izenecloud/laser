@@ -1,9 +1,4 @@
 package com.b5m.admm;
-
-import com.b5m.bfgs.optimize.BFGS;
-import com.b5m.bfgs.optimize.IOptimizer;
-import com.b5m.bfgs.optimize.LogisticL2DifferentiableFunction;
-import com.b5m.bfgs.optimize.OptimizerParameters;
 import com.b5m.lbfgs.LogisticL2DiffFunction;
 
 import edu.stanford.nlp.optimization.DiffFunction;
@@ -38,7 +33,7 @@ public class AdmmIterationMapper extends MapReduceBase
     private Map<String, String> splitToParameters;
     private Set<Integer> columnsToExclude;
 
-    private OptimizerParameters optimizerParameters = new OptimizerParameters();
+//  private OptimizerParameters optimizerParameters = new OptimizerParameters();
     private QNMinimizer lbfgs = new QNMinimizer();
 //    private BFGS<LogisticL2DifferentiableFunction> bfgs = new BFGS<LogisticL2DifferentiableFunction>(optimizerParameters);
     private boolean addIntercept;
@@ -107,7 +102,7 @@ public class AdmmIterationMapper extends MapReduceBase
                         context.getRho(),
                         context.getUInitial(),
                         context.getZInitial());
-        IOptimizer.Ctx optimizationContext = new IOptimizer.Ctx(context.getXInitial());
+        Ctx optimizationContext = new Ctx(context.getXInitial());
        
         double[] optimum = lbfgs.minimize((DiffFunction)myFunction, 1e-10, context.getXInitial());
         for (int d = 0; d < optimum.length ; ++d) {
