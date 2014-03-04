@@ -6,11 +6,12 @@ import edu.stanford.nlp.optimization.QNMinimizer;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.*;
+import org.apache.mahout.math.DenseVector;
+import org.apache.mahout.math.Matrix;
 
 import java.io.IOException;
 import java.util.Map;
@@ -41,6 +42,7 @@ public class AdmmIterationMapper extends MapReduceBase
     private double rho;
     private String previousIntermediateOutputLocation;
     private Path previousIntermediateOutputLocationPath;
+    private int numFeatures;
 
     @Override
     public void configure(JobConf job) {
@@ -49,6 +51,7 @@ public class AdmmIterationMapper extends MapReduceBase
         columnsToExclude = getColumnsToExclude(columnsToExcludeString);
         addIntercept = job.getBoolean("add.intercept", false);
         rho = job.getFloat("rho", DEFAULT_RHO);
+        numFeatures = job.getInt("signal.data.num.features", 0);
         regularizationFactor = job.getFloat("regularization.factor", DEFAULT_REGULARIZATION_FACTOR);
         previousIntermediateOutputLocation = job.get("previous.intermediate.output.location");
         previousIntermediateOutputLocationPath = new Path(previousIntermediateOutputLocation);
@@ -74,7 +77,7 @@ public class AdmmIterationMapper extends MapReduceBase
         String splitId = key.get() + "@" + split.getPath() + ":" + Long.toString(split.getStart()) + " - "+ Long.toString(split.getLength());
         splitId = removeIpFromHdfsFileName(splitId);
 
-        double[][] inputSplitData = createMatrixFromDataString(value.toString(), columnsToExclude, addIntercept);
+        Matrix inputSplitData = createMatrixFromDataString(value.toString(), numFeatures, columnsToExclude, addIntercept);
 
         AdmmMapperContext mapperContext;
         if (iteration == 0) {
@@ -90,12 +93,6 @@ public class AdmmIterationMapper extends MapReduceBase
     }
 
     private AdmmReducerContext localMapperOptimization(AdmmMapperContext context) {
-        /*LogisticL2DifferentiableFunction myFunction =
-                new LogisticL2DifferentiableFunction(context.getA(),
-                        context.getB(),
-                        context.getRho(),
-                        context.getUInitial(),
-                        context.getZInitial());*/
     	LogisticL2DiffFunction myFunction =
                 new LogisticL2DiffFunction(context.getA(),
                         context.getB(),
@@ -108,7 +105,6 @@ public class AdmmIterationMapper extends MapReduceBase
         for (int d = 0; d < optimum.length ; ++d) {
         	optimizationContext.m_optimumX[d] = optimum[d];
         }
-        //bfgs.minimize(myFunction, optimizationContext);
         double primalObjectiveValue = myFunction.evaluatePrimalObjective(optimizationContext.m_optimumX);
         return new AdmmReducerContext(context.getUInitial(),
                 context.getXInitial(),
@@ -119,7 +115,7 @@ public class AdmmIterationMapper extends MapReduceBase
                 regularizationFactor);
     }
 
-    private AdmmMapperContext assembleMapperContextFromCache(double[][] inputSplitData, String splitId) throws IOException {
+    private AdmmMapperContext assembleMapperContextFromCache(Matrix inputSplitData, String splitId) throws IOException {
         if (splitToParameters.containsKey(splitId)) {
             AdmmMapperContext preContext = jsonToAdmmMapperContext(splitToParameters.get(splitId));
             return new AdmmMapperContext(inputSplitData,

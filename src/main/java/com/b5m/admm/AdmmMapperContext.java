@@ -2,215 +2,227 @@ package com.b5m.admm;
 
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
+import org.apache.mahout.math.DenseVector;
+import org.apache.mahout.math.Matrix;
+import org.apache.mahout.math.RandomAccessSparseVector;
+import org.apache.mahout.math.Vector;
+import org.apache.mahout.math.Vector.Element;
 import org.codehaus.jackson.annotate.JsonProperty;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.util.Iterator;
 
 import static com.b5m.admm.AdmmIterationHelper.admmMapperContextToJson;
 import static com.b5m.admm.AdmmIterationHelper.jsonToAdmmMapperContext;
 
 public class AdmmMapperContext implements Writable {
 
-    private static final double LAMBDA_VALUE = 1e-6;
+	private static final double LAMBDA_VALUE = 1e-6;
 
-    @JsonProperty("a")
-    private double[][] a;
+	@JsonProperty("a")
+	private Matrix a;
 
-    @JsonProperty("b")
-    private double[] b;
+	@JsonProperty("b")
+	private double[] b;
 
-    @JsonProperty("uInitial")
-    private double[] uInitial;
+	@JsonProperty("uInitial")
+	private double[] uInitial;
 
-    @JsonProperty("xInitial")
-    private double[] xInitial;
+	@JsonProperty("xInitial")
+	private double[] xInitial;
 
-    @JsonProperty("zInitial")
-    private double[] zInitial;
+	@JsonProperty("zInitial")
+	private double[] zInitial;
 
-    @JsonProperty("rho")
-    private double rho;
+	@JsonProperty("rho")
+	private double rho;
 
-    @JsonProperty("lambdaValue")
-    private double lambdaValue;
+	@JsonProperty("lambdaValue")
+	private double lambdaValue;
 
-    @JsonProperty("primalObjectiveValue")
-    private double primalObjectiveValue;
+	@JsonProperty("primalObjectiveValue")
+	private double primalObjectiveValue;
 
-    @JsonProperty("rNorm")
-    private double rNorm;
+	@JsonProperty("rNorm")
+	private double rNorm;
 
-    @JsonProperty("sNorm")
-    private double sNorm;
+	@JsonProperty("sNorm")
+	private double sNorm;
 
-    public AdmmMapperContext(double[][] ab) {
-        b = new double[ab.length];
-        a = new double[ab.length][ab[0].length - 1];
+	public AdmmMapperContext(Matrix ab) {
+		int numCols = ab.numCols() - 1;
+		
+		a = ab.like(ab.numRows(), ab.numCols() - 1);
+		for (int row = 0; row < a.numRows(); row++) {
+			Vector v = ab.viewRow(row);
+			Vector av = a.viewRow(row);
+			for (Element e : v.nonZeroes()) {
+				if (numCols > e.index()) {
+					av.setQuick(e.index(), e.get());
+				}
+			}
+		}
+		b = new double[ab.numRows()];
+		for (int row = 0; row < ab.numRows(); row++) {
+			b[row] = ab.get(row, numCols);
+		}
+		uInitial = new double[numCols];
+		xInitial = new double[numCols];
+		zInitial = new double[numCols];
 
-        for (int row = 0; row < ab.length; row++) {
-            b[row] = ab[row][ab[row].length - 1];
-            for (int col = 0; col < ab[row].length - 1; col++) {
-                a[row][col] = ab[row][col];
-            }
-        }
+		rho = 1.0;
+		lambdaValue = LAMBDA_VALUE;
+		primalObjectiveValue = -1;
+		rNorm = -1;
+		sNorm = -1;
+	}
 
-        uInitial = new double[a[0].length];
-        xInitial = new double[a[0].length];
-        zInitial = new double[a[0].length];
+	public AdmmMapperContext(Matrix ab, double rho) {
+		this(ab);
+		this.rho = rho;
+	}
 
-        rho = 1.0;
-        lambdaValue = LAMBDA_VALUE;
-        primalObjectiveValue = -1;
-        rNorm = -1;
-        sNorm = -1;
-    }
+	public AdmmMapperContext(Matrix ab, double[] uInitial, double[] xInitial,
+			double[] zInitial, double rho, double lambdaValue,
+			double primalObjectiveValue, double rNorm, double sNorm) {
 
-    public AdmmMapperContext(double[][] ab, double rho) {
-        this(ab);
-        this.rho = rho;
-    }
+		a = ab.like(ab.numRows(), ab.numCols() - 1);
+		for (int row = 0; row < a.numRows(); row++) {
+			Vector v = ab.viewRow(row);
+			Vector av = a.viewRow(row);
+			for (Element e : v.nonZeroes()) {
+				av.setQuick(e.index(), e.get());
+			}
+		}
+		
+		b = new double[ab.numRows()];
+		for (int row = 0; row < ab.numRows(); row++) {
+			b[row] = ab.get(row,  ab.numCols() - 1);
+		}
 
-    public AdmmMapperContext(double[][] ab, double[] uInitial, double[] xInitial, double[] zInitial, double rho, double lambdaValue,
-                             double primalObjectiveValue, double rNorm, double sNorm) {
-        b = new double[ab.length];
-        a = new double[ab.length][ab[0].length - 1];
+		this.uInitial = uInitial;
+		this.xInitial = xInitial;
+		this.zInitial = zInitial;
 
-        for (int row = 0; row < ab.length; row++) {
-            b[row] = ab[row][ab[row].length - 1];
-            for (int col = 0; col < ab[row].length - 1; col++) {
-                a[row][col] = ab[row][col];
-            }
-        }
+		this.rho = rho;
+		this.lambdaValue = lambdaValue;
+		this.primalObjectiveValue = primalObjectiveValue;
+		this.rNorm = rNorm;
+		this.sNorm = sNorm;
+	}
 
-        this.uInitial = uInitial;
-        this.xInitial = xInitial;
-        this.zInitial = zInitial;
+	public AdmmMapperContext(Matrix a, double[] b, double[] uInitial,
+			double[] xInitial, double[] zInitial, double rho, double lambdaValue,
+			double primalObjectiveValue, double rNorm, double sNorm) {
+		this.a = a;
+		this.b = b;
+		this.uInitial = uInitial;
+		this.xInitial = xInitial;
+		this.zInitial = zInitial;
+		this.rho = rho;
+		this.lambdaValue = lambdaValue;
+		this.primalObjectiveValue = primalObjectiveValue;
+		this.rNorm = rNorm;
+		this.sNorm = sNorm;
+	}
 
-        this.rho = rho;
-        this.lambdaValue = lambdaValue;
-        this.primalObjectiveValue = primalObjectiveValue;
-        this.rNorm = rNorm;
-        this.sNorm = sNorm;
-    }
+	public AdmmMapperContext() {
+	}
 
-    public AdmmMapperContext(double[][] a,
-                             double[] b,
-                             double[] uInitial,
-                             double[] xInitial,
-                             double[] zInitial,
-                             double rho,
-                             double lambdaValue,
-                             double primalObjectiveValue,
-                             double rNorm,
-                             double sNorm) {
-        this.a = a;
-        this.b = b;
-        this.uInitial = uInitial;
-        this.xInitial = xInitial;
-        this.zInitial = zInitial;
-        this.rho = rho;
-        this.lambdaValue = lambdaValue;
-        this.primalObjectiveValue = primalObjectiveValue;
-        this.rNorm = rNorm;
-        this.sNorm = sNorm;
-    }
+	public void setAdmmMapperContext(AdmmMapperContext context) {
+		this.a = context.a;
+		this.b = context.b;
+		this.uInitial = context.uInitial;
+		this.xInitial = context.xInitial;
+		this.zInitial = context.zInitial;
+		this.rho = context.rho;
+		this.lambdaValue = context.lambdaValue;
+		this.primalObjectiveValue = context.primalObjectiveValue;
+		this.rNorm = context.rNorm;
+		this.sNorm = context.sNorm;
+	}
 
-    public AdmmMapperContext() {
-    }
+	public void write(DataOutput out) throws IOException {
+		Text contextJson = new Text(admmMapperContextToJson(this));
+		contextJson.write(out);
+	}
 
-    public void setAdmmMapperContext(AdmmMapperContext context) {
-        this.a = context.a;
-        this.b = context.b;
-        this.uInitial = context.uInitial;
-        this.xInitial = context.xInitial;
-        this.zInitial = context.zInitial;
-        this.rho = context.rho;
-        this.lambdaValue = context.lambdaValue;
-        this.primalObjectiveValue = context.primalObjectiveValue;
-        this.rNorm = context.rNorm;
-        this.sNorm = context.sNorm;
-    }
+	public void readFields(DataInput in) throws IOException {
+		Text contextJson = new Text();
+		contextJson.readFields(in);
+		setAdmmMapperContext(jsonToAdmmMapperContext(contextJson.toString()));
+	}
 
-    public void write(DataOutput out) throws IOException {
-        Text contextJson = new Text(admmMapperContextToJson(this));
-        contextJson.write(out);
-    }
+	@JsonProperty("a")
+	public Matrix getA() {
+		return a;
+	}
 
-    public void readFields(DataInput in) throws IOException {
-        Text contextJson = new Text();
-        contextJson.readFields(in);
-        setAdmmMapperContext(jsonToAdmmMapperContext(contextJson.toString()));
-    }
+	@JsonProperty("b")
+	public double[] getB() {
+		return b;
+	}
 
-    @JsonProperty("a")
-    public double[][] getA() {
-        return a;
-    }
+	@JsonProperty("uInitial")
+	public double[] getUInitial() {
+		return uInitial;
+	}
 
-    @JsonProperty("b")
-    public double[] getB() {
-        return b;
-    }
+	@JsonProperty("xInitial")
+	public double[] getXInitial() {
+		return xInitial;
+	}
 
-    @JsonProperty("uInitial")
-    public double[] getUInitial() {
-        return uInitial;
-    }
+	@JsonProperty("zInitial")
+	public double[] getZInitial() {
+		return zInitial;
+	}
 
-    @JsonProperty("xInitial")
-    public double[] getXInitial() {
-        return xInitial;
-    }
+	@JsonProperty("rho")
+	public double getRho() {
+		return rho;
+	}
 
-    @JsonProperty("zInitial")
-    public double[] getZInitial() {
-        return zInitial;
-    }
+	@JsonProperty("rho")
+	public void setRho(double rho) {
+		this.rho = rho;
+	}
 
-    @JsonProperty("rho")
-    public double getRho() {
-        return rho;
-    }
+	@JsonProperty("lambdaValue")
+	public double getLambdaValue() {
+		return lambdaValue;
+	}
 
-    @JsonProperty("rho")
-    public void setRho(double rho) {
-        this.rho = rho;
-    }
+	@JsonProperty("primalObjectiveValue")
+	public double getPrimalObjectiveValue() {
+		return primalObjectiveValue;
+	}
 
-    @JsonProperty("lambdaValue")
-    public double getLambdaValue() {
-        return lambdaValue;
-    }
+	@JsonProperty("primalObjectiveValue")
+	public void setPrimalObjectiveValue(double primalObjectiveValue) {
+		this.primalObjectiveValue = primalObjectiveValue;
+	}
 
-    @JsonProperty("primalObjectiveValue")
-    public double getPrimalObjectiveValue() {
-        return primalObjectiveValue;
-    }
+	@JsonProperty("rNorm")
+	public double getRNorm() {
+		return rNorm;
+	}
 
-    @JsonProperty("primalObjectiveValue")
-    public void setPrimalObjectiveValue(double primalObjectiveValue) {
-        this.primalObjectiveValue = primalObjectiveValue;
-    }
+	@JsonProperty("rNorm")
+	public void setRNorm(double rNorm) {
+		this.rNorm = rNorm;
+	}
 
-    @JsonProperty("rNorm")
-    public double getRNorm() {
-        return rNorm;
-    }
+	@JsonProperty("sNorm")
+	public double getSNorm() {
+		return sNorm;
+	}
 
-    @JsonProperty("rNorm")
-    public void setRNorm(double rNorm) {
-        this.rNorm = rNorm;
-    }
-
-    @JsonProperty("sNorm")
-    public double getSNorm() {
-        return sNorm;
-    }
-
-    @JsonProperty("sNorm")
-    public void setSNorm(double sNorm) {
-        this.sNorm = sNorm;
-    }
+	@JsonProperty("sNorm")
+	public void setSNorm(double sNorm) {
+		this.sNorm = sNorm;
+	}
 }

@@ -42,6 +42,7 @@ public class AdmmOptimizerDriver extends Configured implements Tool {
        
         Path finalOutputBasePath = new Path(admmOptimizerDriverArguments.getOutputPath());
         String intermediateHdfsBaseString = finalOutputBasePath.toString() + "/tmp";
+        int numFeatures = admmOptimizerDriverArguments.getNumFeatures();
         int iterationsMaximum = Optional.fromNullable(admmOptimizerDriverArguments.getIterationsMaximum()).or(
                 DEFAULT_ADMM_ITERATIONS_MAX);
         float regularizationFactor = Optional.fromNullable(admmOptimizerDriverArguments.getRegularizationFactor()).or(
@@ -64,6 +65,7 @@ public class AdmmOptimizerDriver extends Configured implements Tool {
                     previousHdfsResultsPath,
                     currentHdfsResultsPath,
                     signalDataLocation,
+                    numFeatures,
                     iterationNumber,
                     columnsToExclude,
                     addIntercept,
@@ -78,18 +80,19 @@ public class AdmmOptimizerDriver extends Configured implements Tool {
             	AdmmResultWriter writer = new AdmmResultWriterBetas();
             	writer.write(conf, fs, finalOutput, finalOutputBetas);
             	
-                JobConf stdErrConf = new JobConf(getConf(), AdmmOptimizerDriver.class);
-                Path standardErrorHdfsPath = new Path(finalOutputBasePath, STANDARD_ERROR_FOLDER_NAME);
-                doStandardErrorCalculation(
-                        stdErrConf,
-                        finalOutput,
-                        standardErrorHdfsPath,
-                        signalDataLocation,
-                        iterationNumber,
-                        columnsToExclude,
-                        addIntercept,
-                        regularizeIntercept,
-                        regularizationFactor);
+                //JobConf stdErrConf = new JobConf(getConf(), AdmmOptimizerDriver.class);
+                //Path standardErrorHdfsPath = new Path(finalOutputBasePath, STANDARD_ERROR_FOLDER_NAME);
+                //doStandardErrorCalculation(
+                //        stdErrConf,
+                //        finalOutput,
+                //        standardErrorHdfsPath,
+                //        signalDataLocation,
+                //        numFeatures,
+                //        iterationNumber,
+                //        columnsToExclude,
+                //        addIntercept,
+                //        regularizeIntercept,
+                //        regularizationFactor);
             }
             iterationNumber++;
         }
@@ -114,6 +117,7 @@ public class AdmmOptimizerDriver extends Configured implements Tool {
                                            Path currentHdfsPath,
                                            Path standardErrorHdfsPath,
                                            String signalDataLocation,
+                                           int numFeatures,
                                            int iterationNumber,
                                            String columnsToExclude,
                                            boolean addIntercept,
@@ -130,6 +134,8 @@ public class AdmmOptimizerDriver extends Configured implements Tool {
         conf.setBoolean("add.intercept", addIntercept);
         conf.setBoolean("regularize.intercept", regularizeIntercept);
         conf.setFloat("regularization.factor", regularizationFactor);
+        conf.setInt("signal.data.num.features", numFeatures);
+
 
         conf.setMapperClass(AdmmStandardErrorsMapper.class);
         conf.setReducerClass(AdmmStandardErrorsReducer.class);
@@ -150,6 +156,7 @@ public class AdmmOptimizerDriver extends Configured implements Tool {
                                 Path previousHdfsPath,
                                 Path currentHdfsPath,
                                 String signalDataLocation,
+                                int numFeatures,
                                 int iterationNumber,
                                 String columnsToExclude,
                                 boolean addIntercept,
@@ -164,7 +171,8 @@ public class AdmmOptimizerDriver extends Configured implements Tool {
         conf.set("columns.to.exclude", columnsToExclude);
         conf.setBoolean("add.intercept", addIntercept);
         conf.setBoolean("regularize.intercept", regularizeIntercept);
-        conf.setFloat("regularization.factor", regularizationFactor);     
+        conf.setFloat("regularization.factor", regularizationFactor);
+        conf.setInt("signal.data.num.features", numFeatures);
 
         conf.setMapperClass(AdmmIterationMapper.class);
         conf.setReducerClass(AdmmIterationReducer.class);

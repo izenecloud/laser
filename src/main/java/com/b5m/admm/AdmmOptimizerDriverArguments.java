@@ -1,10 +1,12 @@
 package com.b5m.admm;
 
 import com.b5m.args4j.URIOptionHandler;
+
 import org.kohsuke.args4j.Option;
 import org.kohsuke.args4j.spi.BooleanOptionHandler;
 import org.kohsuke.args4j.spi.FloatOptionHandler;
 import org.kohsuke.args4j.spi.IntOptionHandler;
+import org.kohsuke.args4j.spi.LongOptionHandler;
 import org.kohsuke.args4j.spi.StringOptionHandler;
 
 import java.net.URI;
@@ -21,13 +23,17 @@ public class AdmmOptimizerDriverArguments {
             "-regularizationFactor",
             "-addIntercept",
             "-regularizeIntercept",
-            "-columnsToExclude"));
+            "-columnsToExclude",
+            "-numFeatures"));
 
     @Option(name = "-outputPath", required = true, handler = URIOptionHandler.class)
     private URI outputPath;
 
     @Option(name = "-signalPath", required = true, handler = StringOptionHandler.class)
     private String signalPath;
+    
+    @Option(name = "-numFeatures", required = true, handler = IntOptionHandler.class)
+    private int numFeatures;
 
     @Option(name = "-iterationsMaximum", required = false, handler = IntOptionHandler.class)
     private int iterationsMaximum;
@@ -70,5 +76,9 @@ public class AdmmOptimizerDriverArguments {
 
     public String getColumnsToExclude() {
         return columnsToExclude;
+    }
+    
+    public int getNumFeatures() {
+    	return numFeatures;
     }
 }

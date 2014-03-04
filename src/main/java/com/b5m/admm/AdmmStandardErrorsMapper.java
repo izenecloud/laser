@@ -9,6 +9,9 @@ import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.*;
+import org.apache.mahout.math.Matrix;
+import org.apache.mahout.math.Vector;
+import org.apache.mahout.math.Vector.Element;
 
 import java.io.IOException;
 import java.util.Map;
@@ -33,6 +36,9 @@ public class AdmmStandardErrorsMapper extends MapReduceBase implements
 	private boolean addIntercept;
 	private String previousIntermediateOutputLocation;
 	private Path previousIntermediateOutputLocationPath;
+	
+    private int numFeatures;
+
 
 	@Override
 	public void configure(JobConf job) {
@@ -40,6 +46,8 @@ public class AdmmStandardErrorsMapper extends MapReduceBase implements
 		String columnsToExcludeString = job.get("columns.to.exclude");
 		columnsToExclude = getColumnsToExclude(columnsToExcludeString);
 		addIntercept = job.getBoolean("add.intercept", false);
+        numFeatures = job.getInt("signal.data.num.features", 0);
+
 		previousIntermediateOutputLocation = job
 				.get("previous.intermediate.output.location");
 		previousIntermediateOutputLocationPath = new Path(
@@ -69,8 +77,8 @@ public class AdmmStandardErrorsMapper extends MapReduceBase implements
 				+ Long.toString(split.getLength());
 		splitId = removeIpFromHdfsFileName(splitId);
 
-		double[][] inputSplitData = createMatrixFromDataString(
-				value.toString(), columnsToExclude, addIntercept);
+		Matrix inputSplitData = createMatrixFromDataString(
+				value.toString(), numFeatures, columnsToExclude, addIntercept);
 		AdmmMapperContext mapperContext = assembleMapperContextFromCache(
 				inputSplitData, splitId);
 
@@ -82,22 +90,27 @@ public class AdmmStandardErrorsMapper extends MapReduceBase implements
 	private AdmmStandardErrorsReducerContext getReducerContext(
 			AdmmMapperContext mapperContext) {
 		double[] zFinal = mapperContext.getZInitial();
-		double[][] aMatrix = mapperContext.getA();
-		int numRows = aMatrix.length;
-		int numFeatures = aMatrix[0].length;
+		Matrix aMatrix = mapperContext.getA();
+		int numRows = aMatrix.numRows();
 		double[][] xwxMatrix = new double[numFeatures][numFeatures];
 		double[] rowMultipliers = getRowMultipliers(aMatrix, zFinal);
 
 		SparseRealMatrix xtW = new OpenMapRealMatrix(numFeatures, numRows);
 		SparseRealMatrix x = new OpenMapRealMatrix(numRows, numFeatures);
 		for (int row = 0; row < numRows; row++) {
-			for (int col = 0; col < numFeatures; col++) {
-				if (aMatrix[row][col] != 0) {
-					x.setEntry(row, col, aMatrix[row][col]);
-					xtW.setEntry(col, row, aMatrix[row][col]
-							* rowMultipliers[row]);
-				}
+			Vector features = aMatrix.viewRow(row);
+			for (Element e : features.nonZeroes()) {
+				x.setEntry(row, e.index(), e.get());
+				xtW.setEntry(e.index(), row, e.get()
+								* rowMultipliers[row]);
 			}
+			//for (int col = 0; col < numFeatures; col++) {
+			//	if (aMatrix[row][col] != 0) {
+			//		x.setEntry(row, col, aMatrix[row][col]);
+			//		xtW.setEntry(col, row, aMatrix[row][col]
+			//				* rowMultipliers[row]);
+			//	}
+			//}
 		}
 
 		RealMatrix xtWX = xtW.multiply(x);
@@ -108,12 +121,12 @@ public class AdmmStandardErrorsMapper extends MapReduceBase implements
 			}
 		}
 
-		return new AdmmStandardErrorsReducerContext(xwxMatrix,
+		return new AdmmStandardErrorsReducerContext(null,
 				mapperContext.getLambdaValue(), numRows);
 	}
 
-	private double[] getRowMultipliers(double[][] aMatrix, double[] zFinal) {
-		double[] rowMultipliers = new double[aMatrix.length];
+	private double[] getRowMultipliers(Matrix aMatrix, double[] zFinal) {
+		double[] rowMultipliers = new double[aMatrix.numRows()];
 		for (int row = 0; row < rowMultipliers.length; row++) {
 			double rowProbability = getPredictedProbability(aMatrix, zFinal,
 					row);
@@ -122,18 +135,20 @@ public class AdmmStandardErrorsMapper extends MapReduceBase implements
 		return rowMultipliers;
 	}
 
-	private double getPredictedProbability(double[][] aMatrix, double[] zFinal,
+	private double getPredictedProbability(Matrix aMatrix, double[] zFinal,
 			int row) {
-		double[] features = aMatrix[row];
+		//double[] features = aMatrix[row];
+		Vector features = aMatrix.viewRow(row);
 		double dotProduct = 0;
-		for (int i = 0; i < features.length; i++) {
-			dotProduct += features[i] * zFinal[i];
+		for (Element e : features.nonZeroes()) {
+		//for (int i = 0; i < features.length; i++) {
+			dotProduct += features.get(e.index()) * zFinal[e.index()];
 		}
 		return Math.exp(dotProduct) / (1 + Math.exp(dotProduct));
 	}
 
 	private AdmmMapperContext assembleMapperContextFromCache(
-			double[][] inputSplitData, String splitId) throws IOException {
+			Matrix inputSplitData, String splitId) throws IOException {
 		if (splitToParameters.containsKey(splitId)) {
 			AdmmMapperContext preContext = jsonToAdmmMapperContext(splitToParameters
 					.get(splitId));
