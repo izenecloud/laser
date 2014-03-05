@@ -1,0 +1,56 @@
+{
+    objects: 
+    [
+        {
+            "name": "user_source",
+            "class": "com.b5m.laser.source.UserSource",
+            "parameters": 
+            {
+                ...
+            }
+        }, 
+        {
+            "name": "ad_source",
+            "class": "com.b5m.laser.source.AdSource",
+            "parameters": 
+            {
+                ...
+            }
+        },
+        {
+            "name": "user_subset",
+            "class": "com.b5m.laser.transformer.Subset",
+            "parameters": 
+            {
+                "input": "user_source",
+                "features": ["country", "occupation"]
+            }
+        }, 
+        {
+            "name": "ad_subset",
+            "class": "com.b5m.laser.transformer.Subset",
+            "parameters": 
+            {
+                "input": "ad_source",
+                "features": ["title", "body"]
+            }
+        },
+        {
+            "name": "user_ad_int",
+            "class": "com.b5m.laser.transformer.Interaction",
+            "parameters": 
+            {
+                "inputs": [ "user_subset", "ad_subset" ],
+                "interactions": [["country", "occupation"], ["title", "body"]]
+            }
+        }, 
+        {
+            "name": "assembler",
+            "class": "com.b5m.laser.assembler.Assembler",
+            "parameters": 
+            {
+                "inputs": ["user_subset", "ad_subset", "user_ad_int"]
+            }
+        }
+   ]
+}
