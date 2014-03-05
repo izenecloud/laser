@@ -63,13 +63,16 @@ public class LogisticL2DiffFunction implements DiffFunction {
             //    out[col] += -this.a.getQuick(row, col) * thisRowMultiplier;
             //}
         }
-        for (Element e : this.a.viewRow(0).nonZeroes()){
-        //for (int col = 0; col < this.n; col++) {
-            out[e.index()] /= this.m;
+        //for (Element e : this.a.viewRow(0).nonZeroes()){
+        //viewRow(0) doesn't represent  other rows
+        for (int col = 0; col < this.n; col++) {
+            //out[e.index()] /= this.m;
+        	out[col] /= this.m;
         }
-        for (Element e : this.a.viewRow(0).nonZeroes()){
-        //for (int col = 0; col < this.n; col++) {
-            out[e.index()] += this.rho * (x[e.index()] - this.z[e.index()] + this.u[e.index()]);
+        //for (Element e : this.a.viewRow(0).nonZeroes()){
+        for (int col = 0; col < this.n; col++) {
+           // out[e.index()] += this.rho * (x[e.index()] - this.z[e.index()] + this.u[e.index()]);
+        	 out[col] += this.rho * (x[col] - this.z[col] + this.u[col]);
         }
         return out;
      }
@@ -104,7 +107,7 @@ public class LogisticL2DiffFunction implements DiffFunction {
 
     public double evaluateObjectiveDualPenalty(double[] x) {
         double xzuNorm = 0.0;
-        //TODO All non-zeroes in A
+        //TODO All non-zeroes in A to check
         for (Element e : this.nonZeros.nonZeroes()) {
             xzuNorm += Math.pow(x[e.index()] - z[e.index()] + u[e.index()], 2.0);
         //for (int col = 0; col < n; col++) {
