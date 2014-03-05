@@ -41,7 +41,7 @@ public class PropertiesLoader {
 					.get("class").getTextValue(), OBJECT_MAPPER.readValue(node
 					.get("parameters").toString(), Map.class));
 			components.add(com);
-			//LOG.debug("new component: {}", com.toJson());
+			LOG.debug("new component: {}", com.toJson());
 		}
 	}
 	

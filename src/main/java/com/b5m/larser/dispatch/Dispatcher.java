@@ -6,12 +6,13 @@ import java.util.Iterator;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.mortbay.log.Log;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class Dispatcher {
 	private static final PropertiesLoader LOADER = new PropertiesLoader();
-	private static final Logger LOG = LoggerFactory.getLogger(Dispatcher.class.getName());
+	private static final Logger LOG = LoggerFactory.getLogger(Dispatcher.class);
 	
 	public boolean validate() {
 		// TODO
@@ -29,6 +30,7 @@ public class Dispatcher {
 		while (iterator.hasNext()) {
 			ComponentContext comContext = iterator.next();
 			try {
+				LOG.debug("running Component {}", comContext.toJson());
 				comContext.newInstance().run();
 			} catch (Exception e) {
 				e.printStackTrace();

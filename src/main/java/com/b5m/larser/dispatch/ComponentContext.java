@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
 
+import org.apache.commons.collections.map.HashedMap;
 import org.codehaus.jackson.JsonGenerationException;
 import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
@@ -25,7 +26,11 @@ public class ComponentContext {
 
 	public String toJson() throws JsonGenerationException,
 			JsonMappingException, IOException {
-		return OBJECT_MAPPER.writeValueAsString(this);
+		Map<String, Object> map = new HashedMap();
+		map.put("name", name);
+		map.put("class", className);
+		map.put("parameters", parameters);
+		return OBJECT_MAPPER.writeValueAsString(map);
 	}
 
 	public Component newInstance() throws InstantiationException,
