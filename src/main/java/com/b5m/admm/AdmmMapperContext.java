@@ -54,7 +54,7 @@ public class AdmmMapperContext implements Writable {
 		this.splitId = splitId;
 		
 		int numCols = ab.numCols() - 1;
-		
+		//TODO someproblem
 		a = ab.like(ab.numRows(), ab.numCols() - 1);
 		for (int row = 0; row < a.numRows(); row++) {
 			Vector v = ab.viewRow(row);
@@ -90,6 +90,7 @@ public class AdmmMapperContext implements Writable {
 			double primalObjectiveValue, double rNorm, double sNorm) {
 		this.splitId = splitId;
 		a = ab.like(ab.numRows(), ab.numCols() - 1);
+		//TODO some problem
 		for (int row = 0; row < a.numRows(); row++) {
 			Vector v = ab.viewRow(row);
 			Vector av = a.viewRow(row);
