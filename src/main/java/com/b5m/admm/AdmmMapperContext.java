@@ -2,9 +2,7 @@ package com.b5m.admm;
 
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
-import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Matrix;
-import org.apache.mahout.math.RandomAccessSparseVector;
 import org.apache.mahout.math.Vector;
 import org.apache.mahout.math.Vector.Element;
 import org.codehaus.jackson.annotate.JsonProperty;
@@ -12,8 +10,6 @@ import org.codehaus.jackson.annotate.JsonProperty;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.util.Iterator;
 
 import static com.b5m.admm.AdmmIterationHelper.admmMapperContextToJson;
 import static com.b5m.admm.AdmmIterationHelper.jsonToAdmmMapperContext;
@@ -21,7 +17,9 @@ import static com.b5m.admm.AdmmIterationHelper.jsonToAdmmMapperContext;
 public class AdmmMapperContext implements Writable {
 
 	private static final double LAMBDA_VALUE = 1e-6;
-
+	@JsonProperty("splitId")
+	private String splitId;
+	
 	@JsonProperty("a")
 	private Matrix a;
 
@@ -52,7 +50,9 @@ public class AdmmMapperContext implements Writable {
 	@JsonProperty("sNorm")
 	private double sNorm;
 
-	public AdmmMapperContext(Matrix ab) {
+	public AdmmMapperContext(String splitId, Matrix ab) {
+		this.splitId = splitId;
+		
 		int numCols = ab.numCols() - 1;
 		
 		a = ab.like(ab.numRows(), ab.numCols() - 1);
@@ -80,15 +80,15 @@ public class AdmmMapperContext implements Writable {
 		sNorm = -1;
 	}
 
-	public AdmmMapperContext(Matrix ab, double rho) {
-		this(ab);
+	public AdmmMapperContext(String splitId, Matrix ab, double rho) {
+		this(splitId, ab);
 		this.rho = rho;
 	}
 
-	public AdmmMapperContext(Matrix ab, double[] uInitial, double[] xInitial,
+	public AdmmMapperContext(String splitId, Matrix ab, double[] uInitial, double[] xInitial,
 			double[] zInitial, double rho, double lambdaValue,
 			double primalObjectiveValue, double rNorm, double sNorm) {
-
+		this.splitId = splitId;
 		a = ab.like(ab.numRows(), ab.numCols() - 1);
 		for (int row = 0; row < a.numRows(); row++) {
 			Vector v = ab.viewRow(row);
@@ -114,9 +114,10 @@ public class AdmmMapperContext implements Writable {
 		this.sNorm = sNorm;
 	}
 
-	public AdmmMapperContext(Matrix a, double[] b, double[] uInitial,
+	public AdmmMapperContext(String splitId, Matrix a, double[] b, double[] uInitial,
 			double[] xInitial, double[] zInitial, double rho, double lambdaValue,
 			double primalObjectiveValue, double rNorm, double sNorm) {
+		this.splitId = splitId;
 		this.a = a;
 		this.b = b;
 		this.uInitial = uInitial;
@@ -133,6 +134,7 @@ public class AdmmMapperContext implements Writable {
 	}
 
 	public void setAdmmMapperContext(AdmmMapperContext context) {
+		this.splitId = context.splitId;
 		this.a = context.a;
 		this.b = context.b;
 		this.uInitial = context.uInitial;
@@ -224,5 +226,10 @@ public class AdmmMapperContext implements Writable {
 	@JsonProperty("sNorm")
 	public void setSNorm(double sNorm) {
 		this.sNorm = sNorm;
+	}
+	
+	@JsonProperty("splitId")
+	public String getSplitId() {
+		return splitId;
 	}
 }

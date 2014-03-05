@@ -152,7 +152,7 @@ public class AdmmStandardErrorsMapper extends MapReduceBase implements
 		if (splitToParameters.containsKey(splitId)) {
 			AdmmMapperContext preContext = jsonToAdmmMapperContext(splitToParameters
 					.get(splitId));
-			return new AdmmMapperContext(inputSplitData,
+			return new AdmmMapperContext(splitId, inputSplitData,
 					preContext.getUInitial(), preContext.getXInitial(),
 					preContext.getZInitial(), preContext.getRho(),
 					preContext.getLambdaValue(),

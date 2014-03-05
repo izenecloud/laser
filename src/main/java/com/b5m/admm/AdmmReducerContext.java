@@ -13,94 +13,106 @@ import static com.b5m.admm.AdmmIterationHelper.jsonToAdmmReducerContext;
 
 public class AdmmReducerContext implements Writable {
 
-    @JsonProperty("uInitial")
-    private double[] uInitial;
+	@JsonProperty("splitId")
+	private String splitId;
 
-    @JsonProperty("xInitial")
-    private double[] xInitial;
+	@JsonProperty("uInitial")
+	private double[] uInitial;
 
-    @JsonProperty("xUpdated")
-    private double[] xUpdated;
+	@JsonProperty("xInitial")
+	private double[] xInitial;
 
-    @JsonProperty("zInitial")
-    private double[] zInitial; // zInitial is only needed here for calculating the dual norm, used in the rho update
+	@JsonProperty("xUpdated")
+	private double[] xUpdated;
 
-    @JsonProperty("primalObjectiveValue")
-    private double primalObjectiveValue;
+	@JsonProperty("zInitial")
+	private double[] zInitial; // zInitial is only needed here for calculating
+								// the dual norm, used in the rho update
 
-    @JsonProperty("rho")
-    private double rho;
+	@JsonProperty("primalObjectiveValue")
+	private double primalObjectiveValue;
 
-    @JsonProperty("lambdaValue")
-    private double lambdaValue;
+	@JsonProperty("rho")
+	private double rho;
 
-    public AdmmReducerContext(double[] uInitial, double[] xInitial, double[] xUpdated, double[] zInitial,
-                              double primalObjectiveValue, double rho, double lambdaValue) {
-        this.uInitial = uInitial;
-        this.xInitial = xInitial;
-        this.xUpdated = xUpdated;
-        this.zInitial = zInitial;
-        this.primalObjectiveValue = primalObjectiveValue;
-        this.rho = rho;
-        this.lambdaValue = lambdaValue;
-    }
+	@JsonProperty("lambdaValue")
+	private double lambdaValue;
 
-    public AdmmReducerContext() {
-    }
+	public AdmmReducerContext(String splitId, double[] uInitial, double[] xInitial,
+			double[] xUpdated, double[] zInitial, double primalObjectiveValue,
+			double rho, double lambdaValue) {
+		this.splitId = splitId;
+		this.uInitial = uInitial;
+		this.xInitial = xInitial;
+		this.xUpdated = xUpdated;
+		this.zInitial = zInitial;
+		this.primalObjectiveValue = primalObjectiveValue;
+		this.rho = rho;
+		this.lambdaValue = lambdaValue;
+	}
 
-    public void setAdmmReducerContext(AdmmReducerContext context) {
-        this.uInitial = context.uInitial;
-        this.xInitial = context.xInitial;
-        this.xUpdated = context.xUpdated;
-        this.zInitial = context.zInitial;
-        this.primalObjectiveValue = context.primalObjectiveValue;
-        this.rho = context.rho;
-        this.lambdaValue = context.lambdaValue;
-    }
+	public AdmmReducerContext() {
+	}
 
-    public void write(DataOutput out) throws IOException {
-        Text contextJson = new Text(admmReducerContextToJson(this));
-        contextJson.write(out);
-    }
+	public void setAdmmReducerContext(AdmmReducerContext context) {
+		this.splitId = context.splitId;
+		this.uInitial = context.uInitial;
+		this.xInitial = context.xInitial;
+		this.xUpdated = context.xUpdated;
+		this.zInitial = context.zInitial;
+		this.primalObjectiveValue = context.primalObjectiveValue;
+		this.rho = context.rho;
+		this.lambdaValue = context.lambdaValue;
+	}
 
-    public void readFields(DataInput in) throws IOException {
-        Text contextJson = new Text();
-        contextJson.readFields(in);
-        setAdmmReducerContext(jsonToAdmmReducerContext(contextJson.toString()));
-    }
+	public void write(DataOutput out) throws IOException {
+		Text contextJson = new Text(admmReducerContextToJson(this));
+		contextJson.write(out);
+	}
 
-    @JsonProperty("uInitial")
-    public double[] getUInitial() {
-        return uInitial;
-    }
+	public void readFields(DataInput in) throws IOException {
+		Text contextJson = new Text();
+		contextJson.readFields(in);
+		setAdmmReducerContext(jsonToAdmmReducerContext(contextJson.toString()));
+	}
 
-    @JsonProperty("xInitial")
-    public double[] getXInitial() {
-        return xInitial;
-    }
+	@JsonProperty("uInitial")
+	public double[] getUInitial() {
+		return uInitial;
+	}
 
-    @JsonProperty("xUpdated")
-    public double[] getXUpdated() {
-        return xUpdated;
-    }
+	@JsonProperty("xInitial")
+	public double[] getXInitial() {
+		return xInitial;
+	}
 
-    @JsonProperty("zInitial")
-    public double[] getZInitial() {
-        return zInitial;
-    }
+	@JsonProperty("xUpdated")
+	public double[] getXUpdated() {
+		return xUpdated;
+	}
 
-    @JsonProperty("primalObjectiveValue")
-    public double getPrimalObjectiveValue() {
-        return primalObjectiveValue;
-    }
+	@JsonProperty("zInitial")
+	public double[] getZInitial() {
+		return zInitial;
+	}
 
-    @JsonProperty("rho")
-    public double getRho() {
-        return rho;
-    }
+	@JsonProperty("primalObjectiveValue")
+	public double getPrimalObjectiveValue() {
+		return primalObjectiveValue;
+	}
 
-    @JsonProperty("lambdaValue")
-    public double getLambdaValue() {
-        return lambdaValue;
-    }
+	@JsonProperty("rho")
+	public double getRho() {
+		return rho;
+	}
+
+	@JsonProperty("lambdaValue")
+	public double getLambdaValue() {
+		return lambdaValue;
+	}
+	
+	@JsonProperty("splitId")
+	public String getSplitId() {
+		return splitId;
+	}
 }

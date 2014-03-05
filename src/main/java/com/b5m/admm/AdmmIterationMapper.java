@@ -10,7 +10,6 @@ import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.*;
-import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Matrix;
 
 import java.io.IOException;
@@ -22,9 +21,8 @@ import java.util.logging.Logger;
 import static com.b5m.admm.AdmmIterationHelper.*;
 
 public class AdmmIterationMapper extends MapReduceBase
-        implements Mapper<LongWritable, Text, NullWritable, Text> {
+        implements Mapper<LongWritable, Text, NullWritable, AdmmReducerContextWritable> {
 
-	//TODO remove?
     private static final Logger LOG = Logger.getLogger(AdmmIterationMapper.class.getName());
     private static final float DEFAULT_REGULARIZATION_FACTOR = 0.000001f;
     private static final float DEFAULT_RHO = 0.1f;
@@ -34,9 +32,7 @@ public class AdmmIterationMapper extends MapReduceBase
     private Map<String, String> splitToParameters;
     private Set<Integer> columnsToExclude;
 
-//  private OptimizerParameters optimizerParameters = new OptimizerParameters();
-    private QNMinimizer lbfgs = new QNMinimizer();
-//    private BFGS<LogisticL2DifferentiableFunction> bfgs = new BFGS<LogisticL2DifferentiableFunction>(optimizerParameters);
+    private QNMinimizer lbfgs;
     private boolean addIntercept;
     private float regularizationFactor;
     private double rho;
@@ -64,13 +60,14 @@ public class AdmmIterationMapper extends MapReduceBase
         }
 
         splitToParameters = getSplitParameters();
+        lbfgs = new QNMinimizer();
     }
 
     protected Map<String, String> getSplitParameters() {
         return readParametersFromHdfs(fs, previousIntermediateOutputLocationPath, iteration);
     }
 
-    public void map(LongWritable key, Text value, OutputCollector<NullWritable, Text> output, Reporter reporter)
+    public void map(LongWritable key, Text value, OutputCollector<NullWritable, AdmmReducerContextWritable> output, Reporter reporter)
             throws IOException {
         FileSplit split = (FileSplit) reporter.getInputSplit();
         
@@ -81,7 +78,7 @@ public class AdmmIterationMapper extends MapReduceBase
 
         AdmmMapperContext mapperContext;
         if (iteration == 0) {
-            mapperContext = new AdmmMapperContext(inputSplitData, rho);
+            mapperContext = new AdmmMapperContext(splitId, inputSplitData, rho);
         }
         else {
             mapperContext = assembleMapperContextFromCache(inputSplitData, splitId);
@@ -89,7 +86,7 @@ public class AdmmIterationMapper extends MapReduceBase
         AdmmReducerContext reducerContext = localMapperOptimization(mapperContext);
 
         LOG.info("Iteration " + iteration + "Mapper outputting splitId " + splitId);
-        output.collect(NullWritable.get(), new Text(splitId + "::" + admmReducerContextToJson(reducerContext)));
+        output.collect(NullWritable.get(),  new AdmmReducerContextWritable(reducerContext));
     }
 
     private AdmmReducerContext localMapperOptimization(AdmmMapperContext context) {
@@ -106,7 +103,9 @@ public class AdmmIterationMapper extends MapReduceBase
         	optimizationContext.m_optimumX[d] = optimum[d];
         }
         double primalObjectiveValue = myFunction.evaluatePrimalObjective(optimizationContext.m_optimumX);
-        return new AdmmReducerContext(context.getUInitial(),
+        return new AdmmReducerContext(
+        		context.getSplitId(),
+        		context.getUInitial(),
                 context.getXInitial(),
                 optimizationContext.m_optimumX,
                 context.getZInitial(),
@@ -118,7 +117,8 @@ public class AdmmIterationMapper extends MapReduceBase
     private AdmmMapperContext assembleMapperContextFromCache(Matrix inputSplitData, String splitId) throws IOException {
         if (splitToParameters.containsKey(splitId)) {
             AdmmMapperContext preContext = jsonToAdmmMapperContext(splitToParameters.get(splitId));
-            return new AdmmMapperContext(inputSplitData,
+            return new AdmmMapperContext(splitId, 
+            		inputSplitData,
                     preContext.getUInitial(),
                     preContext.getXInitial(),
                     preContext.getZInitial(),

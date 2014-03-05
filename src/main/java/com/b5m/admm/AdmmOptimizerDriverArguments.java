@@ -6,7 +6,6 @@ import org.kohsuke.args4j.Option;
 import org.kohsuke.args4j.spi.BooleanOptionHandler;
 import org.kohsuke.args4j.spi.FloatOptionHandler;
 import org.kohsuke.args4j.spi.IntOptionHandler;
-import org.kohsuke.args4j.spi.LongOptionHandler;
 import org.kohsuke.args4j.spi.StringOptionHandler;
 
 import java.net.URI;
