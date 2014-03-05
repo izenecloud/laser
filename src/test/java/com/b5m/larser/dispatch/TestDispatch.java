@@ -15,7 +15,7 @@ public class TestDispatch {
 	public void setup() throws Exception {
 		dispatcher = new Dispatcher();
 		properties = new Path("src/test/properties/laser.properties");
-		Component.setComponentBasePath(new Path("TEST"));
+		Component.setComponentBasePath(new Path("/tmp"));
 	}
 
 	@AfterTest
