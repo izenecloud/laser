@@ -1,5 +1,6 @@
 package com.b5m.admm;
 
+import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.FileUtil;
@@ -7,10 +8,8 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IOUtils;
 import org.apache.hadoop.mapred.JobConf;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -38,8 +37,8 @@ public abstract class AdmmResultWriter {
 			fs.delete(finalOutputPathFull, true);
 		}
 
-		OutputStream out = fs.create(finalOutputPathFull);
+		FSDataOutputStream out = fs.create(finalOutputPathFull);
 		IOUtils.copyBytes(in, out, conf, true);
-
+		out.close();
 	}
 }

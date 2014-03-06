@@ -47,19 +47,7 @@ public class AdmmResultWriterBetas extends AdmmResultWriter {
 				.jsonToAdmmMapperContext(betaString);
 
 		double[] zInitials = admmMapperContext.getZInitial();
-		StringBuilder outStringBuilder = new StringBuilder();
-		outStringBuilder.append("[");
-
-		for (int i = 0; i < zInitials.length; i++) {
-			outStringBuilder.append(String.format("[%s]", zInitials[i]));
-
-			if (i < zInitials.length - 1) {
-				outStringBuilder.append(",");
-			}
-		}
-		outStringBuilder.append("]");
-
-		return outStringBuilder.toString();
+		return arrayToJson(zInitials);
 	}
 
 }
