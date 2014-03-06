@@ -89,18 +89,18 @@ public class AdmmMapperContext implements Writable {
 			double[] zInitial, double rho, double lambdaValue,
 			double primalObjectiveValue, double rNorm, double sNorm) {
 		this.splitId = splitId;
-		a = ab.like(ab.numRows(), ab.numCols() - 1);
+		int numCols = ab.numCols() - 1;
+		a = ab.like(ab.numRows(), numCols);
+		b = new double[ab.numRows()];
 		for (int row = 0; row < a.numRows(); row++) {
 			Vector v = ab.viewRow(row);
-			Vector av = a.viewRow(row);
+			b[row] = v.get(numCols);
+			Vector av = a.viewRow(row);			
 			for (Element e : v.nonZeroes()) {
-				av.setQuick(e.index(), e.get());
+				if (numCols > e.index()) {
+					av.setQuick(e.index(), e.get());
+				}
 			}
-		}
-		
-		b = new double[ab.numRows()];
-		for (int row = 0; row < ab.numRows(); row++) {
-			b[row] = ab.get(row,  ab.numCols() - 1);
 		}
 
 		this.uInitial = uInitial;
