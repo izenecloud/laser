@@ -58,6 +58,9 @@ public final class AdmmIterationHelper {
 		return OBJECT_MAPPER.writeValueAsString(array);
 	}
 
+	public static double[] jsonToArray(String json) throws IOException {
+		return OBJECT_MAPPER.readValue(json, double[].class);
+	}
 	public static Map<String, String> jsonToMap(String json) throws IOException {
 		return OBJECT_MAPPER.readValue(json, HashMap.class);
 	}

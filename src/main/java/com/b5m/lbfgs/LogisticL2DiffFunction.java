@@ -1,7 +1,5 @@
 package com.b5m.lbfgs;
 
-import java.util.logging.Logger;
-
 import org.apache.mahout.math.Matrix;
 import org.apache.mahout.math.SequentialAccessSparseVector;
 import org.apache.mahout.math.Vector;

@@ -83,19 +83,20 @@ public class AdmmOptimizerDriver extends Configured implements Tool {
 			if (isFinalIteration) {
 				Path finalOutput = new Path(finalOutputBasePath,
 						ITERATION_FOLDER_NAME_FINAL);
+				fs.delete(finalOutput);
 				fs.rename(currentHdfsResultsPath, finalOutput);
 				Path finalOutputBetas = new Path(finalOutputBasePath,
 						BETAS_FOLDER_NAME);
 				AdmmResultWriter writer = new AdmmResultWriterBetas();
 				writer.write(conf, fs, finalOutput, finalOutputBetas);
 
-				JobConf stdErrConf = new JobConf(getConf(),
-						AdmmOptimizerDriver.class);
-				Path standardErrorHdfsPath = new Path(finalOutputBasePath,
-						STANDARD_ERROR_FOLDER_NAME);
 				// TODO the below could be triggered only in test.
 				boolean isTest = false;
 				if (isTest) {
+					JobConf stdErrConf = new JobConf(getConf(),
+							AdmmOptimizerDriver.class);
+					Path standardErrorHdfsPath = new Path(finalOutputBasePath,
+							STANDARD_ERROR_FOLDER_NAME);
 					doStandardErrorCalculation(stdErrConf, finalOutput,
 							standardErrorHdfsPath, signalDataLocation,
 							numFeatures, iterationNumber, columnsToExclude,
