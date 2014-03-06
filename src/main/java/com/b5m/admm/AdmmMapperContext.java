@@ -54,7 +54,6 @@ public class AdmmMapperContext implements Writable {
 		this.splitId = splitId;
 		
 		int numCols = ab.numCols() - 1;
-		
 		a = ab.like(ab.numRows(), ab.numCols() - 1);
 		for (int row = 0; row < a.numRows(); row++) {
 			Vector v = ab.viewRow(row);
