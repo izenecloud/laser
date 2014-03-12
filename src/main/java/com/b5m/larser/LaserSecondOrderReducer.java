@@ -1,4 +1,4 @@
-package com.b5m.larser.demo;
+package com.b5m.larser;
 
 import java.io.IOException;
 
