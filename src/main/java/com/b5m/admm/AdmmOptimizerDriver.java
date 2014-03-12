@@ -156,6 +156,9 @@ public class AdmmOptimizerDriver extends Configured implements Tool {
 		conf.setOutputValueClass(Text.class);
 		conf.setInputFormat(SignalInputFormat.class);
 		conf.setOutputFormat(TextOutputFormat.class);
+		conf.setInt("mapred.num.map.tasks", 2);
+		long heapSize = (long) 1024 * 1024 * 128;
+		conf.setLong("mapred.mapper.jvm.heap.size", heapSize);
 
 		FileInputFormat.setInputPaths(conf, signalDataInputLocation);
 		FileOutputFormat.setOutputPath(conf, standardErrorHdfsPath);
