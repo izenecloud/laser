@@ -26,7 +26,7 @@ import org.junit.Test;
 //import org.apache.mahout.common.MahoutTestCase;
 //import org.apache.mahout.common.commandline.MinhashOptionCreator;
 
-public class TestMinHashClustering {
+public class MinHashClustering {
 
 	public static final double[][] reference = { { 1, 2, 3, 4, 5 },
 			{ 2, 1, 3, 6, 7 }, { 3, 7, 6, 11, 8, 9 }, { 4, 7, 8, 9, 6, 1 },
