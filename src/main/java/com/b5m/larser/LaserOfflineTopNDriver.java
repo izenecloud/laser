@@ -38,7 +38,8 @@ public class LaserOfflineTopNDriver {
 		job.setMapperClass(LaserOfflineTopNMapper.class);
 		//job.setCombinerClass(LaserOfflineTopNReducer.class);
 		job.setReducerClass(LaserOfflineTopNReducer.class);
-
+		//TODO
+		job.setNumReduceTasks(10);
 		HadoopUtil.delete(conf, output);
 		boolean succeeded = job.waitForCompletion(true);
 		if (!succeeded) {
