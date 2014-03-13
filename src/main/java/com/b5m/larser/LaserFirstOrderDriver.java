@@ -5,10 +5,8 @@ import java.io.IOException;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.filecache.DistributedCache;
 import org.apache.hadoop.fs.FSDataInputStream;
-import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapreduce.Job;
@@ -27,6 +25,9 @@ import org.apache.mahout.math.Vector;
 import org.apache.mahout.math.VectorWritable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+
+import static com.b5m.larser.LaserOfflineHelper.*;
 
 public class LaserFirstOrderDriver {
 	private static final Logger LOG = LoggerFactory
@@ -71,9 +72,8 @@ public class LaserFirstOrderDriver {
 		for (int row = 0; row < this.userRes.size(); row++) {
 			this.userRes.set(row, user.viewRow(row).dot(alphas));
 		}
-		FSDataOutputStream out = fs.create(new Path(userRes, "part-r-00000"));
-		new VectorWritable(this.userRes).write(out);
-		out.close();
+		
+		writeVector(userRes, fs, conf, this.userRes);
 		return 0;
 	}
 

@@ -25,12 +25,12 @@ public class Demo {
 //		A.random(ap, fs);
 //		Alpha.randomAlpha(alpha, fs);
 //		Betas.randomBetas(beta, fs);
-//		LaserFirstOrderDriver firstOrderDriver = new LaserFirstOrderDriver();
-//		firstOrderDriver.laserFirstOrder(itemFeatures, userCluster, alpha, beta, output, conf);
+		LaserFirstOrderDriver firstOrderDriver = new LaserFirstOrderDriver();
+		firstOrderDriver.laserFirstOrder(itemFeatures, userCluster, alpha, beta, output, conf);
 //		
 //		LaserSecondOrderDriver.laserSecondOrder(itemFeatures, userCluster, ap, output, conf);
 		
-		LaserOfflineTopNDriver.topN(new Path(output, "XAC"),  output, new Path(output, "top_n"), 1000, 100000, conf);
+		LaserOfflineTopNDriver.topN(new Path(output, "XAC"),  output, new Path(output, "top_n"), 100, conf);
 	}
 
 }

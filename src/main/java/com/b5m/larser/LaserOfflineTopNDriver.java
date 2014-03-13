@@ -11,11 +11,10 @@ import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
 import org.apache.mahout.common.HadoopUtil;
-import org.apache.mahout.math.VectorWritable;
 
 public class LaserOfflineTopNDriver {
 	public static int topN(Path secondOrderRes,
-			Path firstOrderRes, Path output, Integer topN, Integer itemDimension, Configuration baseConf) throws IOException,
+			Path firstOrderRes, Path output, Integer topN, Configuration baseConf) throws IOException,
 			ClassNotFoundException, InterruptedException {
 		Configuration conf = new Configuration(baseConf);
 		Path itemRes = new Path(firstOrderRes, "first_order_item_res");
@@ -23,7 +22,6 @@ public class LaserOfflineTopNDriver {
 		conf.set("laser.offline.topN.driver.first.order.item.res", itemRes.toString());
 		conf.set("laser.offline.topN.driver.first.order.user.res", userRes.toString());
 		conf.setInt("laser.offline.topN.driver.top.n", topN);
-		conf.setInt("laser.offline.topN.driver.item.dimension", itemDimension);
 		
 		Job job = new Job(conf);
 		job.setJarByClass(LaserFirstOrderDriver.class);
@@ -34,14 +32,11 @@ public class LaserOfflineTopNDriver {
 		job.setInputFormatClass(SequenceFileInputFormat.class);
 		job.setOutputFormatClass(SequenceFileOutputFormat.class);
 
-		job.setMapOutputKeyClass(IntDoublePairWritable.class);
-		job.setMapOutputValueClass(IntWritable.class);
 		job.setOutputKeyClass(IntWritable.class);
-		job.setOutputValueClass(VectorWritable.class);
+		job.setOutputValueClass(PriorityQueueWritable.class);
 		
 		job.setMapperClass(LaserOfflineTopNMapper.class);
-		//TODO Combiner is need or not based on test
-		job.setCombinerClass(LaserOfflineTopNCombiner.class);
+		//job.setCombinerClass(LaserOfflineTopNReducer.class);
 		job.setReducerClass(LaserOfflineTopNReducer.class);
 
 		HadoopUtil.delete(conf, output);

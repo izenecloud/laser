@@ -1,25 +1,31 @@
 package com.b5m.larser;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FSDataInputStream;
-import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
-import org.apache.hadoop.io.NullWritable;
-import org.apache.hadoop.io.SequenceFile;
-import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.mahout.math.Vector;
 import org.apache.mahout.math.Vector.Element;
 import org.apache.mahout.math.VectorWritable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import static com.b5m.larser.LaserOfflineHelper.*;
 
 public class LaserOfflineTopNMapper extends
-		Mapper<IntWritable, VectorWritable, IntDoublePairWritable, IntWritable> {
+		Mapper<IntWritable, VectorWritable, IntWritable, PriorityQueueWritable> {
 	private Vector firstOrderUserRes;
 	private Vector firstOderItemRes;
+	private int TOP_N;
+	private List<PriorityQueue> queue;
+
+	private static final Logger LOG = LoggerFactory
+			.getLogger(LaserOfflineTopNMapper.class);
 
 	protected void setup(Context context) throws IOException,
 			InterruptedException {
@@ -27,28 +33,24 @@ public class LaserOfflineTopNMapper extends
 		Path userRes = new Path(
 				conf.get("laser.offline.topN.driver.first.order.user.res"));
 		FileSystem fs = userRes.getFileSystem(conf);
-		for (FileStatus file : fs.listStatus(userRes)) {
-			if (0 < file.getLen()) {
-				FSDataInputStream in = fs.open(file.getPath());
-				firstOrderUserRes = VectorWritable.readVector(in);
-				in.close();
-				break;
-			}
+		LOG.info("Load user related info: {}", userRes);
+		firstOrderUserRes = readVector(userRes, fs, conf);
+
+		Path itemRes = new Path(
+				conf.get("laser.offline.topN.driver.first.order.item.res"));
+		LOG.info("Load item related info: {}", itemRes);
+		firstOderItemRes = readVector(itemRes, fs, conf);
+
+		TOP_N = conf.getInt("laser.offline.topN.driver.top.n", 100);
+
+		LOG.info("user dimension: {}, top N: {}", firstOrderUserRes.size(),
+				TOP_N);
+
+		queue = new ArrayList<PriorityQueue>(firstOrderUserRes.size());
+		for (int i = 0; i < firstOrderUserRes.size(); i++) {
+			queue.add(i, new PriorityQueue());
 		}
 
-		for (FileStatus file : fs.listStatus(new Path(conf
-				.get("laser.offline.topN.driver.first.order.item.res")))) {
-			if (0 < file.getLen()) {
-				System.out.println(file.getPath());
-				SequenceFile.Reader reader = new SequenceFile.Reader(fs, file.getPath(), conf);
-				VectorWritable val = new VectorWritable();
-				reader.next(NullWritable.get(), val);
-				firstOderItemRes = val.get();
-				//firstOderItemRes = VectorWritable.readVector(in);
-				//in.close();
-				break;
-			}
-		}
 	}
 
 	protected void map(IntWritable key, VectorWritable value, Context context)
@@ -58,10 +60,25 @@ public class LaserOfflineTopNMapper extends
 		Vector secondOrderRes = value.get();
 		for (Element e : secondOrderRes.nonZeroes()) {
 			int userId = e.index();
+
 			double res = e.get() + firstOrderUserRes.get(userId)
 					+ firstOderItemRes;
-			context.write(new IntDoublePairWritable(userId, res),
-					new IntWritable(itemId));
+			PriorityQueue queue = this.queue.get(userId);
+			DoubleIntPairWritable min = queue.peek();
+			if (null == min || queue.size() < TOP_N) {
+				queue.add(new DoubleIntPairWritable(itemId, res));
+			} else if (min.getValue() < res) {
+				queue.poll();
+				queue.add(new DoubleIntPairWritable(itemId, res));
+			}
+		}
+	}
+
+	protected void cleanup(Context context) throws IOException,
+			InterruptedException {
+		for (int i = 0; i < queue.size(); i++) {
+			context.write(new IntWritable(i),
+					new PriorityQueueWritable(queue.get(i)));
 		}
 	}
 }
