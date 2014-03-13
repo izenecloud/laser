@@ -13,16 +13,18 @@ import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
 import org.apache.mahout.common.HadoopUtil;
 
 public class LaserOfflineTopNDriver {
-	public static int topN(Path secondOrderRes,
-			Path firstOrderRes, Path output, Integer topN, Configuration baseConf) throws IOException,
-			ClassNotFoundException, InterruptedException {
+	public static int topN(Path secondOrderRes, Path firstOrderRes,
+			Path output, Integer topN, Configuration baseConf)
+			throws IOException, ClassNotFoundException, InterruptedException {
 		Configuration conf = new Configuration(baseConf);
 		Path itemRes = new Path(firstOrderRes, "first_order_item_res");
 		Path userRes = new Path(firstOrderRes, "first_order_user_res");
-		conf.set("laser.offline.topN.driver.first.order.item.res", itemRes.toString());
-		conf.set("laser.offline.topN.driver.first.order.user.res", userRes.toString());
+		conf.set("laser.offline.topN.driver.first.order.item.res",
+				itemRes.toString());
+		conf.set("laser.offline.topN.driver.first.order.user.res",
+				userRes.toString());
 		conf.setInt("laser.offline.topN.driver.top.n", topN);
-		
+
 		Job job = new Job(conf);
 		job.setJarByClass(LaserFirstOrderDriver.class);
 
@@ -34,10 +36,12 @@ public class LaserOfflineTopNDriver {
 
 		job.setOutputKeyClass(IntWritable.class);
 		job.setOutputValueClass(PriorityQueueWritable.class);
-		
+
 		job.setMapperClass(LaserOfflineTopNMapper.class);
-		//job.setCombinerClass(LaserOfflineTopNReducer.class);
+		job.setCombinerClass(LaserOfflineTopNReducer.class);
 		job.setReducerClass(LaserOfflineTopNReducer.class);
+		// TODO
+		job.setNumReduceTasks(10);
 
 		HadoopUtil.delete(conf, output);
 		boolean succeeded = job.waitForCompletion(true);
