@@ -1,14 +1,11 @@
 package com.b5m.larser;
 
 import java.io.IOException;
-import java.util.List;
-import java.util.Random;
-import java.util.regex.Pattern;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.filecache.DistributedCache;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
@@ -22,8 +19,7 @@ import org.apache.mahout.math.VectorWritable;
 
 
 public class LaserSecondOrderDriver {
-	private static final Pattern TAB_PATTERN = Pattern.compile("\t");
-	
+
 	public static int laserSecondOrder(Path itemFeatures,
 			Path userFeatures, Path args, Path output, Configuration baseConf) throws IOException,
 			ClassNotFoundException, InterruptedException {
@@ -50,7 +46,7 @@ public class LaserSecondOrderDriver {
 		job.setInputFormatClass(SequenceFileInputFormat.class);
 		job.setOutputFormatClass(SequenceFileOutputFormat.class);
 
-		job.setOutputKeyClass(LongWritable.class);
+		job.setOutputKeyClass(IntWritable.class);
 		job.setOutputValueClass(VectorWritable.class);
 
 		job.setMapperClass(LaserSecondOrderMapper.class);
@@ -79,7 +75,7 @@ public class LaserSecondOrderDriver {
 		job.setInputFormatClass(TextInputFormat.class);
 		job.setOutputFormatClass(TextOutputFormat.class);
 
-		job.setMapOutputKeyClass(LongWritable.class);
+		job.setMapOutputKeyClass(IntWritable.class);
 		job.setMapOutputValueClass(Text.class);
 
 		job.setMapperClass(LaserSecondOrderMapper.class);
@@ -90,31 +86,5 @@ public class LaserSecondOrderDriver {
 			throw new IllegalStateException("Job failed!");
 		}
 		return 0;
-	}
-	
-	public static long topN(Path acPath, Configuration conf, List<Long> cadidateList, double[] user) throws IOException {
-		AC ac = new AC(acPath,  conf);
-		long sTime = System.nanoTime();
-		java.util.Iterator<Long> it = cadidateList.iterator();
-		while (it.hasNext()) {
-			Long cadidate = it.next();
-			double[] row = createArrayFromDataString(ac.readLine(cadidate));
-			double res = 0.0;
-			for (int i = 0; i < row.length; i++) {
-				res += user[i] * row[i];
-			}
-		}
-		return System.nanoTime() - sTime;
-	}
-	
-	public static double[] createArrayFromDataString(String dataString) {
-		System.out.println(dataString);
-		String[] items = TAB_PATTERN.split(dataString);
-		int n = items.length;
-		double[] arr = new double[n];
-		for (int i = 0; i < n; i++) {
-			arr[i] = Double.valueOf(items[i]);
-		}
-		return arr;
 	}
 }

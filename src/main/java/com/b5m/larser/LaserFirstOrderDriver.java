@@ -4,6 +4,8 @@ import java.io.IOException;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.filecache.DistributedCache;
+import org.apache.hadoop.fs.FSDataInputStream;
+import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
@@ -18,6 +20,9 @@ import org.apache.mahout.common.HadoopUtil;
 import org.apache.mahout.common.Pair;
 import org.apache.mahout.common.iterator.sequencefile.PathType;
 import org.apache.mahout.common.iterator.sequencefile.SequenceFileDirIterable;
+import org.apache.mahout.math.DenseVector;
+import org.apache.mahout.math.Matrix;
+import org.apache.mahout.math.MatrixWritable;
 import org.apache.mahout.math.Vector;
 import org.apache.mahout.math.VectorWritable;
 import org.slf4j.Logger;
@@ -58,8 +63,17 @@ public class LaserFirstOrderDriver {
 		Path userRes = new Path(output, "first_order_user_res");
 		LOG.info("Calculate user relatived part of first order, result = {}",
 				userRes);
-		doLaserFirstOrder(userFeatures, userRes, alpha, conf);
-		this.userRes = readVector(userRes, fs, conf);
+		FSDataInputStream in = fs.open(userFeatures);
+		Matrix user  = MatrixWritable.readMatrix(in);
+		in = fs.open(alpha);
+		Vector alphas = VectorWritable.readVector(in);
+		this.userRes = new DenseVector(user.numRows());
+		for (int row = 0; row < this.userRes.size(); row++) {
+			this.userRes.set(row, user.viewRow(row).dot(alphas));
+		}
+		FSDataOutputStream out = fs.create(new Path(userRes, "part-r-00000"));
+		new VectorWritable(this.userRes).write(out);
+		out.close();
 		return 0;
 	}
 
