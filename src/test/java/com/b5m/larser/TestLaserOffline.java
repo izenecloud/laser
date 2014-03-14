@@ -1,4 +1,4 @@
-package com.b5m.larser.offline;
+package com.b5m.larser;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;

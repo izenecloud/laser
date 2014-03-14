@@ -1,4 +1,4 @@
-package com.b5m.larser.offline;
+package com.b5m.larser;
 
 import java.io.IOException;
 import java.util.Random;
