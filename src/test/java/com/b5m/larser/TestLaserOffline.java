@@ -21,6 +21,7 @@ public class TestLaserOffline {
 	Path beta;
 	Path output;
 	Configuration conf;
+	FileSystem fs;
 
 	@BeforeTest
 	public void setup() throws Exception {
@@ -31,7 +32,7 @@ public class TestLaserOffline {
 		beta = new Path("tmp/beta");
 		output = new Path("tmp/output");
 		conf = new Configuration();
-		FileSystem fs = itemFeatures.getFileSystem(conf);
+		fs = itemFeatures.getFileSystem(conf);
 		ItemFeature.randomSequence(itemFeatures, fs, conf);
 		UserCluster.random(userCluster, fs);
 		A.random(a, fs);
@@ -47,28 +48,30 @@ public class TestLaserOffline {
 	@Test
 	public void test() {
 		try {
-			LaserFirstOrderDriver.laserFirstOrder(itemFeatures, userCluster, alpha,
-					beta, output, conf);
+			LaserFirstOrderDriver.laserFirstOrder(itemFeatures, userCluster,
+					alpha, beta, output, conf);
 		} catch (Exception e) {
 			e.printStackTrace();
 			Assert.assertFalse(true);
 		}
-		
-		try {
-			LaserSecondOrderDriver.laserSecondOrder(itemFeatures, userCluster, a,
-					output, conf);
-		} catch (Exception e) {
-			e.printStackTrace();
-			Assert.assertFalse(true);
-		} 
 
 		try {
-			LaserOfflineTopNDriver.topN(new Path(output, "XAC"), output, new Path(
-					output, "top_n"), 10, conf);
+			LaserSecondOrderDriver.laserSecondOrder(itemFeatures, userCluster,
+					a, output, conf);
 		} catch (Exception e) {
 			e.printStackTrace();
 			Assert.assertFalse(true);
-		} 
+		}
+		Path topN = new Path(output, "top_n");
+		try {
+			LaserOfflineTopNDriver.topN(new Path(output, "XAC"), output, topN,
+					10, conf);
+		} catch (Exception e) {
+			e.printStackTrace();
+			Assert.assertFalse(true);
+		}		
+		LaserOfflineTopNResult topNResult = new LaserOfflineTopNResult(topN, fs, conf);
+		Assert.assertTrue(null != topNResult);
 	}
 
 }
