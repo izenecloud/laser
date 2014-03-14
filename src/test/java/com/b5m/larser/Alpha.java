@@ -11,7 +11,7 @@ import org.apache.mahout.math.Vector;
 import org.apache.mahout.math.VectorWritable;
 
 public class Alpha {
-	private static final Integer D = 100;
+	private static final Integer D = 10;
 	private static final Random random = new Random();
 
 	public static void randomAlpha(Path path, FileSystem fs) throws IOException {

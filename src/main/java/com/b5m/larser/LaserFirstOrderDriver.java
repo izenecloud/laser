@@ -32,26 +32,8 @@ import static com.b5m.larser.LaserOfflineHelper.*;
 public class LaserFirstOrderDriver {
 	private static final Logger LOG = LoggerFactory
 			.getLogger(LaserFirstOrderDriver.class);
-	private Vector itemRes;
-	private Vector userRes;
 
-	public static Vector readVector(Path path, FileSystem fs, Configuration conf) {
-		for (Pair<Writable, VectorWritable> row : new SequenceFileDirIterable<Writable, VectorWritable>(
-				new Path(path, "part-*"), PathType.GLOB, conf)) {
-			return row.getSecond().get();
-		}
-		return null;
-	}
-
-	public Vector getItemResult() {
-		return itemRes;
-	}
-
-	public Vector getUserResult() {
-		return userRes;
-	}
-
-	public int laserFirstOrder(Path itemFeatures, Path userFeatures,
+	public static int laserFirstOrder(Path itemFeatures, Path userFeatures,
 			Path alpha, Path beta, Path output, Configuration conf)
 			throws IOException, ClassNotFoundException, InterruptedException {
 		Path itemRes = new Path(output, "first_order_item_res");
@@ -59,25 +41,24 @@ public class LaserFirstOrderDriver {
 				itemRes);
 		doLaserFirstOrder(itemFeatures, itemRes, beta, conf);
 		FileSystem fs = itemRes.getFileSystem(conf);
-		this.itemRes = readVector(itemRes, fs, conf);
 
-		Path userRes = new Path(output, "first_order_user_res");
+		Path userResPath = new Path(output, "first_order_user_res");
 		LOG.info("Calculate user relatived part of first order, result = {}",
-				userRes);
+				userResPath);
 		FSDataInputStream in = fs.open(userFeatures);
 		Matrix user  = MatrixWritable.readMatrix(in);
 		in = fs.open(alpha);
 		Vector alphas = VectorWritable.readVector(in);
-		this.userRes = new DenseVector(user.numRows());
-		for (int row = 0; row < this.userRes.size(); row++) {
-			this.userRes.set(row, user.viewRow(row).dot(alphas));
+		Vector userRes = new DenseVector(user.numRows());
+		for (int row = 0; row < userRes.size(); row++) {
+			userRes.set(row, user.viewRow(row).dot(alphas));
 		}
 		
-		writeVector(userRes, fs, conf, this.userRes);
+		writeVector(userResPath, fs, conf, userRes);
 		return 0;
 	}
 
-	public int doLaserFirstOrder(Path features, Path output, Path args,
+	public static int doLaserFirstOrder(Path features, Path output, Path args,
 			Configuration baseConf) throws IOException, ClassNotFoundException,
 			InterruptedException {
 		Configuration conf = new Configuration(baseConf);

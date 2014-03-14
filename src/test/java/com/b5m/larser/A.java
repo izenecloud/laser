@@ -12,8 +12,8 @@ import org.apache.mahout.math.MatrixWritable;
 import org.apache.mahout.math.Vector;
 
 public class A {
-	private static final Integer COL = 500000;
-	private static final Integer ROW = 100;
+	private static final Integer COL = 500;
+	private static final Integer ROW = 10;
 
 	private static final Random random = new Random();
 	

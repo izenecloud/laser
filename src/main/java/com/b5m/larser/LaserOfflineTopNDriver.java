@@ -24,13 +24,15 @@ public class LaserOfflineTopNDriver {
 		conf.set("laser.offline.topN.driver.first.order.user.res",
 				userRes.toString());
 		conf.setInt("laser.offline.topN.driver.top.n", topN);
-
+		
 		Job job = new Job(conf);
 		job.setJarByClass(LaserFirstOrderDriver.class);
 
 		FileInputFormat.setInputPaths(job, secondOrderRes);
 		FileOutputFormat.setOutputPath(job, output);
 
+		//TODO
+		//LaserOfflineTopNInputFormat.setNumMapTasks(job, 240);
 		job.setInputFormatClass(SequenceFileInputFormat.class);
 		job.setOutputFormatClass(SequenceFileOutputFormat.class);
 
