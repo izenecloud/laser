@@ -1,4 +1,4 @@
-package com.b5m.larser;
+package com.b5m.larser.offline;
 
 import java.io.IOException;
 
@@ -26,8 +26,7 @@ import org.apache.mahout.math.VectorWritable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
-import static com.b5m.larser.LaserOfflineHelper.*;
+import static com.b5m.larser.offline.LaserOfflineHelper.*;
 
 public class LaserFirstOrderDriver {
 	private static final Logger LOG = LoggerFactory

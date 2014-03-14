@@ -1,4 +1,4 @@
-package com.b5m.larser;
+package com.b5m.larser.offline;
 
 import java.io.DataInput;
 import java.io.DataOutput;
