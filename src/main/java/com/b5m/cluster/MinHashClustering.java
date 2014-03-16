@@ -54,9 +54,9 @@ public class MinHashClustering {
 		
 		//fs = FileSystem.get(conf);
 		List<VectorWritable> points = getPointsWritable(reference);
-		input = new Path("hdfs://172.16.5.192:9000/user/kevinlin/minhash/input/");
+		input = new Path("input");
 		fs = input.getFileSystem(conf);	 
-		output = new Path("hdfs://172.16.5.192:9000/user/kevinlin/minhash/output/");
+		output = new Path("output");
 ////		input = getTestTempDirPath("points");
 //		output = new Path(getTestTempDirPath(), "output");
 		Path pointFile = new Path(input, "points");
@@ -104,7 +104,7 @@ public class MinHashClustering {
 	 */
 	private void verify(Path output) throws Exception {
 		Configuration conf = new Configuration();
-		Path outputFile = new Path(output, "part-r-00000");
+		Path outputFile = new Path(output, "part-00000");
 		SequenceFile.Reader reader = new SequenceFile.Reader(fs, outputFile, conf);
 		Text clusterId = new Text();
 		VectorWritable point = new VectorWritable();
@@ -145,11 +145,11 @@ public class MinHashClustering {
 		// String[] args = makeArguments(2, 3, 21, 3, HashType.linear.toString());
 		// This works
 		 final String[] args = makeArguments(2, 3, 40, 5, HashType.LINEAR.toString());
-		 System.setProperty("HADOOP_USER_NAME", "kevinlin"); 
-		 System.setProperty("user.name", "kevinlin"); 
+	//	 System.setProperty("HADOOP_USER_NAME", "kevinlin"); 
+		// System.setProperty("user.name", "kevinlin"); 
 
 	 Configuration conf = new Configuration();
-	 conf.set("hadoop.job.ugi", "kevinlin");
+	 //conf.set("hadoop.job.ugi", "kevinlin");
 		int ret = ToolRunner.run(conf, new MinHashDriver(), args);
 		System.out.println("Verifying linear hash results" +ret);
 		verify(output);
