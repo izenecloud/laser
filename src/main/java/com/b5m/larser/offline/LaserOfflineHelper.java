@@ -1,10 +1,15 @@
-package com.b5m.larser;
+package com.b5m.larser.offline;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Writable;
@@ -28,5 +33,22 @@ public final class LaserOfflineHelper {
 		SequenceFile.Writer writer = SequenceFile.createWriter(fs, conf, new Path(path, "part-r-00000"), NullWritable.class, VectorWritable.class);
 		writer.append(NullWritable.get(), new VectorWritable(v));
 		writer.close();
+	}
+	
+	public static List<List<DoubleIntPairWritable>> readTopNResult(Path path, FileSystem fs, Configuration conf) {
+		List<List<DoubleIntPairWritable>> topN = new ArrayList<List<DoubleIntPairWritable>>();
+		for (Pair<IntWritable, PriorityQueueWritable> row : new SequenceFileDirIterable<IntWritable, PriorityQueueWritable>(
+				new Path(path, "part-*"), PathType.GLOB, conf)) {
+			int userId = row.getFirst().get();
+			List<DoubleIntPairWritable> userTopN = new LinkedList<DoubleIntPairWritable>();
+
+			PriorityQueue queue = row.getSecond().get();
+			Iterator<DoubleIntPairWritable> iterator = queue.iterator();
+			while (iterator.hasNext()) {
+				userTopN.add(iterator.next());
+			}
+			topN.add(userId, userTopN);
+		}
+		return topN;
 	}
 }

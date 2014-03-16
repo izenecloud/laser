@@ -1,4 +1,4 @@
-package com.b5m.larser;
+package com.b5m.larser.offline;
 
 import java.io.IOException;
 import java.util.Random;
@@ -12,7 +12,7 @@ import org.apache.mahout.math.VectorWritable;
 
 public class Betas {
 	private double[] betas;
-	private static final Integer D = 500000;
+	private static final Integer D = 500;
 	private static final Random random = new Random();
 	public Betas() {
 		betas = new double[D];

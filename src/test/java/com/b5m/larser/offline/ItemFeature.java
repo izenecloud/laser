@@ -1,4 +1,4 @@
-package com.b5m.larser;
+package com.b5m.larser.offline;
 
 import java.io.IOException;
 import java.util.Random;
@@ -15,8 +15,8 @@ import org.apache.mahout.math.Vector;
 import org.apache.mahout.math.VectorWritable;
 
 public class ItemFeature {
-	private static final Integer D = 500000;
-	private static final Integer N = 10000000;
+	private static final Integer D = 500;
+	private static final Integer N = 1000;
 	private static final Integer NON_ZERO_N = 3;
 	private static final Random random = new Random();
 	
@@ -44,14 +44,11 @@ public class ItemFeature {
 		for (int i = 0; i < N; i++) {
 			Vector row = new RandomAccessSparseVector(D);
 			for (int n = 0; n < NON_ZERO_N; n++) {
-				int index = random.nextInt() / D;
+				int index = random.nextInt() % D;
 				if (0 > index) {
 					index *= -1;
 				}
 				row.set(index, random.nextDouble());
-			}
-			if (i % 10000 == 0) {
-				System.out.println(i);
 			}
 			writer.append(new IntWritable(i), new VectorWritable(row));
 		}

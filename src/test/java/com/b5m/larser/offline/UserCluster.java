@@ -1,4 +1,4 @@
-package com.b5m.larser;
+package com.b5m.larser.offline;
 
 import java.io.IOException;
 import java.util.Random;
@@ -17,8 +17,8 @@ import org.apache.mahout.math.Vector;
 import org.apache.mahout.math.VectorWritable;
 
 public class UserCluster {
-	private static final Integer ROW = 10000;
-	private static final Integer COL = 100;
+	private static final Integer ROW = 100;
+	private static final Integer COL = 10;
 
 	private static final Random random = new Random();
 	
