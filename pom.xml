@@ -12,6 +12,11 @@
 
 	<repositories>
 		<repository>
+			<id>public</id>
+			<url>https://repository.apache.org/content/groups/public/</url>
+		</repository>
+
+		<repository>
 			<id>cloudera</id>
 			<url>https://repository.cloudera.com/artifactory/cloudera-repos/</url>
 		</repository>
