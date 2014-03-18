@@ -42,7 +42,6 @@ public class LaserFeatureDriver {
 
 		job.setMapperClass(LaserFeatureMapper.class);
 		job.setReducerClass(LaserFeatureReducer.class);
-		;
 
 		HadoopUtil.delete(conf, output);
 		boolean succeeded = job.waitForCompletion(true);

@@ -1,8 +1,10 @@
 package com.b5m.admm;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapred.*;
+import org.apache.hadoop.mapreduce.Reducer;
+import org.apache.hadoop.mapreduce.Reducer.Context;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -13,7 +15,7 @@ import java.util.logging.Logger;
 import static com.b5m.admm.AdmmIterationHelper.admmMapperContextToJson;
 import static com.b5m.admm.AdmmIterationHelper.mapToJson;
 
-public class AdmmIterationReducer extends MapReduceBase implements
+public class AdmmIterationReducer extends
 		Reducer<NullWritable, AdmmReducerContextWritable, NullWritable, Text> {
 
 	private static final double THRESHOLD = 0.0001;
@@ -25,26 +27,28 @@ public class AdmmIterationReducer extends MapReduceBase implements
 	private boolean regularizeIntercept;
 
 	@Override
-	public void configure(JobConf job) {
-		super.configure(job);
-		iteration = Integer.parseInt(job.get("iteration.number"));
-		regularizeIntercept = job.getBoolean("regularize.intercept", false);
-		numberOfMappers = job.getNumMapTasks();
+	protected void setup(Context context) throws IOException,
+			InterruptedException {
+		Configuration conf = context.getConfiguration();
+		iteration = Integer.parseInt(conf.get("iteration.number"));
+		regularizeIntercept = conf.getBoolean("regularize.intercept", false);
+		// TODO
+		numberOfMappers = (int) conf.getLong("admm.iteration.num.map.tasks", 0);
 	}
 
-	public void reduce(NullWritable key,
-			Iterator<AdmmReducerContextWritable> values,
-			OutputCollector<NullWritable, Text> output, Reporter reporter)
-			throws IOException {
+	protected void reduce(NullWritable key,
+			Iterable<AdmmReducerContextWritable> values, Context context)
+			throws IOException, InterruptedException {
 
-		AdmmReducerContextGroup context = new AdmmReducerContextGroup(values,
-				numberOfMappers, LOG, iteration);
-		
-		setOutputMapperValues(context);
-		output.collect(NullWritable.get(), new Text(mapToJson(outputMap)));
+		AdmmReducerContextGroup reducerContext = new AdmmReducerContextGroup(
+				values.iterator(), numberOfMappers, LOG, iteration);
 
-		if (context.getRNorm() > THRESHOLD || context.getSNorm() > THRESHOLD) {
-			reporter.getCounter(IterationCounter.ITERATION).increment(1);
+		setOutputMapperValues(reducerContext);
+		context.write(NullWritable.get(), new Text(mapToJson(outputMap)));
+
+		if (reducerContext.getRNorm() > THRESHOLD
+				|| reducerContext.getSNorm() > THRESHOLD) {
+			context.getCounter(IterationCounter.ITERATION).increment(1);
 		}
 	}
 

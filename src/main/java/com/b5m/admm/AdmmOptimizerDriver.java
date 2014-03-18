@@ -1,5 +1,11 @@
 package com.b5m.admm;
 
+import com.b5m.larser.feature.IntLongPairWritable;
+import com.b5m.larser.feature.LaserFeatureDriver;
+import com.b5m.larser.feature.LaserFeatureInputFormat;
+import com.b5m.larser.feature.LaserFeatureMapper;
+import com.b5m.larser.feature.LaserFeatureOutputFormat;
+import com.b5m.larser.feature.LaserFeatureReducer;
 import com.google.common.base.Optional;
 
 import org.apache.hadoop.conf.Configuration;
@@ -7,11 +13,18 @@ import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapred.*;
+import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
+import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import org.apache.mahout.common.HadoopUtil;
+import org.apache.mahout.math.VectorWritable;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 
@@ -20,7 +33,7 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-public class AdmmOptimizerDriver extends Configured implements Tool {
+public class AdmmOptimizerDriver {
 
 	private static final int DEFAULT_ADMM_ITERATIONS_MAX = 2;
 	private static final float DEFAULT_REGULARIZATION_FACTOR = 0.000001f;
@@ -31,11 +44,8 @@ public class AdmmOptimizerDriver extends Configured implements Tool {
 	private static final String STANDARD_ERROR_FOLDER_NAME = "standard-error";
 	private static final String BETAS_FOLDER_NAME = "betas";
 
-	public static void main(String[] args) throws Exception {
-		ToolRunner.run(new Configuration(), new AdmmOptimizerDriver(), args);
-	}
-
-	public int run(String[] args) throws IOException, CmdLineException {
+	public static int run(String[] args) throws IOException, CmdLineException,
+			ClassNotFoundException, InterruptedException {
 		AdmmOptimizerDriverArguments admmOptimizerDriverArguments = new AdmmOptimizerDriverArguments();
 		parseArgs(args, admmOptimizerDriverArguments);
 
@@ -63,11 +73,12 @@ public class AdmmOptimizerDriver extends Configured implements Tool {
 
 		int iterationNumber = 0;
 		boolean isFinalIteration = false;
-		FileSystem fs = finalOutputBasePath.getFileSystem(getConf());
+		Configuration conf = new Configuration();
+
+		FileSystem fs = finalOutputBasePath.getFileSystem(conf);
 
 		while (!isFinalIteration) {
 			long preStatus = 0;
-			JobConf conf = new JobConf(getConf(), AdmmOptimizerDriver.class);
 			Path previousHdfsResultsPath = new Path(intermediateHdfsBaseString
 					+ ITERATION_FOLDER_NAME + (iterationNumber - 1));
 			Path currentHdfsResultsPath = new Path(intermediateHdfsBaseString
@@ -88,13 +99,12 @@ public class AdmmOptimizerDriver extends Configured implements Tool {
 				Path finalOutputBetas = new Path(finalOutputBasePath,
 						BETAS_FOLDER_NAME);
 				AdmmResultWriter writer = new AdmmResultWriterBetas();
-				writer.write(conf, fs, finalOutput, finalOutputBetas);
+				// writer.write(conf, fs, finalOutput, finalOutputBetas);
 
 				// TODO the below could be triggered only in test.
 				boolean isTest = false;
 				if (isTest) {
-					JobConf stdErrConf = new JobConf(getConf(),
-							AdmmOptimizerDriver.class);
+					Configuration stdErrConf = new Configuration(conf);
 					Path standardErrorHdfsPath = new Path(finalOutputBasePath,
 							STANDARD_ERROR_FOLDER_NAME);
 					doStandardErrorCalculation(stdErrConf, finalOutput,
@@ -110,7 +120,7 @@ public class AdmmOptimizerDriver extends Configured implements Tool {
 		return 0;
 	}
 
-	private void parseArgs(String[] args,
+	private static void parseArgs(String[] args,
 			AdmmOptimizerDriverArguments admmOptimizerDriverArguments)
 			throws CmdLineException {
 		ArrayList<String> argsList = new ArrayList<String>(Arrays.asList(args));
@@ -128,16 +138,18 @@ public class AdmmOptimizerDriver extends Configured implements Tool {
 				.toArray(new String[argsList.size()]));
 	}
 
-	public void doStandardErrorCalculation(JobConf conf, Path currentHdfsPath,
-			Path standardErrorHdfsPath, String signalDataLocation,
-			int numFeatures, int iterationNumber, String columnsToExclude,
-			boolean addIntercept, boolean regularizeIntercept,
-			float regularizationFactor) throws IOException {
+	public static void doStandardErrorCalculation(Configuration baseconf,
+			Path currentHdfsPath, Path standardErrorHdfsPath,
+			String signalDataLocation, int numFeatures, int iterationNumber,
+			String columnsToExclude, boolean addIntercept,
+			boolean regularizeIntercept, float regularizationFactor)
+			throws IOException, ClassNotFoundException, InterruptedException {
 		Path signalDataInputLocation = new Path(signalDataLocation);
 
+		Configuration conf = new Configuration(baseconf);
 		// No addIntercept option as it would be added in the intermediate data
 		// by the Admm iterations.
-		conf.setJobName("ADMM Standard Errors");
+		// TODO
 		conf.set("mapred.child.java.opts", "-Xmx2g");
 		conf.set("previous.intermediate.output.location",
 				currentHdfsPath.toString());
@@ -148,33 +160,41 @@ public class AdmmOptimizerDriver extends Configured implements Tool {
 		conf.setFloat("regularization.factor", regularizationFactor);
 		conf.setInt("signal.data.num.features", numFeatures);
 
-		conf.setMapperClass(AdmmStandardErrorsMapper.class);
-		conf.setReducerClass(AdmmStandardErrorsReducer.class);
-		conf.setMapOutputKeyClass(IntWritable.class);
-		conf.setMapOutputValueClass(Text.class);
-		conf.setOutputKeyClass(IntWritable.class);
-		conf.setOutputValueClass(Text.class);
-		conf.setInputFormat(SignalInputFormat.class);
-		conf.setOutputFormat(TextOutputFormat.class);
+		Job job = new Job(conf);
+		job.setJarByClass(AdmmOptimizerDriver.class);
+		job.setJobName("ADMM Standard Errors");
+
+		// job.setMapperClass(AdmmStandardErrorsMapper.class);
+		// job.setReducerClass(AdmmStandardErrorsReducer.class);
+		job.setMapOutputKeyClass(IntWritable.class);
+		job.setMapOutputValueClass(Text.class);
+		job.setOutputKeyClass(IntWritable.class);
+		job.setOutputValueClass(Text.class);
+
+		job.setInputFormatClass(AdmmIterationInputFormat.class);
+		job.setOutputFormatClass(TextOutputFormat.class);
+
 		conf.setInt("mapred.num.map.tasks", 2);
 		long heapSize = (long) 1024 * 1024 * 128;
 		conf.setLong("mapred.mapper.jvm.heap.size", heapSize);
 
-		FileInputFormat.setInputPaths(conf, signalDataInputLocation);
-		FileOutputFormat.setOutputPath(conf, standardErrorHdfsPath);
+		FileInputFormat.setInputPaths(job, signalDataInputLocation);
+		FileOutputFormat.setOutputPath(job, standardErrorHdfsPath);
+		boolean succeeded = job.waitForCompletion(true);
+		if (!succeeded) {
+			throw new IllegalStateException("Job failed!");
+		}
 
-		JobClient.runJob(conf);
 	}
 
-	public long doAdmmIteration(JobConf conf, Path previousHdfsPath,
-			Path currentHdfsPath, String signalDataLocation, int numFeatures,
-			int iterationNumber, String columnsToExclude, boolean addIntercept,
+	public static long doAdmmIteration(Configuration baseConf,
+			Path previousHdfsPath, Path currentHdfsPath,
+			String signalDataLocation, int numFeatures, int iterationNumber,
+			String columnsToExclude, boolean addIntercept,
 			boolean regularizeIntercept, float regularizationFactor)
-			throws IOException {
-		Path signalDataInputLocation = new Path(signalDataLocation);
+			throws IOException, ClassNotFoundException, InterruptedException {
 
-		conf.setJobName("ADMM Optimizer " + iterationNumber);
-		conf.set("mapred.child.java.opts", "-Xmx2g");
+		Configuration conf = new Configuration(baseConf);
 		conf.set("previous.intermediate.output.location",
 				previousHdfsPath.toString());
 		conf.setInt("iteration.number", iterationNumber);
@@ -183,35 +203,40 @@ public class AdmmOptimizerDriver extends Configured implements Tool {
 		conf.setBoolean("regularize.intercept", regularizeIntercept);
 		conf.setFloat("regularization.factor", regularizationFactor);
 		conf.setInt("signal.data.num.features", numFeatures);
+		//long heapSize = (long) 1024 * 1024 * 128;
+		//conf.setLong("mapred.mapper.jvm.heap.size", heapSize);
 
-		conf.setMapperClass(AdmmIterationMapper.class);
-		conf.setReducerClass(AdmmIterationReducer.class);
-		conf.setMapOutputKeyClass(NullWritable.class);
-		conf.setMapOutputValueClass(AdmmReducerContextWritable.class);
-		conf.setOutputKeyClass(NullWritable.class);
-		conf.setOutputValueClass(Text.class);
-		conf.setInt("mapred.num.map.tasks", 2);
-		long heapSize = (long) 1024 * 1024 * 128;
-		conf.setLong("mapred.mapper.jvm.heap.size", heapSize);
+		Job job = new Job(conf);
+		job.setJarByClass(AdmmOptimizerDriver.class);
+		job.setJobName("ADMM Optimizer " + iterationNumber);
+		AdmmIterationInputFormat.setNumMapTasks(job, 1);
 
-		conf.setInputFormat(SignalInputFormat.class);
-		conf.setOutputFormat(TextOutputFormat.class);
+		FileInputFormat.setInputPaths(job, signalDataLocation);
+		FileOutputFormat.setOutputPath(job, currentHdfsPath);
 
-		FileInputFormat.setInputPaths(conf, signalDataInputLocation);
-		FileSystem fs = signalDataInputLocation.getFileSystem(conf);
-		if (fs.exists(currentHdfsPath)) {
-			fs.delete(currentHdfsPath, true);
+		job.setInputFormatClass(AdmmIterationInputFormat.class);
+		job.setOutputFormatClass(TextOutputFormat.class);
+
+		job.setMapOutputKeyClass(NullWritable.class);
+		job.setMapOutputValueClass(AdmmReducerContextWritable.class);
+		job.setOutputKeyClass(NullWritable.class);
+		job.setOutputValueClass(Text.class);
+
+		job.setMapperClass(AdmmIterationMapper.class);
+		job.setReducerClass(AdmmIterationReducer.class);
+
+		HadoopUtil.delete(conf, currentHdfsPath);
+		boolean succeeded = job.waitForCompletion(true);
+		if (!succeeded) {
+			throw new IllegalStateException("Job failed!");
 		}
-		FileOutputFormat.setOutputPath(conf, currentHdfsPath);
-
-		RunningJob job = JobClient.runJob(conf);
 
 		return job.getCounters()
 				.findCounter(AdmmIterationReducer.IterationCounter.ITERATION)
 				.getValue();
 	}
 
-	private boolean convergedOrMaxed(long curStatus, long preStatus,
+	private static boolean convergedOrMaxed(long curStatus, long preStatus,
 			int iterationNumber, int iterationsMaximum) {
 		return curStatus <= preStatus || iterationNumber >= iterationsMaximum;
 	}
