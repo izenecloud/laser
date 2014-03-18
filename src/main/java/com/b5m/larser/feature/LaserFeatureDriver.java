@@ -1,5 +1,7 @@
 package com.b5m.larser.feature;
 
+import static com.b5m.larser.feature.LaserFeatureHelper.deleteFiles;
+
 import java.io.IOException;
 
 import org.apache.hadoop.conf.Configuration;
@@ -20,11 +22,10 @@ public class LaserFeatureDriver {
 		LaserFeatureDriver.run(input, output, conf);
 	}
 
-	public static int run(Path input,
-			Path output, Configuration baseConf) throws IOException,
-			ClassNotFoundException, InterruptedException {
+	public static int run(Path input, Path output, Configuration baseConf)
+			throws IOException, ClassNotFoundException, InterruptedException {
 		Configuration conf = new Configuration(baseConf);
-	
+
 		Job job = new Job(conf);
 		job.setJarByClass(LaserFeatureDriver.class);
 
@@ -40,13 +41,16 @@ public class LaserFeatureDriver {
 		job.setOutputValueClass(VectorWritable.class);
 
 		job.setMapperClass(LaserFeatureMapper.class);
-		job.setReducerClass(LaserFeatureReducer.class);;
+		job.setReducerClass(LaserFeatureReducer.class);
+		;
 
 		HadoopUtil.delete(conf, output);
 		boolean succeeded = job.waitForCompletion(true);
 		if (!succeeded) {
 			throw new IllegalStateException("Job failed!");
 		}
+
+		deleteFiles(output, new String("part-r-*"), output.getFileSystem(conf));
 		return 0;
 	}
 }

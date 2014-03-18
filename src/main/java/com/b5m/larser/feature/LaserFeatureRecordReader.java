@@ -4,15 +4,12 @@ import java.io.IOException;
 
 import org.apache.avro.file.DataFileReader;
 import org.apache.avro.file.SeekableInput;
-import org.apache.avro.generic.GenericDatumReader;
-import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.io.DatumReader;
 import org.apache.avro.mapred.FsInput;
 import org.apache.avro.specific.SpecificDatumReader;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.NullWritable;
+import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
@@ -21,10 +18,10 @@ import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 import com.b5m.flume.B5MEvent;
 
 public class LaserFeatureRecordReader extends
-		RecordReader<LongWritable, B5MEvent> {
+		RecordReader<Writable, B5MEvent> {
 	DatumReader<B5MEvent> datumReader;
 	DataFileReader<B5MEvent> dataFileReader;
-	private LongWritable key = null;
+	private final Writable key = NullWritable.get();
 	private B5MEvent value = null;
 	private long start = 0;
 	private long end = 0;
@@ -44,12 +41,6 @@ public class LaserFeatureRecordReader extends
 
 	@Override
 	public boolean nextKeyValue() throws IOException, InterruptedException {
-		if (key == null) {
-			key = new LongWritable();
-		}
-		//if (value == null) {
-		//	value = new B5MEvent();
-		//}
 		if (dataFileReader.hasNext()) {
 			value = dataFileReader.next();
 			return true;
@@ -59,7 +50,7 @@ public class LaserFeatureRecordReader extends
 	}
 
 	@Override
-	public LongWritable getCurrentKey() throws IOException,
+	public Writable getCurrentKey() throws IOException,
 			InterruptedException {
 		return key;
 	}

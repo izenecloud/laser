@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.util.Map;
 
 import org.apache.avro.util.Utf8;
-import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.mahout.math.SequentialAccessSparseVector;
 import org.apache.mahout.math.Vector;
@@ -15,7 +15,7 @@ import com.b5m.flume.B5MEvent;
 import static com.b5m.larser.feature.LaserFeatureHelper.*;
 
 public class LaserFeatureMapper extends
-		Mapper<LongWritable, B5MEvent, IntLongPairWritable, VectorWritable> {
+		Mapper<Writable, B5MEvent, IntLongPairWritable, VectorWritable> {
 	private final int AD_LOG_TYPE_ID = 8800;
 	private final int POSITVE = 108;
 	private final int NEGATIVE = 103;
@@ -31,7 +31,7 @@ public class LaserFeatureMapper extends
 		featureDimension = context.getConfiguration().getInt("laser.feature.feature.dimension", 0);
 	}
 
-	protected void map(LongWritable key, B5MEvent value, Context context)
+	protected void map(Writable key, B5MEvent value, Context context)
 			throws IOException, InterruptedException {
 		Map<CharSequence, CharSequence> args = value.getArgs();
 		//CharSequence logType = args.get(LOG_TYPE);
