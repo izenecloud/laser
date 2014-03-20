@@ -1,7 +1,5 @@
 package com.b5m.admm;
 
-import com.b5m.lbfgs.LogisticL2DiffFunction;
-
 import edu.stanford.nlp.optimization.DiffFunction;
 import edu.stanford.nlp.optimization.QNMinimizer;
 
@@ -19,14 +17,13 @@ import org.apache.mahout.math.Matrix;
 import org.apache.mahout.math.SparseRowMatrix;
 import org.apache.mahout.math.Vector;
 import org.apache.mahout.math.VectorWritable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import static com.b5m.admm.AdmmIterationHelper.*;
 
@@ -34,7 +31,7 @@ public class AdmmIterationMapper
 		extends
 		Mapper<Writable, VectorWritable, NullWritable, AdmmReducerContextWritable> {
 
-	private static final Logger LOG = Logger
+	private static final Logger LOG = LoggerFactory
 			.getLogger(AdmmIterationMapper.class.getName());
 	private static final float DEFAULT_REGULARIZATION_FACTOR = 0.000001f;
 	private static final float DEFAULT_RHO = 0.1f;
@@ -42,7 +39,6 @@ public class AdmmIterationMapper
 	private int iteration;
 	private FileSystem fs;
 	private Map<String, String> splitToParameters;
-	// private Set<Integer> columnsToExclude;
 
 	private QNMinimizer lbfgs;
 	private boolean addIntercept;
@@ -50,16 +46,13 @@ public class AdmmIterationMapper
 	private double rho;
 	private String previousIntermediateOutputLocation;
 	private Path previousIntermediateOutputLocationPath;
-	private Matrix inputSplitData;
 	private String splitId;
-	private List<Vector> input;
+	private List<Vector> inputSplitData;
 
 	protected void setup(Context context) throws IOException,
 			InterruptedException {
 		Configuration conf = context.getConfiguration();
 		iteration = Integer.parseInt(conf.get("iteration.number"));
-		String columnsToExcludeString = conf.get("columns.to.exclude");
-		// columnsToExclude = getColumnsToExclude(columnsToExcludeString);
 		addIntercept = conf.getBoolean("add.intercept", false);
 		rho = conf.getFloat("rho", DEFAULT_RHO);
 		regularizationFactor = conf.getFloat("regularization.factor",
@@ -72,7 +65,7 @@ public class AdmmIterationMapper
 		try {
 			fs = previousIntermediateOutputLocationPath.getFileSystem(conf); // FileSystem.get(job);
 		} catch (IOException e) {
-			LOG.log(Level.FINE, e.toString());
+			LOG.info(e.toString());
 		}
 
 		splitToParameters = getSplitParameters();
@@ -83,26 +76,18 @@ public class AdmmIterationMapper
 				+ " - " + Long.toString(split.getLength());
 		splitId = removeIpFromHdfsFileName(splitId);
 
-		input = new LinkedList<Vector>();
+		inputSplitData = new LinkedList<Vector>();
 	}
 
 	protected void map(Writable key, VectorWritable value, Context context)
 			throws IOException, InterruptedException {
-		input.add(value.get());
+		inputSplitData.add(value.get());
 	}
 
 	protected void cleanup(Context context) throws IOException,
 			InterruptedException {
-		inputSplitData = new SparseRowMatrix(input.size(), input.get(0).size());
-		for (int i = 0; i < input.size(); i++) {
-			Vector v = input.get(i);
-			if (addIntercept) {
-				v.set(0, 1);
-			}
-			inputSplitData.viewRow(i).assign(v);
-			v = null;
-		}
-		input = null;
+		LOG.info("Input Split Size : row = {}, col = {}",
+				inputSplitData.size(), inputSplitData.get(0).size());
 
 		AdmmMapperContext mapperContext;
 		if (iteration == 0) {
@@ -130,6 +115,7 @@ public class AdmmIterationMapper
 				context.getUInitial(), context.getZInitial());
 		Ctx optimizationContext = new Ctx(context.getXInitial());
 
+		LOG.info("Minimize Logistic Function using LBFGS....");
 		double[] optimum = lbfgs.minimize((DiffFunction) myFunction, 1e-10,
 				context.getXInitial());
 		for (int d = 0; d < optimum.length; ++d) {
@@ -144,7 +130,7 @@ public class AdmmIterationMapper
 	}
 
 	private AdmmMapperContext assembleMapperContextFromCache(
-			Matrix inputSplitData, String splitId) throws IOException {
+			List<Vector> inputSplitData, String splitId) throws IOException {
 		if (splitToParameters.containsKey(splitId)) {
 			AdmmMapperContext preContext = jsonToAdmmMapperContext(splitToParameters
 					.get(splitId));
@@ -155,8 +141,8 @@ public class AdmmIterationMapper
 					preContext.getPrimalObjectiveValue(),
 					preContext.getRNorm(), preContext.getSNorm());
 		} else {
-			LOG.log(Level.FINE, "Key not found. Split ID: " + splitId
-					+ " Split Map: " + splitToParameters.toString());
+			LOG.info("Key not found. Split ID: " + splitId + " Split Map: "
+					+ splitToParameters.toString());
 			throw new IOException("Key not found.  Split ID: " + splitId
 					+ " Split Map: " + splitToParameters.toString());
 		}

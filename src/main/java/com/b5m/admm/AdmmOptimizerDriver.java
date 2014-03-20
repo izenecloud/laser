@@ -1,37 +1,23 @@
 package com.b5m.admm;
 
-import com.b5m.larser.feature.IntLongPairWritable;
-import com.b5m.larser.feature.LaserFeatureDriver;
-import com.b5m.larser.feature.LaserFeatureInputFormat;
-import com.b5m.larser.feature.LaserFeatureMapper;
-import com.b5m.larser.feature.LaserFeatureOutputFormat;
-import com.b5m.larser.feature.LaserFeatureReducer;
 import com.google.common.base.Optional;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
-import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
-import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
-import org.apache.hadoop.util.Tool;
-import org.apache.hadoop.util.ToolRunner;
 import org.apache.mahout.common.HadoopUtil;
-import org.apache.mahout.math.VectorWritable;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 
 import java.io.IOException;
-import java.net.URI;
 import java.util.ArrayList;
-import java.util.Arrays;
 
 public class AdmmOptimizerDriver {
 
@@ -74,6 +60,8 @@ public class AdmmOptimizerDriver {
 		int iterationNumber = 0;
 		boolean isFinalIteration = false;
 		Configuration conf = new Configuration();
+		conf.set("mapred.job.queue.name", "sf1");
+		conf.setInt("mapred.task.timeout", 6000000);
 
 		FileSystem fs = finalOutputBasePath.getFileSystem(conf);
 
@@ -99,7 +87,7 @@ public class AdmmOptimizerDriver {
 				Path finalOutputBetas = new Path(finalOutputBasePath,
 						BETAS_FOLDER_NAME);
 				AdmmResultWriter writer = new AdmmResultWriterBetas();
-				// writer.write(conf, fs, finalOutput, finalOutputBetas);
+				writer.write(conf, fs, finalOutput, finalOutputBetas);
 
 				// TODO the below could be triggered only in test.
 				boolean isTest = false;
@@ -120,17 +108,21 @@ public class AdmmOptimizerDriver {
 		return 0;
 	}
 
-	private static void parseArgs(String[] args,
+	public static void parseArgs(String[] args,
 			AdmmOptimizerDriverArguments admmOptimizerDriverArguments)
 			throws CmdLineException {
-		ArrayList<String> argsList = new ArrayList<String>(Arrays.asList(args));
+		ArrayList<String> argsList = new ArrayList<String>();
 
 		for (int i = 0; i < args.length; i++) {
-			if (i % 2 == 0
-					&& !AdmmOptimizerDriverArguments.VALID_ARGUMENTS
-							.contains(args[i])) {
-				argsList.remove(args[i]);
-				argsList.remove(args[i + 1]);
+			if (AdmmOptimizerDriverArguments.VALID_ARGUMENTS.contains(args[i])) {
+				argsList.add(args[i]);
+				if (i + 1 < args.length) {
+					if (!AdmmOptimizerDriverArguments.VALID_ARGUMENTS
+							.contains(args[i + 1])) {
+						argsList.add(args[i + 1]);
+					}
+				}
+
 			}
 		}
 
@@ -203,13 +195,12 @@ public class AdmmOptimizerDriver {
 		conf.setBoolean("regularize.intercept", regularizeIntercept);
 		conf.setFloat("regularization.factor", regularizationFactor);
 		conf.setInt("signal.data.num.features", numFeatures);
-		//long heapSize = (long) 1024 * 1024 * 128;
-		//conf.setLong("mapred.mapper.jvm.heap.size", heapSize);
 
+		conf.set("mapred.admin.map.child.java.opts", "Xmx4096M");
 		Job job = new Job(conf);
 		job.setJarByClass(AdmmOptimizerDriver.class);
 		job.setJobName("ADMM Optimizer " + iterationNumber);
-		AdmmIterationInputFormat.setNumMapTasks(job, 1);
+		AdmmIterationInputFormat.setNumMapTasks(job, 240);
 
 		FileInputFormat.setInputPaths(job, signalDataLocation);
 		FileOutputFormat.setOutputPath(job, currentHdfsPath);

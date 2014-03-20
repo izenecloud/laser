@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.BlockLocation;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
@@ -17,11 +18,11 @@ public class AdmmIterationInputFormat<K, V> extends
 		SequenceFileInputFormat<K, V> {
 	static final String NUM_INPUT_FILES = "mapreduce.input.num.files";
 	private static final double SPLIT_SLOP = 1.1; // 10% slop
+	private static final long JAVA_OPTS = (long) 1 * 1024 * 1024 * 1024 / 4;
 
-	protected long computeSplitSize(long blockSize, long numMapTasks,
+	protected long computeSplitSize(long javaOpts, long numMapTasks,
 			long goalSize) {
-		// TODO
-		return goalSize / numMapTasks;
+		return Math.min(goalSize / numMapTasks, javaOpts);
 	}
 
 	public static void setNumMapTasks(JobContext job, int numMapTasks) {
@@ -30,9 +31,8 @@ public class AdmmIterationInputFormat<K, V> extends
 	}
 
 	public List<InputSplit> getSplits(JobContext job) throws IOException {
-		// long maxSize = getMaxSplitSize(job);
-		int numMapTasks = job.getConfiguration().getInt(
-				"admm.iteration.num.map.tasks", 0);
+		Configuration conf = job.getConfiguration();
+		int numMapTasks = conf.getInt("admm.iteration.num.map.tasks", 0);
 		if (0 == numMapTasks) {
 			return super.getSplits(job);
 		}
@@ -42,7 +42,6 @@ public class AdmmIterationInputFormat<K, V> extends
 		List<FileStatus> files = listStatus(job);
 		long goalSize = 0;
 		for (FileStatus file : files) {
-			// Path path = file.getPath();
 			goalSize += file.getLen();
 		}
 
@@ -53,14 +52,8 @@ public class AdmmIterationInputFormat<K, V> extends
 			BlockLocation[] blkLocations = fs.getFileBlockLocations(file, 0,
 					length);
 			if ((length != 0) && isSplitable(job, path)) {
-				long blockSize = file.getBlockSize();
-				long splitSize = computeSplitSize(blockSize, numMapTasks,
+				long splitSize = computeSplitSize(JAVA_OPTS, numMapTasks,
 						goalSize);
-
-				// System.out.println(Long.toString(splitSize)
-				// + "\t"
-				// + Long.toString(super.computeSplitSize(blockSize,
-				// minSize, maxSize)));
 				long bytesRemaining = length;
 				while (((double) bytesRemaining) / splitSize > SPLIT_SLOP) {
 					int blkIndex = getBlockIndex(blkLocations, length
@@ -79,15 +72,14 @@ public class AdmmIterationInputFormat<K, V> extends
 				splits.add(new FileSplit(path, 0, length, blkLocations[0]
 						.getHosts()));
 			} else {
-				// Create empty hosts array for zero length files
 				splits.add(new FileSplit(path, 0, length, new String[0]));
 			}
 		}
 
 		// Save the number of input files in the job-conf
 		job.getConfiguration().setLong(NUM_INPUT_FILES, files.size());
-		job.getConfiguration().setInt("ladmm.iteration.num.map.tasks",
-				files.size());
+		job.getConfiguration().setInt("admm.iteration.num.map.tasks",
+				splits.size());
 		return splits;
 	}
 

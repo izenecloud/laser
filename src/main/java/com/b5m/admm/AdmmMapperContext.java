@@ -2,26 +2,30 @@ package com.b5m.admm;
 
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
-import org.apache.mahout.math.Matrix;
 import org.apache.mahout.math.Vector;
-import org.apache.mahout.math.Vector.Element;
 import org.codehaus.jackson.annotate.JsonProperty;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.util.Iterator;
+import java.util.List;
 
 import static com.b5m.admm.AdmmIterationHelper.admmMapperContextToJson;
 import static com.b5m.admm.AdmmIterationHelper.jsonToAdmmMapperContext;
 
 public class AdmmMapperContext implements Writable {
-
+	private static final Logger LOG = LoggerFactory
+			.getLogger(AdmmMapperContext.class.getName());
+	
 	private static final double LAMBDA_VALUE = 1e-6;
 	@JsonProperty("splitId")
 	private String splitId;
-	
+
 	@JsonProperty("a")
-	private Matrix a;
+	private List<Vector> a;
 
 	@JsonProperty("b")
 	private double[] b;
@@ -50,24 +54,31 @@ public class AdmmMapperContext implements Writable {
 	@JsonProperty("sNorm")
 	private double sNorm;
 
-	public AdmmMapperContext(String splitId, Matrix ab) {
+	/*
+	 * 18:15 SequentialAccessSparseVector for (int row = 0; row < numRows; row++)
+	 * 00:01 SequentialAccessSparseVector		while (iterator.hasNext()) {
+	 */
+	public AdmmMapperContext(String splitId, List<Vector> ab) {
+		LOG.info("Initialize AdmmMapperContext, splitId = {}", splitId);
 		this.splitId = splitId;
-		
-		int numCols = ab.numCols() - 1;
-		a = ab.like(ab.numRows(), ab.numCols() - 1);
-		for (int row = 0; row < a.numRows(); row++) {
-			Vector v = ab.viewRow(row);
-			Vector av = a.viewRow(row);
-			for (Element e : v.nonZeroes()) {
-				if (numCols > e.index()) {
-					av.setQuick(e.index(), e.get());
-				}
-			}
+		this.a = ab;
+		int numCols = this.a.get(0).size() - 1;
+		int numRows = this.a.size();
+		b = new double[numRows];
+		Iterator<Vector> iterator = this.a.iterator();
+		int row = 0;
+		while (iterator.hasNext()) {
+			Vector v = iterator.next();
+			b[row] = v.get(numCols);
+			v.set(numCols, 0.0);
+			row++;
 		}
-		b = new double[ab.numRows()];
-		for (int row = 0; row < ab.numRows(); row++) {
-			b[row] = ab.get(row, numCols);
-		}
+		/*for (int row = 0; row < numRows; row++) {
+			Vector v = this.a.get(row);
+			b[row] = v.get(numCols);
+			v.set(numCols, 0.0);
+		}*/
+
 		uInitial = new double[numCols];
 		xInitial = new double[numCols];
 		zInitial = new double[numCols];
@@ -77,29 +88,28 @@ public class AdmmMapperContext implements Writable {
 		primalObjectiveValue = -1;
 		rNorm = -1;
 		sNorm = -1;
+		
+		LOG.info("Initialize AdmmMapperContext, Finish");
 	}
 
-	public AdmmMapperContext(String splitId, Matrix ab, double rho) {
+	public AdmmMapperContext(String splitId, List<Vector> ab, double rho) {
 		this(splitId, ab);
 		this.rho = rho;
 	}
 
-	public AdmmMapperContext(String splitId, Matrix ab, double[] uInitial, double[] xInitial,
-			double[] zInitial, double rho, double lambdaValue,
-			double primalObjectiveValue, double rNorm, double sNorm) {
+	public AdmmMapperContext(String splitId, List<Vector> ab,
+			double[] uInitial, double[] xInitial, double[] zInitial,
+			double rho, double lambdaValue, double primalObjectiveValue,
+			double rNorm, double sNorm) {
 		this.splitId = splitId;
-		int numCols = ab.numCols() - 1;
-		a = ab.like(ab.numRows(), numCols);
-		b = new double[ab.numRows()];
-		for (int row = 0; row < a.numRows(); row++) {
-			Vector v = ab.viewRow(row);
+		this.a = ab;
+		int numCols = this.a.get(0).size() - 1;
+		int numRows = this.a.size();
+		b = new double[numRows];
+		for (int row = 0; row < numRows; row++) {
+			Vector v = this.a.get(row);
 			b[row] = v.get(numCols);
-			Vector av = a.viewRow(row);			
-			for (Element e : v.nonZeroes()) {
-				if (numCols > e.index()) {
-					av.setQuick(e.index(), e.get());
-				}
-			}
+			v.set(numCols, 0.0);
 		}
 
 		this.uInitial = uInitial;
@@ -113,9 +123,10 @@ public class AdmmMapperContext implements Writable {
 		this.sNorm = sNorm;
 	}
 
-	public AdmmMapperContext(String splitId, Matrix a, double[] b, double[] uInitial,
-			double[] xInitial, double[] zInitial, double rho, double lambdaValue,
-			double primalObjectiveValue, double rNorm, double sNorm) {
+	public AdmmMapperContext(String splitId, List<Vector> a, double[] b,
+			double[] uInitial, double[] xInitial, double[] zInitial,
+			double rho, double lambdaValue, double primalObjectiveValue,
+			double rNorm, double sNorm) {
 		this.splitId = splitId;
 		this.a = a;
 		this.b = b;
@@ -158,7 +169,7 @@ public class AdmmMapperContext implements Writable {
 	}
 
 	@JsonProperty("a")
-	public Matrix getA() {
+	public List<Vector> getA() {
 		return a;
 	}
 
@@ -226,7 +237,7 @@ public class AdmmMapperContext implements Writable {
 	public void setSNorm(double sNorm) {
 		this.sNorm = sNorm;
 	}
-	
+
 	@JsonProperty("splitId")
 	public String getSplitId() {
 		return splitId;

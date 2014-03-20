@@ -1,9 +1,9 @@
 package com.b5m.admm;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.mapred.JobConf;
 import org.jetbrains.annotations.TestOnly;
 
 import java.io.ByteArrayInputStream;
@@ -14,7 +14,7 @@ import static com.b5m.admm.AdmmIterationHelper.*;
 
 public class AdmmResultWriterBetas extends AdmmResultWriter {
 	@Override
-	public void write(JobConf conf, FileSystem hdfs, Path hdfsFilePath,
+	public void write(Configuration conf, FileSystem hdfs, Path hdfsFilePath,
 			Path finalOutputPath) throws IOException {
 		Path[] files = getFilePaths(conf, hdfs, hdfsFilePath);
 		for (Path file : files) {
@@ -28,8 +28,9 @@ public class AdmmResultWriterBetas extends AdmmResultWriter {
 		}
 	}
 
-	private void writeBetas(FSDataInputStream in, int inputSize, JobConf conf,
-			Path hdfsFilePath, Path finalOutputPath) throws IOException {
+	private void writeBetas(FSDataInputStream in, int inputSize,
+			Configuration conf, Path hdfsFilePath, Path finalOutputPath)
+			throws IOException {
 		String jsonString = fsDataInputStreamToString(in, inputSize);
 		String betasString = buildBetasString(jsonString);
 		InputStream inBetas = new ByteArrayInputStream(betasString.getBytes());

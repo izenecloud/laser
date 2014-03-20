@@ -36,9 +36,8 @@ public class AdmmStandardErrorsMapper extends MapReduceBase implements
 	private boolean addIntercept;
 	private String previousIntermediateOutputLocation;
 	private Path previousIntermediateOutputLocationPath;
-	
-    private int numFeatures;
 
+	private int numFeatures;
 
 	@Override
 	public void configure(JobConf job) {
@@ -46,7 +45,7 @@ public class AdmmStandardErrorsMapper extends MapReduceBase implements
 		String columnsToExcludeString = job.get("columns.to.exclude");
 		columnsToExclude = getColumnsToExclude(columnsToExcludeString);
 		addIntercept = job.getBoolean("add.intercept", false);
-        numFeatures = job.getInt("signal.data.num.features", 0);
+		numFeatures = job.getInt("signal.data.num.features", 0);
 
 		previousIntermediateOutputLocation = job
 				.get("previous.intermediate.output.location");
@@ -77,20 +76,20 @@ public class AdmmStandardErrorsMapper extends MapReduceBase implements
 				+ Long.toString(split.getLength());
 		splitId = removeIpFromHdfsFileName(splitId);
 
-		Matrix inputSplitData = createMatrixFromDataString(
-				value.toString(), numFeatures, columnsToExclude, addIntercept);
-		AdmmMapperContext mapperContext = assembleMapperContextFromCache(
-				inputSplitData, splitId);
-
-		AdmmStandardErrorsReducerContext reducerContext = getReducerContext(mapperContext);
-		output.collect(ZERO, new Text(splitId + "::"
-				+ admmStandardErrorReducerContextToJson(reducerContext)));
+		Matrix inputSplitData = createMatrixFromDataString(value.toString(),
+				numFeatures, columnsToExclude, addIntercept);
+//		AdmmMapperContext mapperContext = assembleMapperContextFromCache(
+//				inputSplitData, splitId);
+//
+//		AdmmStandardErrorsReducerContext reducerContext = getReducerContext(mapperContext);
+//		output.collect(ZERO, new Text(splitId + "::"
+//				+ admmStandardErrorReducerContextToJson(reducerContext)));
 	}
 
 	private AdmmStandardErrorsReducerContext getReducerContext(
 			AdmmMapperContext mapperContext) {
 		double[] zFinal = mapperContext.getZInitial();
-		Matrix aMatrix = mapperContext.getA();
+		Matrix aMatrix = null;// mapperContext.getA();
 		int numRows = aMatrix.numRows();
 		double[][] xwxMatrix = new double[numFeatures][numFeatures];
 		double[] rowMultipliers = getRowMultipliers(aMatrix, zFinal);
@@ -101,16 +100,15 @@ public class AdmmStandardErrorsMapper extends MapReduceBase implements
 			Vector features = aMatrix.viewRow(row);
 			for (Element e : features.nonZeroes()) {
 				x.setEntry(row, e.index(), e.get());
-				xtW.setEntry(e.index(), row, e.get()
-								* rowMultipliers[row]);
+				xtW.setEntry(e.index(), row, e.get() * rowMultipliers[row]);
 			}
-			//for (int col = 0; col < numFeatures; col++) {
-			//	if (aMatrix[row][col] != 0) {
-			//		x.setEntry(row, col, aMatrix[row][col]);
-			//		xtW.setEntry(col, row, aMatrix[row][col]
-			//				* rowMultipliers[row]);
-			//	}
-			//}
+			// for (int col = 0; col < numFeatures; col++) {
+			// if (aMatrix[row][col] != 0) {
+			// x.setEntry(row, col, aMatrix[row][col]);
+			// xtW.setEntry(col, row, aMatrix[row][col]
+			// * rowMultipliers[row]);
+			// }
+			// }
 		}
 
 		RealMatrix xtWX = xtW.multiply(x);
@@ -137,32 +135,32 @@ public class AdmmStandardErrorsMapper extends MapReduceBase implements
 
 	private double getPredictedProbability(Matrix aMatrix, double[] zFinal,
 			int row) {
-		//double[] features = aMatrix[row];
+		// double[] features = aMatrix[row];
 		Vector features = aMatrix.viewRow(row);
 		double dotProduct = 0;
 		for (Element e : features.nonZeroes()) {
-		//for (int i = 0; i < features.length; i++) {
+			// for (int i = 0; i < features.length; i++) {
 			dotProduct += features.get(e.index()) * zFinal[e.index()];
 		}
 		return Math.exp(dotProduct) / (1 + Math.exp(dotProduct));
 	}
 
-	private AdmmMapperContext assembleMapperContextFromCache(
-			Matrix inputSplitData, String splitId) throws IOException {
-		if (splitToParameters.containsKey(splitId)) {
-			AdmmMapperContext preContext = jsonToAdmmMapperContext(splitToParameters
-					.get(splitId));
-			return new AdmmMapperContext(splitId, inputSplitData,
-					preContext.getUInitial(), preContext.getXInitial(),
-					preContext.getZInitial(), preContext.getRho(),
-					preContext.getLambdaValue(),
-					preContext.getPrimalObjectiveValue(),
-					preContext.getRNorm(), preContext.getSNorm());
-		} else {
-			LOG.log(Level.FINE, "Key not found. Split ID: " + splitId
-					+ " Split Map: " + splitToParameters.toString());
-			throw new IOException("Key not found.  Split ID: " + splitId
-					+ " Split Map: " + splitToParameters.toString());
-		}
-	}
+//	private AdmmMapperContext assembleMapperContextFromCache(
+//			Matrix inputSplitData, String splitId) throws IOException {
+//		if (splitToParameters.containsKey(splitId)) {
+//			AdmmMapperContext preContext = jsonToAdmmMapperContext(splitToParameters
+//					.get(splitId));
+//			return new AdmmMapperContext(splitId, inputSplitData,
+//					preContext.getUInitial(), preContext.getXInitial(),
+//					preContext.getZInitial(), preContext.getRho(),
+//					preContext.getLambdaValue(),
+//					preContext.getPrimalObjectiveValue(),
+//					preContext.getRNorm(), preContext.getSNorm());
+//		} else {
+//			LOG.log(Level.FINE, "Key not found. Split ID: " + splitId
+//					+ " Split Map: " + splitToParameters.toString());
+//			throw new IOException("Key not found.  Split ID: " + splitId
+//					+ " Split Map: " + splitToParameters.toString());
+//		}
+//	}
 }
