@@ -11,6 +11,7 @@ import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapreduce.Mapper;
+import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.hadoop.mapreduce.Mapper.Context;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 import org.apache.mahout.math.Matrix;
@@ -31,14 +32,13 @@ public class AdmmIterationMapper
 		extends
 		Mapper<Writable, VectorWritable, NullWritable, AdmmReducerContextWritable> {
 
-	private static final Logger LOG = LoggerFactory
+	public static final Logger LOG = LoggerFactory
 			.getLogger(AdmmIterationMapper.class.getName());
 	private static final float DEFAULT_REGULARIZATION_FACTOR = 0.000001f;
 	private static final float DEFAULT_RHO = 0.1f;
 
 	private int iteration;
 	private FileSystem fs;
-	private Map<String, String> splitToParameters;
 
 	private QNMinimizer lbfgs;
 	private boolean addIntercept;
@@ -49,9 +49,11 @@ public class AdmmIterationMapper
 	private String splitId;
 	private List<Vector> inputSplitData;
 
+	private Configuration conf;
+
 	protected void setup(Context context) throws IOException,
 			InterruptedException {
-		Configuration conf = context.getConfiguration();
+		conf = context.getConfiguration();
 		iteration = Integer.parseInt(conf.get("iteration.number"));
 		addIntercept = conf.getBoolean("add.intercept", false);
 		rho = conf.getFloat("rho", DEFAULT_RHO);
@@ -63,12 +65,11 @@ public class AdmmIterationMapper
 				previousIntermediateOutputLocation);
 
 		try {
-			fs = previousIntermediateOutputLocationPath.getFileSystem(conf); // FileSystem.get(job);
+			fs = previousIntermediateOutputLocationPath.getFileSystem(conf);
 		} catch (IOException e) {
 			LOG.info(e.toString());
 		}
 
-		splitToParameters = getSplitParameters();
 		lbfgs = new QNMinimizer();
 
 		FileSplit split = (FileSplit) context.getInputSplit();
@@ -81,9 +82,14 @@ public class AdmmIterationMapper
 
 	protected void map(Writable key, VectorWritable value, Context context)
 			throws IOException, InterruptedException {
-		inputSplitData.add(value.get());
+		Vector v = value.get();
+		if (addIntercept) {
+			v.set(0, 1.0);
+		}
+		inputSplitData.add(v);
 	}
 
+	@SuppressWarnings("unchecked")
 	protected void cleanup(Context context) throws IOException,
 			InterruptedException {
 		LOG.info("Input Split Size : row = {}, col = {}",
@@ -100,13 +106,37 @@ public class AdmmIterationMapper
 
 		LOG.info("Iteration " + iteration + "Mapper outputting splitId "
 				+ splitId);
+
 		context.write(NullWritable.get(), new AdmmReducerContextWritable(
 				reducerContext));
-	}
 
-	protected Map<String, String> getSplitParameters() {
-		return readParametersFromHdfs(fs,
-				previousIntermediateOutputLocationPath, iteration);
+		Configuration conf = context.getConfiguration();
+
+		RecordWriter<NullWritable, DoubleArrayWritable> writer = null;
+		try {
+			conf.setClass("com.b5m.admm.iteration.output.class",
+					DoubleArrayWritable.class, Writable.class);
+			conf.set("com.b5m.admm.iteration.output.name", "X-" + this.splitId);
+
+			writer = (RecordWriter<NullWritable, DoubleArrayWritable>) context
+					.getOutputFormatClass().newInstance()
+					.getRecordWriter(context);
+			writer.write(NullWritable.get(), new DoubleArrayWritable(
+					reducerContext.getXUpdated()));
+			writer.close(context);
+
+			conf.set("com.b5m.admm.iteration.output.name", "U" + this.splitId);
+			writer = (RecordWriter<NullWritable, DoubleArrayWritable>) context
+					.getOutputFormatClass().newInstance()
+					.getRecordWriter(context);
+			writer.write(NullWritable.get(), new DoubleArrayWritable(
+					reducerContext.getUInitial()));
+			writer.close(context);
+
+		} catch (Exception e) {
+			LOG.error(e.getMessage());
+			throw new IOException(e.getMessage());
+		}
 	}
 
 	private AdmmReducerContext localMapperOptimization(AdmmMapperContext context) {
@@ -124,27 +154,25 @@ public class AdmmIterationMapper
 		double primalObjectiveValue = myFunction
 				.evaluatePrimalObjective(optimizationContext.m_optimumX);
 		return new AdmmReducerContext(context.getSplitId(),
-				context.getUInitial(), context.getXInitial(),
-				optimizationContext.m_optimumX, context.getZInitial(),
-				primalObjectiveValue, context.getRho(), regularizationFactor);
+				context.getUInitial(), optimizationContext.m_optimumX, null,
+				primalObjectiveValue, context.getRho(), regularizationFactor, 1);
 	}
 
 	private AdmmMapperContext assembleMapperContextFromCache(
 			List<Vector> inputSplitData, String splitId) throws IOException {
-		if (splitToParameters.containsKey(splitId)) {
-			AdmmMapperContext preContext = jsonToAdmmMapperContext(splitToParameters
-					.get(splitId));
+		try {
+			AdmmMapperContext preContext = readPreviousAdmmMapperContext(
+					splitId, previousIntermediateOutputLocationPath, fs, conf);
 			return new AdmmMapperContext(splitId, inputSplitData,
 					preContext.getUInitial(), preContext.getXInitial(),
 					preContext.getZInitial(), preContext.getRho(),
 					preContext.getLambdaValue(),
 					preContext.getPrimalObjectiveValue(),
 					preContext.getRNorm(), preContext.getSNorm());
-		} else {
-			LOG.info("Key not found. Split ID: " + splitId + " Split Map: "
-					+ splitToParameters.toString());
+		} catch (IOException e) {
+			LOG.info("Key not found. Split ID: " + splitId + e.getMessage());
 			throw new IOException("Key not found.  Split ID: " + splitId
-					+ " Split Map: " + splitToParameters.toString());
+					+ e.getMessage());
 		}
 	}
 }

@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory;
 import edu.stanford.nlp.optimization.DiffFunction;
 
 /*
- * f(x) = (1 / m) * [1 + log(-b'A'x)] + rho / 2 * (x - z + u)^2
+ * f(x) = (1 / m) * log[1 + exp(-b'A'x)] + rho / 2 * (x - z + u)^2
  * df/dx = (1 / m) * (-Ab) / [1 + exp(b'A'x)] + rho * (x -z + u)
  */
 
@@ -56,9 +56,9 @@ public class LogisticL2DiffFunction implements DiffFunction {
 		LOG.info("Initialize LogisticL2DiffFunction Finish");
 
 	}
+
 	/*
-	 * 2.6s per gradient.
-	 * 
+	 * 28s for 1G
 	 */
 	public double[] derivativeAt(double[] x) {
 		long sTime = System.nanoTime();

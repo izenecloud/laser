@@ -1,11 +1,18 @@
 package com.b5m.admm;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IOUtils;
+import org.apache.hadoop.io.NullWritable;
+import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.Writable;
+import org.apache.mahout.common.Pair;
+import org.apache.mahout.common.iterator.sequencefile.PathType;
+import org.apache.mahout.common.iterator.sequencefile.SequenceFileDirIterable;
 import org.apache.mahout.math.IndexException;
 import org.apache.mahout.math.Matrix;
 import org.apache.mahout.math.SparseRowMatrix;
@@ -34,6 +41,113 @@ public final class AdmmIterationHelper {
 	private AdmmIterationHelper() {
 	}
 
+	public static AdmmMapperContext readPreviousAdmmMapperContext(
+			String splitId, Path previousIntermediateOutputLocationPath,
+			FileSystem fs, Configuration conf) throws IOException {
+		Path previousUPath = new Path(previousIntermediateOutputLocationPath,
+				"U-" + splitId);
+		SequenceFile.Reader reader = new SequenceFile.Reader(fs, previousUPath,
+				conf);
+		Writable key = NullWritable.get();
+		DoubleArrayWritable uval = new DoubleArrayWritable();
+		reader.next(key, uval);
+		double[] uInitial = uval.get();
+		reader.close();
+
+		Path previousXPath = new Path(previousIntermediateOutputLocationPath,
+				"X-" + splitId);
+		reader = new SequenceFile.Reader(fs, previousUPath, conf);
+		DoubleArrayWritable xval = new DoubleArrayWritable();
+		reader.next(key, xval);
+		double[] xUpdated = xval.get();
+		reader.close();
+
+		Path previousZPath = new Path(previousIntermediateOutputLocationPath,
+				"Z");
+		reader = new SequenceFile.Reader(fs, previousUPath, conf);
+		AdmmReducerContextWritable reduceContextWritable = new AdmmReducerContextWritable();
+		reader.next(key, reduceContextWritable);
+		reader.close();
+
+		AdmmReducerContext reduceContext = reduceContextWritable.get();
+		double[] zUpdated = reduceContext.getZUpdated();
+		for (int i = 0; i < zUpdated.length; i++) {
+			uInitial[i] += xUpdated[i] - zUpdated[i]; // uUpdated
+		}
+
+		AdmmMapperContext mapperContext = new AdmmMapperContext(null, null,
+				uInitial, xUpdated, zUpdated, reduceContext.getRho(),
+				reduceContext.getLambdaValue(),
+				reduceContext.getPrimalObjectiveValue(), 0.0, 0.0);
+		return mapperContext;
+	}
+
+	public static double calculateS(Path prevOutput, FileSystem fs,
+			Configuration conf, double[] xUpdatedAverage) {
+		double[] xPreviousAverage = null;
+		long count = 0;
+		for (Pair<Writable, DoubleArrayWritable> row : new SequenceFileDirIterable<Writable, DoubleArrayWritable>(
+				new Path(prevOutput, "X-*"), PathType.GLOB, conf)) {
+			double[] xUpdated = row.getSecond().get();
+			if (null == xPreviousAverage) {
+				xPreviousAverage = xUpdated;
+			} else {
+				for (int i = 0; i < xPreviousAverage.length; i++) {
+					xPreviousAverage[i] += xUpdated[i];
+				}
+			}
+			count++;
+		}
+		double result = 0.0;
+		// iteration 0
+		if (null == xPreviousAverage) {
+
+			for (int i = 0; i < xUpdatedAverage.length; i++) {
+				result += Math.pow(xUpdatedAverage[i], 2);
+			}
+
+		} else {
+
+			for (int i = 0; i < xPreviousAverage.length; i++) {
+				xPreviousAverage[i] /= count;
+			}
+
+			for (int i = 0; i < xPreviousAverage.length; i++) {
+				result += Math.pow(xPreviousAverage[i] - xUpdatedAverage[i], 2);
+			}
+		}
+
+		return result;
+	}
+
+	public static double calculateR(Path output, FileSystem fs,
+			Configuration conf, double[] xUpdatedAverage) {
+		double result = 0.0;
+		for (Pair<Writable, DoubleArrayWritable> row : new SequenceFileDirIterable<Writable, DoubleArrayWritable>(
+				new Path(output, "X-*"), PathType.GLOB, conf)) {
+			double[] thisXUpdated = row.getSecond().get();
+			for (int j = 0; j < xUpdatedAverage.length; j++) {
+				result += Math.pow(thisXUpdated[j] - xUpdatedAverage[j], 2);
+			}
+		}
+		return result;
+	}
+
+	public static AdmmReducerContext readPreviousAdmmReducerContext(
+			Path previousIntermediateOutputLocationPath, FileSystem fs,
+			Configuration conf) throws IOException {
+		Path previousZPath = new Path(previousIntermediateOutputLocationPath,
+				"<Z>");
+		SequenceFile.Reader reader = new SequenceFile.Reader(fs, previousZPath,
+				conf);
+		AdmmReducerContextWritable reduceContextWritable = new AdmmReducerContextWritable();
+		Writable key = NullWritable.get();
+
+		reader.next(key, reduceContextWritable);
+		reader.close();
+		return reduceContextWritable.get();
+	}
+
 	public static String admmMapperContextToJson(AdmmMapperContext context)
 			throws IOException {
 		return OBJECT_MAPPER.writeValueAsString(context);
@@ -41,11 +155,6 @@ public final class AdmmIterationHelper {
 
 	public static String admmReducerContextToJson(AdmmReducerContext context)
 			throws IOException {
-		return OBJECT_MAPPER.writeValueAsString(context);
-	}
-
-	public static String admmStandardErrorReducerContextToJson(
-			AdmmStandardErrorsReducerContext context) throws IOException {
 		return OBJECT_MAPPER.writeValueAsString(context);
 	}
 
@@ -61,6 +170,7 @@ public final class AdmmIterationHelper {
 	public static double[] jsonToArray(String json) throws IOException {
 		return OBJECT_MAPPER.readValue(json, double[].class);
 	}
+
 	public static Map<String, String> jsonToMap(String json) throws IOException {
 		return OBJECT_MAPPER.readValue(json, HashMap.class);
 	}
@@ -75,50 +185,7 @@ public final class AdmmIterationHelper {
 		return OBJECT_MAPPER.readValue(json, AdmmReducerContext.class);
 	}
 
-	public static AdmmStandardErrorsReducerContext jsonToAdmmStandardErrorsReducerContext(
-			String json) throws IOException {
-		return OBJECT_MAPPER.readValue(json,
-				AdmmStandardErrorsReducerContext.class);
-	}
-
-	public static Matrix createMatrixFromDataString(
-			String dataString, int numFeatures, Set<Integer> columnsToExclude,
-			boolean addIntercept) throws IndexException {
-		String[] rows = NEWLINE_PATTERN.split(dataString);
-		int numRows = rows.length;
-
-		Matrix data = new SparseRowMatrix(numRows, numFeatures + 1);
-
-		for (int i = 0; i < numRows; i++) {
-			String[] elements = TAB_PATTERN.split(rows[i]);
-			if (addIntercept) {
-				data.set(i, 0, 1.0);
-			}
-			for (int j = 0; j < elements.length - 1; ++j) {
-				String[] element = COLON_PATTERN.split(elements[j]);
-				Integer featureId = Integer.parseInt(element[0]);
-				if (columnsToExclude.contains(featureId)) {
-					continue;
-				}
-				Double feature = Double.parseDouble(element[1]);
-				try {
-					data.set(i, featureId, feature);
-				} catch (IndexException e) {
-					LOG.log(Level.FINE,
-							String.format(
-									"i value: %d, j value: %d, data rows: %d, data cols: %d\n",
-									i, featureId, numRows, numFeatures));
-					throw e;
-				}
-			}
-			if (elements.length >= 2) {
-				data.set(i, numFeatures,
-						Double.parseDouble(elements[elements.length - 1]));
-			}
-		}
-		return data;
-	}
-
+	
 	public static Set<Integer> getColumnsToExclude(String columnsToExcludeString) {
 		String[] columnsToExcludeArray;
 		if (columnsToExcludeString == null || columnsToExcludeString.isEmpty()) {
@@ -135,25 +202,7 @@ public final class AdmmIterationHelper {
 	}
 
 	public static String removeIpFromHdfsFileName(String fileString) {
-		if (fileString.contains("hdfs")) {
-			int indexOfSecondForwardSlash = fileString.indexOf("/") + 1; // add
-																			// 1
-																			// to
-																			// get
-																			// index
-																			// of
-																			// second
-																			// forward
-																			// slash
-			int indexOfThirdForwardSlash = fileString.indexOf("/",
-					indexOfSecondForwardSlash + 1);
-
-			return fileString.substring(0, indexOfSecondForwardSlash)
-					+ fileString.substring(indexOfThirdForwardSlash,
-							fileString.length());
-		} else {
-			return fileString;
-		}
+		return Integer.toString(fileString.hashCode());
 	}
 
 	public static String fsDataInputStreamToString(FSDataInputStream in,

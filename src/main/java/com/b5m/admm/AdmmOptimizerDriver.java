@@ -20,6 +20,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 public class AdmmOptimizerDriver {
+	public static void main(String[] args) throws Exception {
+		AdmmOptimizerDriver.run(args);
+	}
 
 	private static final int DEFAULT_ADMM_ITERATIONS_MAX = 2;
 	private static final float DEFAULT_REGULARIZATION_FACTOR = 0.000001f;
@@ -62,8 +65,11 @@ public class AdmmOptimizerDriver {
 		Configuration conf = new Configuration();
 		conf.set("mapred.job.queue.name", "sf1");
 		conf.setInt("mapred.task.timeout", 6000000);
+		conf.setInt("mapred.job.map.memory.mb", 4096);
+		conf.setInt("mapred.job.reduce.memory.mb", 4096);
 
 		FileSystem fs = finalOutputBasePath.getFileSystem(conf);
+		HadoopUtil.delete(conf, finalOutputBasePath);
 
 		while (!isFinalIteration) {
 			long preStatus = 0;
@@ -86,21 +92,21 @@ public class AdmmOptimizerDriver {
 				fs.rename(currentHdfsResultsPath, finalOutput);
 				Path finalOutputBetas = new Path(finalOutputBasePath,
 						BETAS_FOLDER_NAME);
-				AdmmResultWriter writer = new AdmmResultWriterBetas();
-				writer.write(conf, fs, finalOutput, finalOutputBetas);
-
-				// TODO the below could be triggered only in test.
-				boolean isTest = false;
-				if (isTest) {
-					Configuration stdErrConf = new Configuration(conf);
-					Path standardErrorHdfsPath = new Path(finalOutputBasePath,
-							STANDARD_ERROR_FOLDER_NAME);
-					doStandardErrorCalculation(stdErrConf, finalOutput,
-							standardErrorHdfsPath, signalDataLocation,
-							numFeatures, iterationNumber, columnsToExclude,
-							addIntercept, regularizeIntercept,
-							regularizationFactor);
-				}
+				 AdmmResultWriter writer = new AdmmResultWriterBetas();
+				 writer.write(conf, fs, finalOutput, finalOutputBetas);
+				//
+				// // TODO the below could be triggered only in test.
+				// boolean isTest = false;
+				// if (isTest) {
+				// Configuration stdErrConf = new Configuration(conf);
+				// Path standardErrorHdfsPath = new Path(finalOutputBasePath,
+				// STANDARD_ERROR_FOLDER_NAME);
+				// doStandardErrorCalculation(stdErrConf, finalOutput,
+				// standardErrorHdfsPath, signalDataLocation,
+				// numFeatures, iterationNumber, columnsToExclude,
+				// addIntercept, regularizeIntercept,
+				// regularizationFactor);
+				// }
 			}
 			iterationNumber++;
 		}
@@ -206,14 +212,15 @@ public class AdmmOptimizerDriver {
 		FileOutputFormat.setOutputPath(job, currentHdfsPath);
 
 		job.setInputFormatClass(AdmmIterationInputFormat.class);
-		job.setOutputFormatClass(TextOutputFormat.class);
+		job.setOutputFormatClass(AdmmIterationOutputFormat.class);
 
 		job.setMapOutputKeyClass(NullWritable.class);
 		job.setMapOutputValueClass(AdmmReducerContextWritable.class);
 		job.setOutputKeyClass(NullWritable.class);
-		job.setOutputValueClass(Text.class);
+		job.setOutputValueClass(AdmmReducerContextWritable.class);
 
 		job.setMapperClass(AdmmIterationMapper.class);
+		job.setCombinerClass(AdmmIterationCombiner.class);
 		job.setReducerClass(AdmmIterationReducer.class);
 
 		HadoopUtil.delete(conf, currentHdfsPath);

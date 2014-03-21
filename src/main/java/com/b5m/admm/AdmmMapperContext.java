@@ -1,62 +1,42 @@
 package com.b5m.admm;
 
-import org.apache.hadoop.io.Text;
-import org.apache.hadoop.io.Writable;
 import org.apache.mahout.math.Vector;
-import org.codehaus.jackson.annotate.JsonProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
 
-import static com.b5m.admm.AdmmIterationHelper.admmMapperContextToJson;
-import static com.b5m.admm.AdmmIterationHelper.jsonToAdmmMapperContext;
-
-public class AdmmMapperContext implements Writable {
+public class AdmmMapperContext {
 	private static final Logger LOG = LoggerFactory
 			.getLogger(AdmmMapperContext.class.getName());
-	
+
 	private static final double LAMBDA_VALUE = 1e-6;
-	@JsonProperty("splitId")
 	private String splitId;
 
-	@JsonProperty("a")
 	private List<Vector> a;
 
-	@JsonProperty("b")
 	private double[] b;
 
-	@JsonProperty("uInitial")
 	private double[] uInitial;
 
-	@JsonProperty("xInitial")
 	private double[] xInitial;
 
-	@JsonProperty("zInitial")
 	private double[] zInitial;
 
-	@JsonProperty("rho")
 	private double rho;
 
-	@JsonProperty("lambdaValue")
 	private double lambdaValue;
 
-	@JsonProperty("primalObjectiveValue")
 	private double primalObjectiveValue;
 
-	@JsonProperty("rNorm")
 	private double rNorm;
 
-	@JsonProperty("sNorm")
 	private double sNorm;
 
 	/*
-	 * 18:15 SequentialAccessSparseVector for (int row = 0; row < numRows; row++)
-	 * 00:01 SequentialAccessSparseVector		while (iterator.hasNext()) {
+	 * 18:15 SequentialAccessSparseVector for (int row = 0; row < numRows;
+	 * row++) 00:01 SequentialAccessSparseVector while (iterator.hasNext()) {
 	 */
 	public AdmmMapperContext(String splitId, List<Vector> ab) {
 		LOG.info("Initialize AdmmMapperContext, splitId = {}", splitId);
@@ -73,11 +53,10 @@ public class AdmmMapperContext implements Writable {
 			v.set(numCols, 0.0);
 			row++;
 		}
-		/*for (int row = 0; row < numRows; row++) {
-			Vector v = this.a.get(row);
-			b[row] = v.get(numCols);
-			v.set(numCols, 0.0);
-		}*/
+		/*
+		 * for (int row = 0; row < numRows; row++) { Vector v = this.a.get(row);
+		 * b[row] = v.get(numCols); v.set(numCols, 0.0); }
+		 */
 
 		uInitial = new double[numCols];
 		xInitial = new double[numCols];
@@ -88,7 +67,7 @@ public class AdmmMapperContext implements Writable {
 		primalObjectiveValue = -1;
 		rNorm = -1;
 		sNorm = -1;
-		
+
 		LOG.info("Initialize AdmmMapperContext, Finish");
 	}
 
@@ -157,88 +136,62 @@ public class AdmmMapperContext implements Writable {
 		this.sNorm = context.sNorm;
 	}
 
-	public void write(DataOutput out) throws IOException {
-		Text contextJson = new Text(admmMapperContextToJson(this));
-		contextJson.write(out);
-	}
-
-	public void readFields(DataInput in) throws IOException {
-		Text contextJson = new Text();
-		contextJson.readFields(in);
-		setAdmmMapperContext(jsonToAdmmMapperContext(contextJson.toString()));
-	}
-
-	@JsonProperty("a")
 	public List<Vector> getA() {
 		return a;
 	}
 
-	@JsonProperty("b")
 	public double[] getB() {
 		return b;
 	}
 
-	@JsonProperty("uInitial")
 	public double[] getUInitial() {
 		return uInitial;
 	}
 
-	@JsonProperty("xInitial")
 	public double[] getXInitial() {
 		return xInitial;
 	}
 
-	@JsonProperty("zInitial")
 	public double[] getZInitial() {
 		return zInitial;
 	}
 
-	@JsonProperty("rho")
 	public double getRho() {
 		return rho;
 	}
 
-	@JsonProperty("rho")
 	public void setRho(double rho) {
 		this.rho = rho;
 	}
 
-	@JsonProperty("lambdaValue")
 	public double getLambdaValue() {
 		return lambdaValue;
 	}
 
-	@JsonProperty("primalObjectiveValue")
 	public double getPrimalObjectiveValue() {
 		return primalObjectiveValue;
 	}
 
-	@JsonProperty("primalObjectiveValue")
 	public void setPrimalObjectiveValue(double primalObjectiveValue) {
 		this.primalObjectiveValue = primalObjectiveValue;
 	}
 
-	@JsonProperty("rNorm")
 	public double getRNorm() {
 		return rNorm;
 	}
 
-	@JsonProperty("rNorm")
 	public void setRNorm(double rNorm) {
 		this.rNorm = rNorm;
 	}
 
-	@JsonProperty("sNorm")
 	public double getSNorm() {
 		return sNorm;
 	}
 
-	@JsonProperty("sNorm")
 	public void setSNorm(double sNorm) {
 		this.sNorm = sNorm;
 	}
 
-	@JsonProperty("splitId")
 	public String getSplitId() {
 		return splitId;
 	}
