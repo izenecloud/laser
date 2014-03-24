@@ -85,14 +85,10 @@ public class AdmmMapperContext {
 		int numCols = this.a.get(0).size() - 1;
 		int numRows = this.a.size();
 		b = new double[numRows];
-		
-		Iterator<Vector> iterator = this.a.iterator();
-		int row = 0;
-		while (iterator.hasNext()) {
-			Vector v = iterator.next();
+		for (int row = 0; row < numRows; row++) {
+			Vector v = this.a.get(row);
 			b[row] = v.get(numCols);
 			v.set(numCols, 0.0);
-			row++;
 		}
 
 		this.uInitial = uInitial;

@@ -6,7 +6,6 @@ import edu.stanford.nlp.optimization.QNMinimizer;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
@@ -26,14 +25,12 @@ import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 
 import static com.b5m.admm.AdmmIterationHelper.*;
 
 public class AdmmIterationMapper
 		extends
-		Mapper<Writable, VectorWritable, IntWritable, AdmmReducerContextWritable> {
-	private static final Random RADNOM = new Random();
+		Mapper<Writable, VectorWritable, NullWritable, AdmmReducerContextWritable> {
 
 	public static final Logger LOG = LoggerFactory
 			.getLogger(AdmmIterationMapper.class.getName());
@@ -110,8 +107,8 @@ public class AdmmIterationMapper
 		LOG.info("Iteration " + iteration + "Mapper outputting splitId "
 				+ splitId);
 
-		context.write(new IntWritable(RADNOM.nextInt()),
-				new AdmmReducerContextWritable(reducerContext));
+		context.write(NullWritable.get(), new AdmmReducerContextWritable(
+				reducerContext));
 
 		Configuration conf = context.getConfiguration();
 

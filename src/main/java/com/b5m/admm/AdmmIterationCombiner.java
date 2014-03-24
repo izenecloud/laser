@@ -1,31 +1,32 @@
 package com.b5m.admm;
 
 import java.io.IOException;
-import java.util.Random;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.mapreduce.Reducer;
 
 public class AdmmIterationCombiner
 		extends
-		Reducer<IntWritable, AdmmReducerContextWritable, IntWritable, AdmmReducerContextWritable> {
+		Reducer<NullWritable, AdmmReducerContextWritable, NullWritable, AdmmReducerContextWritable> {
 
-	private static final Random RADNOM = new Random();
+	private boolean regularizeIntercept;
 	private double[] zUpdated;
 	private long count;
 	private double rho;
 	private double lambda;
+	private double zMultiplier;
 
 	@Override
 	protected void setup(Context context) throws IOException,
 			InterruptedException {
+		Configuration conf = context.getConfiguration();
+		regularizeIntercept = conf.getBoolean("regularize.intercept", false);
 		zUpdated = null;
 		count = 0;
 	}
 
-	protected void reduce(IntWritable key,
+	protected void reduce(NullWritable key,
 			Iterable<AdmmReducerContextWritable> values, Context context)
 			throws IOException, InterruptedException {
 
@@ -49,9 +50,9 @@ public class AdmmIterationCombiner
 	protected void cleanup(Context context) throws IOException,
 			InterruptedException {
 		AdmmReducerContext reducerContext = new AdmmReducerContext(null, null,
-				null, zUpdated, 0.0, rho, lambda, count);
+				null, zUpdated, 0.0, rho, lambda, (long) 0);
 
-		context.write(new IntWritable(RADNOM.nextInt()), new AdmmReducerContextWritable(
+		context.write(NullWritable.get(), new AdmmReducerContextWritable(
 				reducerContext));
 	}
 }
