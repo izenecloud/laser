@@ -3,6 +3,7 @@ package com.b5m.admm;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
@@ -15,7 +16,7 @@ import static com.b5m.admm.AdmmIterationHelper.*;
 
 public class AdmmIterationReducer
 		extends
-		Reducer<NullWritable, AdmmReducerContextWritable, NullWritable, AdmmReducerContextWritable> {
+		Reducer<IntWritable, AdmmReducerContextWritable, NullWritable, AdmmReducerContextWritable> {
 	private static final Logger LOG = LoggerFactory
 			.getLogger(AdmmIterationReducer.class);
 
@@ -42,7 +43,7 @@ public class AdmmIterationReducer
 		count = 0;
 	}
 
-	protected void reduce(NullWritable key,
+	protected void reduce(IntWritable key,
 			Iterable<AdmmReducerContextWritable> values, Context context)
 			throws IOException, InterruptedException {
 
