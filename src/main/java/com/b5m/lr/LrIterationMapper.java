@@ -2,34 +2,24 @@ package com.b5m.lr;
 
 import java.io.IOException;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.IntWritable;
-import org.apache.hadoop.io.LongWritable;
-import org.apache.hadoop.io.NullWritable;
-import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapreduce.Mapper;
-import org.apache.hadoop.mapreduce.Mapper.Context;
-import org.apache.hadoop.mapreduce.lib.input.FileSplit;
-import org.apache.mahout.math.Matrix;
 import org.apache.mahout.math.Vector;
 import org.apache.mahout.math.VectorWritable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import edu.stanford.nlp.optimization.QNMinimizer;
-import static com.b5m.admm.AdmmIterationHelper.*;
-import static com.b5m.lr.LrIterationHelper.*;
 
 public class LrIterationMapper
 		extends
 		Mapper<IntWritable, ListWritable, IntWritable, LrIterationMapContextWritable> {
-	private static final Logger LOG = LoggerFactory
-			.getLogger(LrIterationMapper.class);
+	// private static final Logger LOG = LoggerFactory
+	// .getLogger(LrIterationMapper.class);
 	private static final double DEFAULT_REGULARIZATION_FACTOR = 0.000001f;
 
 	private boolean addIntercept;
@@ -44,15 +34,14 @@ public class LrIterationMapper
 				"lr.iteration.regulariztion.factor",
 				DEFAULT_REGULARIZATION_FACTOR);
 		lbfgs = new QNMinimizer();
-		lbfgs.setRobustOptions();
-		// lbfgs.useOWLQN(true, DEFAULT_REGULARIZATION_FACTOR);
+		lbfgs.useBacktracking();
+		// lbfgs.setRobustOptions();
 	}
 
 	@SuppressWarnings("unchecked")
 	protected void map(IntWritable key, ListWritable valueWritable,
 			Context context) throws IOException, InterruptedException {
 		int itemId = key.get();
-		// long sTime = System.nanoTime();
 		List<Vector> inputSplitData = null;
 		try {
 			inputSplitData = valueWritable.getListClass().newInstance();
@@ -70,8 +59,6 @@ public class LrIterationMapper
 				v.set(0, 1.0);
 			inputSplitData.add(v);
 		}
-		// long eTime = System.nanoTime();
-		// LOG.info("Time for construct A and b, {}", eTime - sTime);
 		LrIterationMapContext mapContext = new LrIterationMapContext(itemId,
 				inputSplitData);
 		mapContext = localMapperOptimization(mapContext);
