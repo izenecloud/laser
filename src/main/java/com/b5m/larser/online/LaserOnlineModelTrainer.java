@@ -32,20 +32,21 @@ public class LaserOnlineModelTrainer {
 	public int doModelFitting() throws ClassNotFoundException, IOException,
 			InterruptedException {
 		Path signalDataLocation = new Path(laserOnlineArguments.getSignalPath());
-
 		Path finalOutput = new Path(laserOnlineArguments.getOutputPath());
-		int numFeatures = laserOnlineArguments.getNumFeatures();
 		float regularizationFactor = Optional.fromNullable(
 				laserOnlineArguments.getRegularizationFactor()).or(
 				DEFAULT_REGULARIZATION_FACTOR);
 		boolean addIntercept = Optional.fromNullable(
 				laserOnlineArguments.getAddIntercept()).or(false);
-		String columnsToExclude = Optional.fromNullable(
-				laserOnlineArguments.getColumnsToExclude()).or("");
+
 		Configuration conf = new Configuration();
+		conf.set("mapred.job.queue.name", "sf1");
+		conf.setInt("mapred.task.timeout", 6000000);
+		conf.setInt("mapred.job.map.memory.mb", 4096);
+		conf.setInt("mapred.job.reduce.memory.mb", 4096);
+
 		return LrIterationDriver.run(signalDataLocation, finalOutput,
-				numFeatures, regularizationFactor, addIntercept,
-				columnsToExclude, conf);
+				regularizationFactor, addIntercept, conf);
 	}
 
 	private void parseArgs(String[] args) throws CmdLineException {

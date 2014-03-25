@@ -12,7 +12,7 @@ import org.apache.mahout.math.VectorWritable;
 
 public class LrIterationHelper {
 	public static String createItemIdFromHdfsPath(Path path) {
-		return Integer.toString(path.toString().hashCode());
+		return path.toString();
 	}
 
 	public static Vector readVectorGivenIdentifier(Path path, FileSystem fs,

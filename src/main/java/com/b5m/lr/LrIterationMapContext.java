@@ -8,7 +8,7 @@ import org.apache.mahout.math.Vector.Element;
 
 public class LrIterationMapContext {
 	private static final double LAMBDA_VALUE = 1e-6;
-	private String itemId;
+	private int itemId;
 
 	private List<Vector> a;
 
@@ -20,10 +20,12 @@ public class LrIterationMapContext {
 
 	private double lambdaValue;
 
-	public LrIterationMapContext(String itemId, List<Vector> ab) {
+	public LrIterationMapContext(int itemId, List<Vector> ab) {
 		this.itemId = itemId;
 		this.a = ab;
 		int numCols = this.a.get(0).size() - 1;
+		int numRows = this.a.size();
+		this.b = new double[numRows];
 
 		Iterator<Vector> iterator = this.a.iterator();
 		int row = 0;
@@ -38,12 +40,12 @@ public class LrIterationMapContext {
 		lambdaValue = LAMBDA_VALUE;
 	}
 
-	public LrIterationMapContext(String itemId, List<Vector> ab, double rho) {
+	public LrIterationMapContext(int itemId, List<Vector> ab, double rho) {
 		this(itemId, ab);
 		this.rho = rho;
 	}
 
-	public LrIterationMapContext(String itemId, List<Vector> ab, double[] x,
+	public LrIterationMapContext(int itemId, List<Vector> ab, double[] x,
 			double rho, double lambdaValue) {
 		this.itemId = itemId;
 		this.a = ab;
@@ -58,14 +60,14 @@ public class LrIterationMapContext {
 			v.set(numCols, 0.0);
 			row++;
 		}
-		
+
 		this.x = x;
 
 		this.rho = rho;
 		this.lambdaValue = lambdaValue;
 	}
 
-	public LrIterationMapContext(String itemId, List<Vector> a, double[] b,
+	public LrIterationMapContext(int itemId, List<Vector> a, double[] b,
 			double[] x, double rho, double lambdaValue) {
 		this.itemId = itemId;
 		this.a = a;

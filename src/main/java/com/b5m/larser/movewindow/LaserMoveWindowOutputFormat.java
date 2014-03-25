@@ -11,6 +11,7 @@ import org.apache.hadoop.io.compress.CompressionCodec;
 import org.apache.hadoop.io.compress.DefaultCodec;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputCommitter;
+import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
 import org.apache.hadoop.util.ReflectionUtils;
 
@@ -48,6 +49,6 @@ public class LaserMoveWindowOutputFormat<K, V> extends
 			return new Path(committer.getWorkPath(), getUniqueFile(context,
 					getOutputName(context), extension));
 		}
-		return new Path(committer.getWorkPath(), outputName);
+		return new Path(FileOutputFormat.getOutputPath(context), outputName);
 	}
 }
