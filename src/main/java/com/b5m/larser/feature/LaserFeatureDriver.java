@@ -26,7 +26,7 @@ public class LaserFeatureDriver {
 			throws IOException, ClassNotFoundException, InterruptedException {
 		Configuration conf = new Configuration(baseConf);
 
-		Job job = new Job(conf);
+		Job job = Job.getInstance(conf);
 		job.setJarByClass(LaserFeatureDriver.class);
 
 		FileInputFormat.setInputPaths(job, input);
