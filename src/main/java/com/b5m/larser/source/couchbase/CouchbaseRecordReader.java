@@ -55,7 +55,7 @@ public class CouchbaseRecordReader extends RecordReader<BytesWritable, BytesWrit
 
 	public boolean nextKeyValue() {
 		while (tapclient.hasMoreMessages()) {
-			lastmessage = tapclient.getNextMessage(10, TimeUnit.SECONDS);
+			lastmessage = tapclient.getNextMessage(1, TimeUnit.SECONDS);
 			if (lastmessage != null) {
 				return true;
 			}
@@ -99,7 +99,7 @@ public class CouchbaseRecordReader extends RecordReader<BytesWritable, BytesWrit
 		final List<URI> ClientURIList = new ArrayList<URI>();
 		ClientURIList.add(ClusterURI.resolve("/pools"));
 		final String bucket = conf.get(CouchbaseConfig.CB_INPUT_BUCKET,
-				"default");
+				"");
 		final String password = conf.get(CouchbaseConfig.CB_INPUT_PASSWORD, "");
 
 		RequestMessage tapReq = new RequestMessage();

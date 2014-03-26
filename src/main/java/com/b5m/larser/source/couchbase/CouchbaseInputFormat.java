@@ -76,7 +76,7 @@ public class CouchbaseInputFormat extends InputFormat<BytesWritable, BytesWritab
 		}
 		final List<URI> ClientURIList = new ArrayList<URI>();
 		ClientURIList.add(ClusterURI.resolve("/pools"));
-		final String bucket = conf.get(CouchbaseConfig.CB_INPUT_BUCKET, "default");
+		final String bucket = conf.get(CouchbaseConfig.CB_INPUT_BUCKET, "");
 		final String password = conf.get(CouchbaseConfig.CB_INPUT_PASSWORD, "");
 
 		final CouchbaseConnectionFactory fact = new CouchbaseConnectionFactory(
