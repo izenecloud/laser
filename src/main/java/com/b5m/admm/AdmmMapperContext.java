@@ -39,9 +39,8 @@ public class AdmmMapperContext {
 		int numRows = this.a.length;
 		b = new double[numRows];
 		for (int row = 0; row < numRows; row++) {
-			b[row] = a[row].get(numCols);
-			a[row].set(numCols, 0.0);
-			row++;
+			this.b[row] = this.a[row].get(numCols);
+			this.a[row].set(numCols, 0.0);
 		}
 
 		uInitial = new double[numCols];
@@ -74,7 +73,6 @@ public class AdmmMapperContext {
 		for (int row = 0; row < numRows; row++) {
 			b[row] = a[row].get(numCols);
 			a[row].set(numCols, 0.0);
-			row++;
 		}
 
 		this.uInitial = uInitial;
