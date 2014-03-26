@@ -22,6 +22,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -94,13 +95,20 @@ public class AdmmIterationMapper
 			InterruptedException {
 		LOG.info("Input Split Size : row = {}, col = {}",
 				inputSplitData.size(), inputSplitData.get(0).size());
+		Vector[] vecArray = new Vector[inputSplitData.size()];
+
+		Iterator<Vector> iterator = inputSplitData.iterator();
+		int row = 0;
+		while (iterator.hasNext()) {
+			vecArray[row] = iterator.next();
+			row++;
+		}
 
 		AdmmMapperContext mapperContext;
 		if (iteration == 0) {
-			mapperContext = new AdmmMapperContext(splitId, inputSplitData, rho);
+			mapperContext = new AdmmMapperContext(splitId, vecArray, rho);
 		} else {
-			mapperContext = assembleMapperContextFromCache(inputSplitData,
-					splitId);
+			mapperContext = assembleMapperContextFromCache(vecArray, splitId);
 		}
 		AdmmReducerContext reducerContext = localMapperOptimization(mapperContext);
 
@@ -159,7 +167,7 @@ public class AdmmIterationMapper
 	}
 
 	private AdmmMapperContext assembleMapperContextFromCache(
-			List<Vector> inputSplitData, String splitId) throws IOException {
+			Vector[] inputSplitData, String splitId) throws IOException {
 		try {
 			AdmmMapperContext preContext = readPreviousAdmmMapperContext(
 					splitId, previousIntermediateOutputLocationPath, fs, conf);

@@ -4,9 +4,6 @@ import org.apache.mahout.math.Vector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Iterator;
-import java.util.List;
-
 public class AdmmMapperContext {
 	private static final Logger LOG = LoggerFactory
 			.getLogger(AdmmMapperContext.class.getName());
@@ -14,7 +11,7 @@ public class AdmmMapperContext {
 	private static final double LAMBDA_VALUE = 1e-6;
 	private String splitId;
 
-	private List<Vector> a;
+	private Vector[] a;
 
 	private double[] b;
 
@@ -34,29 +31,18 @@ public class AdmmMapperContext {
 
 	private double sNorm;
 
-	/*
-	 * 18:15 SequentialAccessSparseVector for (int row = 0; row < numRows;
-	 * row++) 00:01 SequentialAccessSparseVector while (iterator.hasNext()) {
-	 */
-	public AdmmMapperContext(String splitId, List<Vector> ab) {
+	public AdmmMapperContext(String splitId, Vector[] ab) {
 		LOG.info("Initialize AdmmMapperContext, splitId = {}", splitId);
 		this.splitId = splitId;
 		this.a = ab;
-		int numCols = this.a.get(0).size() - 1;
-		int numRows = this.a.size();
+		int numCols = this.a[0].size() - 1;
+		int numRows = this.a.length;
 		b = new double[numRows];
-		Iterator<Vector> iterator = this.a.iterator();
-		int row = 0;
-		while (iterator.hasNext()) {
-			Vector v = iterator.next();
-			b[row] = v.get(numCols);
-			v.set(numCols, 0.0);
+		for (int row = 0; row < numRows; row++) {
+			b[row] = a[row].get(numCols);
+			a[row].set(numCols, 0.0);
 			row++;
 		}
-		/*
-		 * for (int row = 0; row < numRows; row++) { Vector v = this.a.get(row);
-		 * b[row] = v.get(numCols); v.set(numCols, 0.0); }
-		 */
 
 		uInitial = new double[numCols];
 		xInitial = new double[numCols];
@@ -71,24 +57,24 @@ public class AdmmMapperContext {
 		LOG.info("Initialize AdmmMapperContext, Finish");
 	}
 
-	public AdmmMapperContext(String splitId, List<Vector> ab, double rho) {
+	public AdmmMapperContext(String splitId, Vector[] ab, double rho) {
 		this(splitId, ab);
 		this.rho = rho;
 	}
 
-	public AdmmMapperContext(String splitId, List<Vector> ab,
-			double[] uInitial, double[] xInitial, double[] zInitial,
-			double rho, double lambdaValue, double primalObjectiveValue,
-			double rNorm, double sNorm) {
+	public AdmmMapperContext(String splitId, Vector[] ab, double[] uInitial,
+			double[] xInitial, double[] zInitial, double rho,
+			double lambdaValue, double primalObjectiveValue, double rNorm,
+			double sNorm) {
 		this.splitId = splitId;
 		this.a = ab;
-		int numCols = this.a.get(0).size() - 1;
-		int numRows = this.a.size();
+		int numCols = this.a[0].size() - 1;
+		int numRows = this.a.length;
 		b = new double[numRows];
 		for (int row = 0; row < numRows; row++) {
-			Vector v = this.a.get(row);
-			b[row] = v.get(numCols);
-			v.set(numCols, 0.0);
+			b[row] = a[row].get(numCols);
+			a[row].set(numCols, 0.0);
+			row++;
 		}
 
 		this.uInitial = uInitial;
@@ -102,7 +88,7 @@ public class AdmmMapperContext {
 		this.sNorm = sNorm;
 	}
 
-	public AdmmMapperContext(String splitId, List<Vector> a, double[] b,
+	public AdmmMapperContext(String splitId, Vector[] a, double[] b,
 			double[] uInitial, double[] xInitial, double[] zInitial,
 			double rho, double lambdaValue, double primalObjectiveValue,
 			double rNorm, double sNorm) {
@@ -136,7 +122,7 @@ public class AdmmMapperContext {
 		this.sNorm = context.sNorm;
 	}
 
-	public List<Vector> getA() {
+	public Vector[] getA() {
 		return a;
 	}
 

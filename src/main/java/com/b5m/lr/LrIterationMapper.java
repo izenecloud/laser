@@ -32,8 +32,8 @@ public class LrIterationMapper
 				"lr.iteration.regulariztion.factor",
 				DEFAULT_REGULARIZATION_FACTOR);
 		lbfgs = new QNMinimizer();
-		lbfgs.useBacktracking();
-		//lbfgs.setRobustOptions();
+		//lbfgs.useBacktracking();
+		lbfgs.setRobustOptions();
 	}
 
 	protected void map(IntWritable key, ListWritable valueWritable,
