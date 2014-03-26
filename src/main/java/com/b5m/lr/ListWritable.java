@@ -27,6 +27,7 @@ public class ListWritable implements Writable {
 		return valueClass;
 	}
 
+	@SuppressWarnings("rawtypes")
 	public Class<? extends List> getListClass() {
 		return listClass;
 	}
@@ -39,6 +40,7 @@ public class ListWritable implements Writable {
 		return values;
 	}
 
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public void readFields(DataInput in) throws IOException {
 		String listClass = in.readUTF();
 		try {

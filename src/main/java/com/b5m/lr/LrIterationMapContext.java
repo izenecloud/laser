@@ -1,16 +1,12 @@
 package com.b5m.lr;
 
-import java.util.Iterator;
-import java.util.List;
-
 import org.apache.mahout.math.Vector;
-import org.apache.mahout.math.Vector.Element;
 
 public class LrIterationMapContext {
 	private static final double LAMBDA_VALUE = 1e-6;
 	private int itemId;
 
-	private List<Vector> a;
+	private Vector[] a;
 
 	private double[] b;
 
@@ -20,45 +16,38 @@ public class LrIterationMapContext {
 
 	private double lambdaValue;
 
-	public LrIterationMapContext(int itemId, List<Vector> ab) {
+	public LrIterationMapContext(int itemId, Vector[] ab) {
 		this.itemId = itemId;
 		this.a = ab;
-		int numCols = this.a.get(0).size() - 1;
-		int numRows = this.a.size();
+		int numCols = this.a[0].size() - 1;
+		int numRows = this.a.length;
 		this.b = new double[numRows];
-
-		Iterator<Vector> iterator = this.a.iterator();
-		int row = 0;
-		while (iterator.hasNext()) {
-			Vector v = iterator.next();
-			b[row] = v.get(numCols);
-			v.set(numCols, 0.0);
-			row++;
+		
+		for (int row = 0; row < numRows; row++) {
+			this.b[row] = this.a[row].get(numCols);
+			this.a[row].set(numCols, 0.0);
 		}
 		x = new double[numCols];
 		rho = 1.0;
 		lambdaValue = LAMBDA_VALUE;
 	}
 
-	public LrIterationMapContext(int itemId, List<Vector> ab, double rho) {
+	public LrIterationMapContext(int itemId, Vector[] ab, double rho) {
 		this(itemId, ab);
 		this.rho = rho;
 	}
 
-	public LrIterationMapContext(int itemId, List<Vector> ab, double[] x,
+	public LrIterationMapContext(int itemId, Vector[] ab, double[] x,
 			double rho, double lambdaValue) {
 		this.itemId = itemId;
 		this.a = ab;
-		int numCols = this.a.get(0).size() - 1;
-		int numRows = this.a.size();
-		b = new double[numRows];
-		Iterator<Vector> iterator = this.a.iterator();
-		int row = 0;
-		while (iterator.hasNext()) {
-			Vector v = iterator.next();
-			b[row] = v.get(numCols);
-			v.set(numCols, 0.0);
-			row++;
+		int numCols = this.a[0].size() - 1;
+		int numRows = this.a.length;
+		this.b = new double[numRows];
+		
+		for (int row = 0; row < numRows; row++) {
+			this.b[row] = this.a[row].get(numCols);
+			this.a[row].set(numCols, 0.0);
 		}
 
 		this.x = x;
@@ -67,7 +56,7 @@ public class LrIterationMapContext {
 		this.lambdaValue = lambdaValue;
 	}
 
-	public LrIterationMapContext(int itemId, List<Vector> a, double[] b,
+	public LrIterationMapContext(int itemId, Vector[] a, double[] b,
 			double[] x, double rho, double lambdaValue) {
 		this.itemId = itemId;
 		this.a = a;
@@ -89,7 +78,7 @@ public class LrIterationMapContext {
 		this.lambdaValue = context.lambdaValue;
 	}
 
-	public List<Vector> getA() {
+	public Vector[] getA() {
 		return a;
 	}
 

@@ -10,8 +10,6 @@ import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.mahout.math.Vector;
 import org.apache.mahout.math.VectorWritable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import edu.stanford.nlp.optimization.QNMinimizer;
 
@@ -35,29 +33,23 @@ public class LrIterationMapper
 				DEFAULT_REGULARIZATION_FACTOR);
 		lbfgs = new QNMinimizer();
 		lbfgs.useBacktracking();
-		// lbfgs.setRobustOptions();
+		//lbfgs.setRobustOptions();
 	}
 
-	@SuppressWarnings("unchecked")
 	protected void map(IntWritable key, ListWritable valueWritable,
 			Context context) throws IOException, InterruptedException {
 		int itemId = key.get();
-		List<Vector> inputSplitData = null;
-		try {
-			inputSplitData = valueWritable.getListClass().newInstance();
-		} catch (InstantiationException e) {
-			e.printStackTrace();
-		} catch (IllegalAccessException e) {
-			e.printStackTrace();
-		}
+		Vector[] inputSplitData = new Vector[valueWritable.get().size()];
 
 		List<Writable> value = valueWritable.get();
 		Iterator<Writable> iterator = value.iterator();
+		int row = 0;
 		while (iterator.hasNext()) {
 			Vector v = ((VectorWritable) (iterator.next())).get();
 			if (addIntercept)
 				v.set(0, 1.0);
-			inputSplitData.add(v);
+			inputSplitData[row] = v;
+			row++;
 		}
 		LrIterationMapContext mapContext = new LrIterationMapContext(itemId,
 				inputSplitData);
