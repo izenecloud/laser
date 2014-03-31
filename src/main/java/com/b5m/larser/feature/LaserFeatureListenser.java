@@ -39,6 +39,7 @@ public class LaserFeatureListenser implements MessageListener {
 	private final DatumReader<B5MEvent> reader = new SpecificDatumReader<B5MEvent>(
 			B5MEvent.SCHEMA$);
 
+	@SuppressWarnings("deprecation")
 	private final DecoderFactory decoderFactor = DecoderFactory
 			.defaultFactory();
 	private BinaryDecoder decorder = null;

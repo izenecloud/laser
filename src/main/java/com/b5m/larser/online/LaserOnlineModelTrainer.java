@@ -6,9 +6,11 @@ import java.util.Arrays;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
+import org.apache.mahout.common.HadoopUtil;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 
+import com.b5m.larser.feature.online.OnlineFeatureDriver;
 import com.b5m.lr.LrIterationDriver;
 import com.google.common.base.Optional;
 
@@ -25,30 +27,32 @@ public class LaserOnlineModelTrainer {
 	public int run(String[] args) throws IOException, CmdLineException,
 			ClassNotFoundException, InterruptedException {
 		parseArgs(args);
-		doModelFitting();
-		return 0;
-	}
-
-	public int doModelFitting() throws ClassNotFoundException, IOException,
-			InterruptedException {
-		Path signalDataLocation = new Path(laserOnlineArguments.getSignalPath());
-		Path finalOutput = new Path(laserOnlineArguments.getOutputPath());
+		
+		Path input = new Path(laserOnlineArguments.getSignalPath());
+		Path output = new Path(laserOnlineArguments.getOutputPath());
 		float regularizationFactor = Optional.fromNullable(
 				laserOnlineArguments.getRegularizationFactor()).or(
 				DEFAULT_REGULARIZATION_FACTOR);
 		boolean addIntercept = Optional.fromNullable(
 				laserOnlineArguments.getAddIntercept()).or(false);
-
 		Configuration conf = new Configuration();
+		
+		Path userGroup = new Path(output, "userGroup");
+		OnlineFeatureDriver.run(input, userGroup, conf);
+		
 		conf.set("mapred.job.queue.name", "sf1");
 		conf.setInt("mapred.task.timeout", 6000000);
 		conf.setInt("mapred.job.map.memory.mb", 4096);
 		conf.setInt("mapred.job.reduce.memory.mb", 4096);
 
-		return LrIterationDriver.run(signalDataLocation, finalOutput,
+		Path lrOutput = new Path(output, "LR");
+		LrIterationDriver.run(userGroup, lrOutput,
 				regularizationFactor, addIntercept, conf);
+		
+		HadoopUtil.delete(conf, userGroup);		
+		return 0;
 	}
-
+	
 	private void parseArgs(String[] args) throws CmdLineException {
 		ArrayList<String> argsList = new ArrayList<String>(Arrays.asList(args));
 
