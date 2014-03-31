@@ -1,4 +1,4 @@
-package com.b5m.larser.source.couchbase;
+package com.b5m.couchbase;
 
 import java.io.DataInput;
 import java.io.DataOutput;

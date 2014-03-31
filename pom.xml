@@ -90,6 +90,10 @@
 					<groupId>org.slf4j</groupId>
 					<artifactId>slf4j-log4j12</artifactId>
 				</exclusion>
+				<exclusion>
+					<artifactId>hadoop-core</artifactId>
+					<groupId>org.apache.hadoop</groupId>
+				</exclusion>
 			</exclusions>
 		</dependency>
 		<dependency>
@@ -108,6 +112,14 @@
 				<exclusion>
 					<artifactId>zookeeper</artifactId>
 					<groupId>org.apache.zookeeper</groupId>
+				</exclusion>
+				<exclusion>
+					<artifactId>hbase-client</artifactId>
+					<groupId>org.apache.hbase</groupId>
+				</exclusion>
+				<exclusion>
+					<artifactId>hadoop-core</artifactId>
+					<groupId>org.apache.hadoop</groupId>
 				</exclusion>
 			</exclusions>
 		</dependency>
@@ -136,21 +148,9 @@
 					<artifactId>zookeeper</artifactId>
 					<groupId>org.apache.zookeeper</groupId>
 				</exclusion>
-
 				<exclusion>
 					<artifactId>slf4j-log4j12</artifactId>
 					<groupId>org.slf4j</groupId>
-				</exclusion>
-			</exclusions>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.hadoop</groupId>
-			<artifactId>hadoop-core</artifactId>
-			<version>2.0.0-mr1-cdh4.5.0</version>
-			<exclusions>
-				<exclusion>
-					<artifactId>zookeeper</artifactId>
-					<groupId>org.apache.zookeeper</groupId>
 				</exclusion>
 			</exclusions>
 		</dependency>
@@ -173,6 +173,12 @@
 			<groupId>com.couchbase.client</groupId>
 			<artifactId>couchbase-client</artifactId>
 			<version>1.4.0-dp</version>
+		</dependency>
+
+		<dependency>
+			<groupId>com.taobao.metamorphosis</groupId>
+			<artifactId>metamorphosis-client-extension</artifactId>
+			<version>1.4.3</version>
 		</dependency>
 
 		<dependency>

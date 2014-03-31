@@ -1,4 +1,4 @@
-package com.b5m.larser.source.couchbase;
+package com.b5m.couchbase;
 
 public class CouchbaseConfig {
 	public static final String CB_INPUT_CLUSTER = "couchbase.input.uri";

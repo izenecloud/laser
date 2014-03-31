@@ -13,8 +13,8 @@ import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.apache.mahout.common.HadoopUtil;
 import org.testng.annotations.Test;
 
-import com.b5m.larser.source.couchbase.CouchbaseConfig;
-import com.b5m.larser.source.couchbase.CouchbaseInputFormat;
+import com.b5m.couchbase.CouchbaseConfig;
+import com.b5m.couchbase.CouchbaseInputFormat;
 
 public class TestCouchbaseInputFormat {
 	public static class DumpMapper extends

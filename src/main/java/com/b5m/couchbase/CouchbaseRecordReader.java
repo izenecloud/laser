@@ -1,4 +1,4 @@
-package com.b5m.larser.source.couchbase;
+package com.b5m.couchbase;
 
 import java.io.IOException;
 import java.net.URI;
@@ -22,7 +22,7 @@ import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 
-import com.b5m.larser.source.couchbase.CouchbaseInputFormat.CouchbaseSplit;
+import com.b5m.couchbase.CouchbaseInputFormat.CouchbaseSplit;
 import com.couchbase.client.TapClient;
 
 public class CouchbaseRecordReader extends RecordReader<BytesWritable, BytesWritable> {
