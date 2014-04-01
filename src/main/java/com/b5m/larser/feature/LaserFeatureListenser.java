@@ -54,6 +54,8 @@ public class LaserFeatureListenser implements MessageListener {
 
 	private final CouchbaseClient couchbaseClient;
 
+	private boolean threadSuspended;
+
 	public LaserFeatureListenser(String url, String bucket, String passwd,
 			Path output, FileSystem fs, Configuration conf, int featureDimension)
 			throws IOException, URISyntaxException {
@@ -64,6 +66,7 @@ public class LaserFeatureListenser implements MessageListener {
 		initSequenceWriter();
 		List<URI> hosts = Arrays.asList(new URI(url));
 		couchbaseClient = new CouchbaseClient(hosts, bucket, passwd);
+		threadSuspended = false;
 	}
 
 	public void shutdown() {
@@ -74,13 +77,19 @@ public class LaserFeatureListenser implements MessageListener {
 	public void incrSequentialNumber() throws IOException {
 		synchronized (this) {
 			writer.close();
+			threadSuspended = true;
 		}
 		sequentialNumber++;
 		synchronized (this) {
 			writer = SequenceFile.createWriter(fs, conf,
 					new Path(output, Long.toString(sequentialNumber)),
 					IntWritable.class, VectorWritable.class);
+			threadSuspended = false;
 		}
+	}
+	
+	public synchronized long getSequentialNumber() {
+		return sequentialNumber;
 	}
 
 	@SuppressWarnings("deprecation")
@@ -97,6 +106,11 @@ public class LaserFeatureListenser implements MessageListener {
 	}
 
 	public void recieveMessages(Message message) {
+		synchronized (this) {
+			while (threadSuspended) {
+
+			}
+		}
 		byte[] data = message.getData();
 		decorder = decoderFactor.binaryDecoder(data, decorder);
 		try {

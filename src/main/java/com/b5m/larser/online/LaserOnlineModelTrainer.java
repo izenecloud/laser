@@ -24,35 +24,54 @@ public class LaserOnlineModelTrainer {
 		trainer.run(args);
 	}
 
-	public int run(String[] args) throws IOException, CmdLineException,
-			ClassNotFoundException, InterruptedException {
-		parseArgs(args);
-		
-		Path input = new Path(laserOnlineArguments.getSignalPath());
-		Path output = new Path(laserOnlineArguments.getOutputPath());
-		float regularizationFactor = Optional.fromNullable(
-				laserOnlineArguments.getRegularizationFactor()).or(
-				DEFAULT_REGULARIZATION_FACTOR);
-		boolean addIntercept = Optional.fromNullable(
-				laserOnlineArguments.getAddIntercept()).or(false);
-		Configuration conf = new Configuration();
-		
+	public static int run(Path input, Path output, Float regularizationFactor,
+			Boolean addIntercept, Configuration conf)
+			throws ClassNotFoundException, IOException, InterruptedException {
 		Path userGroup = new Path(output, "userGroup");
 		OnlineFeatureDriver.run(input, userGroup, conf);
-		
+
 		conf.set("mapred.job.queue.name", "sf1");
 		conf.setInt("mapred.task.timeout", 6000000);
 		conf.setInt("mapred.job.map.memory.mb", 4096);
 		conf.setInt("mapred.job.reduce.memory.mb", 4096);
 
 		Path lrOutput = new Path(output, "LR");
-		LrIterationDriver.run(userGroup, lrOutput,
-				regularizationFactor, addIntercept, conf);
-		
-		HadoopUtil.delete(conf, userGroup);		
+		LrIterationDriver.run(userGroup, lrOutput, regularizationFactor,
+				addIntercept, conf);
+
+		HadoopUtil.delete(conf, userGroup);
 		return 0;
 	}
-	
+
+	public int run(String[] args) throws IOException, CmdLineException,
+			ClassNotFoundException, InterruptedException {
+		parseArgs(args);
+
+		Path input = new Path(laserOnlineArguments.getSignalPath());
+		Path output = new Path(laserOnlineArguments.getOutputPath());
+		Float regularizationFactor = Optional.fromNullable(
+				laserOnlineArguments.getRegularizationFactor()).or(
+				DEFAULT_REGULARIZATION_FACTOR);
+		Boolean addIntercept = Optional.fromNullable(
+				laserOnlineArguments.getAddIntercept()).or(false);
+		Configuration conf = new Configuration();
+
+		Path userGroup = new Path(output, "userGroup");
+		OnlineFeatureDriver.run(input, userGroup, conf);
+
+		conf.set("mapred.job.queue.name", "sf1");
+		conf.setInt("mapred.task.timeout", 6000000);
+		conf.setInt("mapred.job.map.memory.mb", 4096);
+		conf.setInt("mapred.job.reduce.memory.mb", 4096);
+
+		Path lrOutput = new Path(output, "LR");
+		LrIterationDriver.run(userGroup, lrOutput, regularizationFactor,
+				addIntercept, conf);
+
+		HadoopUtil.delete(conf, userGroup);
+		return 0;
+	}
+
 	private void parseArgs(String[] args) throws CmdLineException {
 		ArrayList<String> argsList = new ArrayList<String>(Arrays.asList(args));
 

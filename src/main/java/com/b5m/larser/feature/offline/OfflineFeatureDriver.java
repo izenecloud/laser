@@ -10,7 +10,7 @@ public class OfflineFeatureDriver {
 	public static int run(Path input, Path output, Configuration conf)
 			throws IOException {
 		FileSystem fs = input.getFileSystem(conf);
-		fs.rename(input, output);
+		fs.rename(input, new Path(output, input.getName()));
 		return 0;
 	}
 }

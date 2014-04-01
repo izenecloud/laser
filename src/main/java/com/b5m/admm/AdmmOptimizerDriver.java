@@ -30,8 +30,61 @@ public class AdmmOptimizerDriver {
 	private static final String ITERATION_FOLDER_NAME_FINAL = ITERATION_FOLDER_NAME
 			+ "final";
 
-	private static final String STANDARD_ERROR_FOLDER_NAME = "standard-error";
 	private static final String BETAS_FOLDER_NAME = "betas";
+
+	public static int run(Path signalData, Path output,
+			Float regularizationFactor, Boolean addIntercept,
+			Boolean regularizeIntercept, Integer iterationsMaximum,
+			Configuration baseConf) throws IOException, ClassNotFoundException,
+			InterruptedException {
+		Configuration conf = new Configuration(baseConf);
+		float thisRegularizationFactor = null == regularizationFactor ? DEFAULT_REGULARIZATION_FACTOR
+				: regularizationFactor;
+		boolean thisAddIntercept = null == addIntercept ? true : addIntercept;
+		boolean thisRegularizeIntercept = null == regularizeIntercept ? false
+				: regularizeIntercept;
+		int thisIterationsMaximum = null == iterationsMaximum ? DEFAULT_ADMM_ITERATIONS_MAX
+				: iterationsMaximum;
+
+		int iterationNumber = 0;
+		boolean isFinalIteration = false;
+		conf.set("mapred.job.queue.name", "sf1");
+		conf.setInt("mapred.task.timeout", 6000000);
+		conf.setInt("mapred.job.map.memory.mb", 4096);
+		conf.setInt("mapred.job.reduce.memory.mb", 4096);
+
+		FileSystem fs = output.getFileSystem(conf);
+		HadoopUtil.delete(conf, output);
+
+		String intermediateHdfsBaseString = output.toString() + "/Iteration/";
+
+		while (!isFinalIteration) {
+			long preStatus = 0;
+			Path previousHdfsResultsPath = new Path(intermediateHdfsBaseString
+					+ ITERATION_FOLDER_NAME + (iterationNumber - 1));
+			Path currentHdfsResultsPath = new Path(intermediateHdfsBaseString
+					+ ITERATION_FOLDER_NAME + iterationNumber);
+
+			long curStatus = doAdmmIteration(conf, previousHdfsResultsPath,
+					currentHdfsResultsPath, signalData, iterationNumber,
+					thisAddIntercept, thisRegularizeIntercept,
+					thisRegularizationFactor);
+			isFinalIteration = convergedOrMaxed(curStatus, preStatus,
+					iterationNumber, thisIterationsMaximum);
+
+			if (isFinalIteration) {
+				Path finalOutput = new Path(output, ITERATION_FOLDER_NAME_FINAL);
+				fs.delete(finalOutput);
+				fs.rename(currentHdfsResultsPath, finalOutput);
+				Path finalOutputBetas = new Path(output, BETAS_FOLDER_NAME);
+				AdmmResultWriter writer = new AdmmResultWriterBetas();
+				writer.write(conf, fs, finalOutput, finalOutputBetas);
+			}
+			iterationNumber++;
+		}
+
+		return 0;
+	}
 
 	public static int run(String[] args) throws IOException, CmdLineException,
 			ClassNotFoundException, InterruptedException {
@@ -79,9 +132,9 @@ public class AdmmOptimizerDriver {
 					+ ITERATION_FOLDER_NAME + iterationNumber);
 
 			long curStatus = doAdmmIteration(conf, previousHdfsResultsPath,
-					currentHdfsResultsPath, signalDataLocation, numFeatures,
-					iterationNumber, columnsToExclude, addIntercept,
-					regularizeIntercept, regularizationFactor);
+					currentHdfsResultsPath, new Path(signalDataLocation),
+					iterationNumber, addIntercept, regularizeIntercept,
+					regularizationFactor);
 			isFinalIteration = convergedOrMaxed(curStatus, preStatus,
 					iterationNumber, iterationsMaximum);
 
@@ -92,21 +145,8 @@ public class AdmmOptimizerDriver {
 				fs.rename(currentHdfsResultsPath, finalOutput);
 				Path finalOutputBetas = new Path(finalOutputBasePath,
 						BETAS_FOLDER_NAME);
-				 AdmmResultWriter writer = new AdmmResultWriterBetas();
-				 writer.write(conf, fs, finalOutput, finalOutputBetas);
-				//
-				// // TODO the below could be triggered only in test.
-				// boolean isTest = false;
-				// if (isTest) {
-				// Configuration stdErrConf = new Configuration(conf);
-				// Path standardErrorHdfsPath = new Path(finalOutputBasePath,
-				// STANDARD_ERROR_FOLDER_NAME);
-				// doStandardErrorCalculation(stdErrConf, finalOutput,
-				// standardErrorHdfsPath, signalDataLocation,
-				// numFeatures, iterationNumber, columnsToExclude,
-				// addIntercept, regularizeIntercept,
-				// regularizationFactor);
-				// }
+				AdmmResultWriter writer = new AdmmResultWriterBetas();
+				writer.write(conf, fs, finalOutput, finalOutputBetas);
 			}
 			iterationNumber++;
 		}
@@ -187,8 +227,7 @@ public class AdmmOptimizerDriver {
 
 	public static long doAdmmIteration(Configuration baseConf,
 			Path previousHdfsPath, Path currentHdfsPath,
-			String signalDataLocation, int numFeatures, int iterationNumber,
-			String columnsToExclude, boolean addIntercept,
+			Path signalDataLocation, int iterationNumber, boolean addIntercept,
 			boolean regularizeIntercept, float regularizationFactor)
 			throws IOException, ClassNotFoundException, InterruptedException {
 
@@ -196,11 +235,9 @@ public class AdmmOptimizerDriver {
 		conf.set("previous.intermediate.output.location",
 				previousHdfsPath.toString());
 		conf.setInt("iteration.number", iterationNumber);
-		conf.set("columns.to.exclude", columnsToExclude);
 		conf.setBoolean("add.intercept", addIntercept);
 		conf.setBoolean("regularize.intercept", regularizeIntercept);
 		conf.setFloat("regularization.factor", regularizationFactor);
-		conf.setInt("signal.data.num.features", numFeatures);
 
 		conf.set("mapred.admin.map.child.java.opts", "Xmx4096M");
 		Job job = new Job(conf);

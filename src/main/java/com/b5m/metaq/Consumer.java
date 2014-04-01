@@ -1,5 +1,6 @@
 package com.b5m.metaq;
 
+import com.b5m.conf.Configuration;
 import com.taobao.metamorphosis.client.MessageSessionFactory;
 import com.taobao.metamorphosis.client.MetaClientConfig;
 import com.taobao.metamorphosis.client.MetaMessageSessionFactory;
@@ -26,7 +27,7 @@ public class Consumer {
 	private Consumer() throws MetaClientException {
 		final MetaClientConfig metaClientConfig = new MetaClientConfig();
 		final ZKConfig zkConfig = new ZKConfig();
-		zkConfig.zkConnect = com.b5m.metaq.ConsumerConfig.zookeeper;
+		zkConfig.zkConnect = Configuration.getInstance().getMetaqZookeeper();
 		metaClientConfig.setZkConfig(zkConfig);
 		MessageSessionFactory sessionFactory = new MetaMessageSessionFactory(
 				metaClientConfig);
@@ -34,10 +35,18 @@ public class Consumer {
 		consumer = sessionFactory.createConsumer(new ConsumerConfig(group));
 	}
 
-	public void subscribe(String topic, MessageListener listener)
-			throws MetaClientException {
-		consumer.subscribe(topic, 1024 * 1024, listener);
+	public void subscribe(MessageListener listener) throws MetaClientException {
+		consumer.subscribe(Configuration.getInstance().getMetaqTopic(),
+				1024 * 1024, listener);
 		consumer.completeSubscribe();
+	}
+
+	public void shutdown() {
+		try {
+			consumer.shutdown();
+		} catch (MetaClientException e) {
+			e.printStackTrace();
+		}
 	}
 
 	public static void main(String[] args) throws Exception {

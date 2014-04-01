@@ -14,13 +14,17 @@ import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
 import org.apache.mahout.common.HadoopUtil;
 
 public class LrIterationDriver {
-	public static int run(Path input, Path output, double regularizationFactor,
-			boolean addIntercept, Configuration baseConf) throws IOException,
+	public static int run(Path input, Path output, Float regularizationFactor,
+			Boolean addIntercept, Configuration baseConf) throws IOException,
 			ClassNotFoundException, InterruptedException {
 		Configuration conf = new Configuration(baseConf);
-		conf.setBoolean("lr.iteration.add.intercept", addIntercept);
-		conf.setDouble("lr.iteration.regulariztion.factor",
-				regularizationFactor);
+		if (null != addIntercept) {
+			conf.setBoolean("lr.iteration.add.intercept", addIntercept);
+		}
+		if (null != regularizationFactor) {
+			conf.setDouble("lr.iteration.regulariztion.factor",
+					regularizationFactor);
+		}
 		Job job = new Job(conf);
 		job.setJarByClass(LrIterationDriver.class);
 
