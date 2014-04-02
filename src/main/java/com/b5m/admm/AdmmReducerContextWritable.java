@@ -1,9 +1,7 @@
 package com.b5m.admm;
 
 import org.apache.hadoop.io.DoubleWritable;
-import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
-import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 
 import java.io.DataInput;

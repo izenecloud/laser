@@ -45,24 +45,28 @@ public class LaserFeatureListenser implements MessageListener {
 	private BinaryDecoder decorder = null;
 	private final B5MEvent b5mEvent = new B5MEvent();
 
-	private final int featureDimension;
+	private final int itemDimension;
+	private final int userDimension;
 	private final Path output;
 	private final FileSystem fs;
 	private final Configuration conf;
 	private SequenceFile.Writer writer;
-	private long sequentialNumber = 0;
+	private long majorVersion = 0;
+	private long minorVersion = 0;
 
 	private final CouchbaseClient couchbaseClient;
 
 	private boolean threadSuspended;
 
 	public LaserFeatureListenser(String url, String bucket, String passwd,
-			Path output, FileSystem fs, Configuration conf, int featureDimension)
-			throws IOException, URISyntaxException {
+			Path output, FileSystem fs, Configuration conf, int itemDimension,
+			int userDimension) throws IOException, URISyntaxException {
 		this.output = output;
 		this.fs = fs;
 		this.conf = conf;
-		this.featureDimension = featureDimension;
+		this.itemDimension = itemDimension;
+		this.userDimension = userDimension;
+
 		initSequenceWriter();
 		List<URI> hosts = Arrays.asList(new URI(url));
 		couchbaseClient = new CouchbaseClient(hosts, bucket, passwd);
@@ -74,34 +78,61 @@ public class LaserFeatureListenser implements MessageListener {
 	}
 
 	@SuppressWarnings("deprecation")
-	public void incrSequentialNumber() throws IOException {
+	public void incrMinorVersion() throws IOException {
 		synchronized (this) {
 			writer.close();
 			threadSuspended = true;
 		}
-		sequentialNumber++;
+		minorVersion++;
 		synchronized (this) {
-			writer = SequenceFile.createWriter(fs, conf,
-					new Path(output, Long.toString(sequentialNumber)),
-					IntWritable.class, VectorWritable.class);
+			writer = SequenceFile.createWriter(
+					fs,
+					conf,
+					new Path(output, Long.toString(majorVersion) + "-"
+							+ Long.toString(minorVersion)), IntWritable.class,
+					RequestWritable.class);
 			threadSuspended = false;
 		}
 	}
-	
-	public synchronized long getSequentialNumber() {
-		return sequentialNumber;
+
+	public synchronized long geMinorVersion() {
+		return minorVersion;
+	}
+
+	@SuppressWarnings("deprecation")
+	public void incrMajorVersion() throws IOException {
+		synchronized (this) {
+			writer.close();
+			threadSuspended = true;
+		}
+		majorVersion++;
+		synchronized (this) {
+			writer = SequenceFile.createWriter(
+					fs,
+					conf,
+					new Path(output, Long.toString(majorVersion) + "-"
+							+ Long.toString(minorVersion)), IntWritable.class,
+					RequestWritable.class);
+			threadSuspended = false;
+		}
+	}
+
+	public synchronized long geMajorVersion() {
+		return majorVersion;
 	}
 
 	@SuppressWarnings("deprecation")
 	private void initSequenceWriter() throws IOException {
-		Path sequentialPath = new Path(output, Long.toString(sequentialNumber));
+		Path sequentialPath = new Path(output, Long.toString(majorVersion)
+				+ "-" + Long.toString(minorVersion));
 		while (fs.exists(sequentialPath)) {
-			sequentialNumber++;
-			sequentialPath = new Path(output, Long.toString(sequentialNumber));
+			minorVersion++;
+			sequentialPath = new Path(output, Long.toString(majorVersion) + "-"
+					+ Long.toString(minorVersion));
 		}
 		synchronized (this) {
 			writer = SequenceFile.createWriter(fs, conf, sequentialPath,
-					IntWritable.class, VectorWritable.class);
+					IntWritable.class, RequestWritable.class);
 		}
 	}
 
@@ -149,12 +180,14 @@ public class LaserFeatureListenser implements MessageListener {
 		if (null == title) {
 			return;
 		}
+		Integer action = 1;
 		String item = title.toString();
-		Vector feature = new SequentialAccessSparseVector(featureDimension + 1);
-		setUserFeature(user, feature);
-		setItemFeature(item, feature);
-		writer.append(new IntWritable(user.hashCode()), new VectorWritable(
-				feature));
+		Vector userFeature = new SequentialAccessSparseVector(userDimension);
+		setUserFeature(user, userFeature);
+		// setItemFeature(item, feature);
+		Vector itemFeature = new SequentialAccessSparseVector(itemDimension);
+		writer.append(new IntWritable(user.hashCode()), new RequestWritable(
+				userFeature, itemFeature, action));
 	}
 
 	private void setUserFeature(String user, Vector feature)

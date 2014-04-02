@@ -1,5 +1,6 @@
 package com.b5m.admm;
 
+import com.b5m.larser.feature.offline.OfflineFeatureDriver;
 import com.google.common.base.Optional;
 
 import org.apache.hadoop.conf.Configuration;
@@ -38,6 +39,11 @@ public class AdmmOptimizerDriver {
 			Configuration baseConf) throws IOException, ClassNotFoundException,
 			InterruptedException {
 		Configuration conf = new Configuration(baseConf);
+
+		Path model = new Path(output, "ADMM");
+		Path offlineFeature = new Path(output, "ADMM_SIGNAL");
+		OfflineFeatureDriver.run(signalData, offlineFeature, conf);
+
 		float thisRegularizationFactor = null == regularizationFactor ? DEFAULT_REGULARIZATION_FACTOR
 				: regularizationFactor;
 		boolean thisAddIntercept = null == addIntercept ? true : addIntercept;
@@ -53,10 +59,10 @@ public class AdmmOptimizerDriver {
 		conf.setInt("mapred.job.map.memory.mb", 4096);
 		conf.setInt("mapred.job.reduce.memory.mb", 4096);
 
-		FileSystem fs = output.getFileSystem(conf);
-		HadoopUtil.delete(conf, output);
+		FileSystem fs = model.getFileSystem(conf);
+		HadoopUtil.delete(conf, model);
 
-		String intermediateHdfsBaseString = output.toString() + "/Iteration/";
+		String intermediateHdfsBaseString = model.toString() + "/Iteration/";
 
 		while (!isFinalIteration) {
 			long preStatus = 0;
@@ -66,22 +72,21 @@ public class AdmmOptimizerDriver {
 					+ ITERATION_FOLDER_NAME + iterationNumber);
 
 			long curStatus = doAdmmIteration(conf, previousHdfsResultsPath,
-					currentHdfsResultsPath, signalData, iterationNumber,
+					currentHdfsResultsPath, offlineFeature, iterationNumber,
 					thisAddIntercept, thisRegularizeIntercept,
 					thisRegularizationFactor);
 			isFinalIteration = convergedOrMaxed(curStatus, preStatus,
 					iterationNumber, thisIterationsMaximum);
 
 			if (isFinalIteration) {
-				Path finalOutput = new Path(output, ITERATION_FOLDER_NAME_FINAL);
+				Path finalOutput = new Path(model, ITERATION_FOLDER_NAME_FINAL);
 				fs.delete(finalOutput);
 				fs.rename(currentHdfsResultsPath, finalOutput);
-				Path finalOutputBetas = new Path(output, BETAS_FOLDER_NAME);
-				AdmmResultWriter writer = new AdmmResultWriterBetas();
-				writer.write(conf, fs, finalOutput, finalOutputBetas);
 			}
 			iterationNumber++;
 		}
+
+		HadoopUtil.delete(conf, offlineFeature);
 
 		return 0;
 	}
