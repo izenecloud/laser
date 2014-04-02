@@ -5,11 +5,13 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 import org.apache.hadoop.fs.Path;
+import org.apache.mahout.common.HadoopUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.b5m.admm.AdmmOptimizerDriver;
 import com.b5m.conf.Configuration;
+import com.b5m.larser.feature.offline.OfflineFeatureDriver;
 import com.b5m.larser.offline.LaserOfflineResultWriter;
 
 public class LaserOfflineTrainerThread {
@@ -42,7 +44,6 @@ public class LaserOfflineTrainerThread {
 	}
 
 	class LaserOfflineTrainTask extends TimerTask {
-		private final Path signalPath;
 		private final Path outputPath;
 		private final Integer iterationsMaximum;
 		private final Float regularizationFactor;
@@ -51,7 +52,6 @@ public class LaserOfflineTrainerThread {
 
 		public LaserOfflineTrainTask() {
 			Configuration conf = Configuration.getInstance();
-			this.signalPath = conf.getLaserOfflineInput();
 			this.outputPath = conf.getLaserOfflineOutput();
 			this.regularizationFactor = conf.getRegularizationFactor();
 			this.addIntercept = conf.addIntercept();
@@ -75,12 +75,18 @@ public class LaserOfflineTrainerThread {
 						.getMetaqOutput(), Long.toString(majorVersion) + "-*");
 				LOG.info("Retraining Laser's Offline Model, result = {}",
 						outputPath);
+				
+				Path signalData = new Path(outputPath, "ADMM_SIGNAL");
+				OfflineFeatureDriver.run(input, signalData, conf);
+				
 				Path admmOutput = new Path(outputPath, "ADMM");
-				AdmmOptimizerDriver.run(input, admmOutput,
+				AdmmOptimizerDriver.run(signalData, admmOutput,
 						regularizationFactor, addIntercept, null,
 						iterationsMaximum, conf);
+				HadoopUtil.delete(conf, signalData);
+
 				LaserOfflineResultWriter writer = new LaserOfflineResultWriter();
-				writer.write(conf, outputPath.getFileSystem(conf), admmOutput,
+				writer.write(conf, outputPath.getFileSystem(conf), new Path(admmOutput, "ADMM"),
 						outputPath);
 			} catch (ClassNotFoundException e) {
 				// TODO Auto-generated catch block

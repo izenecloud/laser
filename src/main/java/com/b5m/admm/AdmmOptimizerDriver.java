@@ -40,10 +40,6 @@ public class AdmmOptimizerDriver {
 			InterruptedException {
 		Configuration conf = new Configuration(baseConf);
 
-		Path model = new Path(output, "ADMM");
-		Path offlineFeature = new Path(output, "ADMM_SIGNAL");
-		OfflineFeatureDriver.run(signalData, offlineFeature, conf);
-
 		float thisRegularizationFactor = null == regularizationFactor ? DEFAULT_REGULARIZATION_FACTOR
 				: regularizationFactor;
 		boolean thisAddIntercept = null == addIntercept ? true : addIntercept;
@@ -59,10 +55,10 @@ public class AdmmOptimizerDriver {
 		conf.setInt("mapred.job.map.memory.mb", 4096);
 		conf.setInt("mapred.job.reduce.memory.mb", 4096);
 
-		FileSystem fs = model.getFileSystem(conf);
-		HadoopUtil.delete(conf, model);
+		FileSystem fs = output.getFileSystem(conf);
+		HadoopUtil.delete(conf, output);
 
-		String intermediateHdfsBaseString = model.toString() + "/Iteration/";
+		String intermediateHdfsBaseString = output.toString() + "/Iteration/";
 
 		while (!isFinalIteration) {
 			long preStatus = 0;
@@ -72,21 +68,19 @@ public class AdmmOptimizerDriver {
 					+ ITERATION_FOLDER_NAME + iterationNumber);
 
 			long curStatus = doAdmmIteration(conf, previousHdfsResultsPath,
-					currentHdfsResultsPath, offlineFeature, iterationNumber,
+					currentHdfsResultsPath, signalData, iterationNumber,
 					thisAddIntercept, thisRegularizeIntercept,
 					thisRegularizationFactor);
 			isFinalIteration = convergedOrMaxed(curStatus, preStatus,
 					iterationNumber, thisIterationsMaximum);
 
 			if (isFinalIteration) {
-				Path finalOutput = new Path(model, ITERATION_FOLDER_NAME_FINAL);
+				Path finalOutput = new Path(output, ITERATION_FOLDER_NAME_FINAL);
 				fs.delete(finalOutput);
 				fs.rename(currentHdfsResultsPath, finalOutput);
 			}
 			iterationNumber++;
 		}
-
-		HadoopUtil.delete(conf, offlineFeature);
 
 		return 0;
 	}
