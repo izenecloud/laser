@@ -16,7 +16,7 @@ import org.apache.mahout.math.VectorWritable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.b5m.larser.feature.LaserFeatureHelper;
+import com.b5m.HDFSHelper;
 
 public class OfflineFeatureDriver {
 	private static final Logger LOG = LoggerFactory
@@ -50,7 +50,7 @@ public class OfflineFeatureDriver {
 		}
 
 		LOG.info("Deleting files: {}", input);
-		LaserFeatureHelper.deleteFiles(input.getParent(), input.getName(),
+		HDFSHelper.deleteFiles(input.getParent(), input.getName(),
 				input.getFileSystem(conf));
 		return 0;
 	}
