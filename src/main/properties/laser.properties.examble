@@ -8,11 +8,16 @@
     "zookeeper" : "localhost:2181",
     "topic":"test"
   },
+  "msgpack":{
+    "ip" : "",
+    "port" : ""
+  },
   "laser":{
     "output":"laser",
-    "feature_dimension":"10000000",
-    "online_retraining_frequency":"600",
-    "offline_retraining_frequency":"1209600",
+    "user_feature_dimension":"200",
+    "item_feature_dimension":"10000",
+    "online_retraining_frequency":"6",
+    "offline_retraining_frequency":"120",
     "offline_max_iteration":"20"
   }
 }
