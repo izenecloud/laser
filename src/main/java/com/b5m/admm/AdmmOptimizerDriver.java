@@ -211,10 +211,6 @@ public class AdmmOptimizerDriver {
 		job.setInputFormatClass(AdmmIterationInputFormat.class);
 		job.setOutputFormatClass(TextOutputFormat.class);
 
-		conf.setInt("mapred.num.map.tasks", 2);
-		long heapSize = (long) 1024 * 1024 * 128;
-		conf.setLong("mapred.mapper.jvm.heap.size", heapSize);
-
 		FileInputFormat.setInputPaths(job, signalDataInputLocation);
 		FileOutputFormat.setOutputPath(job, standardErrorHdfsPath);
 		boolean succeeded = job.waitForCompletion(true);
