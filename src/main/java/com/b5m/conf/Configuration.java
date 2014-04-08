@@ -23,6 +23,9 @@ public class Configuration {
 	Map<String, String> metaq;
 
 	@JsonProperty
+	Map<String, String> msgpack;
+
+	@JsonProperty
 	Map<String, String> laser;
 
 	private Path metaqFolder;
@@ -136,5 +139,17 @@ public class Configuration {
 			return null;
 		}
 		return Integer.valueOf(offline_max_iteration);
+	}
+
+	public String getMsgpackAddress() {
+		return msgpack.get("ip");
+	}
+
+	public Integer getMsgpackPort() {
+		String port =  msgpack.get("port");
+		if (null == port) {
+			return null;
+		}
+		return Integer.valueOf(port);
 	}
 }

@@ -55,6 +55,7 @@ public class LaserFeatureListenser implements MessageListener {
 	private long minorVersion = 0;
 
 	private final CouchbaseClient couchbaseClient;
+	private final ItemProfile itemProfileProvider;
 
 	private boolean threadSuspended;
 
@@ -70,11 +71,13 @@ public class LaserFeatureListenser implements MessageListener {
 		initSequenceWriter();
 		List<URI> hosts = Arrays.asList(new URI(url));
 		couchbaseClient = new CouchbaseClient(hosts, bucket, passwd);
+		itemProfileProvider = new ItemProfile();
 		threadSuspended = false;
 	}
 
 	public void shutdown() {
 		couchbaseClient.shutdown();
+		itemProfileProvider.close();
 	}
 
 	@SuppressWarnings("deprecation")
@@ -186,6 +189,7 @@ public class LaserFeatureListenser implements MessageListener {
 		setUserFeature(user, userFeature);
 		// setItemFeature(item, feature);
 		Vector itemFeature = new SequentialAccessSparseVector(itemDimension);
+		setItemFeature(item, itemFeature);
 		writer.append(new IntWritable(user.hashCode()), new RequestWritable(
 				userFeature, itemFeature, action));
 	}
@@ -198,6 +202,6 @@ public class LaserFeatureListenser implements MessageListener {
 	}
 
 	private void setItemFeature(String item, Vector feature) {
-
+		itemProfileProvider.setItemFeature(item, feature);
 	}
 }
