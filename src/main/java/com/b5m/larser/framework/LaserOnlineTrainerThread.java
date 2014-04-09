@@ -11,7 +11,6 @@ import org.slf4j.LoggerFactory;
 import com.b5m.conf.Configuration;
 import com.b5m.larser.feature.offline.OfflineFeatureDriver;
 import com.b5m.larser.online.LaserOnlineModelTrainer;
-import com.b5m.larser.online.LaserOnlineResultWriter;
 
 public class LaserOnlineTrainerThread {
 	private static LaserOnlineTrainerThread thread = null;
@@ -81,10 +80,6 @@ public class LaserOnlineTrainerThread {
 							output);
 					LaserOnlineModelTrainer.run(signalPath, output,
 							regularizationFactor, addIntercept, conf);
-
-					LaserOnlineResultWriter writer = new LaserOnlineResultWriter();
-					writer.write(conf, output.getFileSystem(conf), new Path(
-							output, "LR"));
 				} catch (ClassNotFoundException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();

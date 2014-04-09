@@ -75,10 +75,10 @@ public class LaserOfflineTrainerThread {
 						.getMetaqOutput(), Long.toString(majorVersion) + "-*");
 				LOG.info("Retraining Laser's Offline Model, result = {}",
 						outputPath);
-
+				
 				Path signalData = new Path(outputPath, "ADMM_SIGNAL");
 				OfflineFeatureDriver.run(input, signalData, conf);
-
+				
 				Path admmOutput = new Path(outputPath, "ADMM");
 				AdmmOptimizerDriver.run(signalData, admmOutput,
 						regularizationFactor, addIntercept, null,
@@ -86,9 +86,8 @@ public class LaserOfflineTrainerThread {
 				HadoopUtil.delete(conf, signalData);
 
 				LaserOfflineResultWriter writer = new LaserOfflineResultWriter();
-				writer.write(conf, outputPath.getFileSystem(conf), new Path(
-						admmOutput, "ADMM"), outputPath);
-
+				writer.write(conf, outputPath.getFileSystem(conf), new Path(admmOutput, "ADMM"),
+						outputPath);
 			} catch (ClassNotFoundException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();

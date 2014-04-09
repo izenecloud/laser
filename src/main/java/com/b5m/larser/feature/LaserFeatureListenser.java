@@ -77,6 +77,7 @@ public class LaserFeatureListenser implements MessageListener {
 
 	public void shutdown() {
 		couchbaseClient.shutdown();
+		itemProfileProvider.close();
 	}
 
 	@SuppressWarnings("deprecation")
@@ -201,6 +202,6 @@ public class LaserFeatureListenser implements MessageListener {
 	}
 
 	private void setItemFeature(String item, Vector feature) {
-		ItemProfile.setItemFeature(item, feature);
+		itemProfileProvider.setItemFeature(item, feature);
 	}
 }
