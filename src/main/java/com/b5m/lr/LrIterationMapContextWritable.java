@@ -19,10 +19,14 @@ public class LrIterationMapContextWritable implements Writable {
 		this.context = context;
 	}
 
+	public LrIterationMapContext get() {
+		return context;
+	}
+
 	public void readFields(DataInput in) throws IOException {
 		ArrayWritable arr = new ArrayWritable(DoubleWritable.class);
 		arr.readFields(in);
-		DoubleWritable[] xWritable = (DoubleWritable[])arr.toArray();
+		DoubleWritable[] xWritable = (DoubleWritable[]) arr.toArray();
 		double[] x = new double[xWritable.length];
 		for (int i = 0; i < x.length; i++) {
 			x[i] = xWritable[i].get();
