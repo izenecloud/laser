@@ -1,4 +1,4 @@
-package com.b5m.larser.offline;
+package com.b5m.larser.offline.topn;
 
 import static com.b5m.admm.AdmmIterationHelper.getFileLength;
 

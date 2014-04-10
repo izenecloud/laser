@@ -8,7 +8,7 @@ import org.msgpack.rpc.loop.EventLoop;
 import com.b5m.conf.Configuration;
 import com.b5m.larser.feature.SplitTitleRequest;
 import com.b5m.larser.feature.SplitTitleResponse;
-import com.b5m.larser.offline.LaserOfflineModel;
+import com.b5m.larser.offline.topn.LaserOfflineModel;
 import com.b5m.larser.online.LaserOnlineModel;
 
 public class RpcClient {
@@ -31,6 +31,10 @@ public class RpcClient {
 		void updateLaserOfflineModel(LaserOfflineModel model);
 
 		void updateLaserOnlineModel(LaserOnlineModel model);
+
+		ClusterInfoResponse getClusterInfos(ClusterInfoRequest req);
+
+		void updateLaserTopN(PriorityQueue queue);
 	}
 
 	public RpcClient() throws UnknownHostException {
@@ -54,8 +58,16 @@ public class RpcClient {
 	public void updateLaserOnlineModel(LaserOnlineModel model) {
 		iface.updateLaserOnlineModel(model);
 	}
-	
+
 	public SplitTitleResponse spliteTitle(SplitTitleRequest request) {
 		return iface.spliteTitle(request);
+	}
+
+	public ClusterInfoResponse getClusterInfos(ClusterInfoRequest req) {
+		return iface.getClusterInfos(req);
+	}
+
+	public void updateLaserTopN(PriorityQueue queue) {
+		iface.updateLaserTopN(queue);
 	}
 }

@@ -113,7 +113,13 @@ public class AdmmIterationReducer
 	private double calculateRNorm(Path outputPath, double[] xUpdated,
 			FileSystem fs, Configuration conf) {
 		LOG.info("calculateRNorm...");
-		double result = calculateR(outputPath, fs, conf, xUpdated);
+		double result = 0.0;
+		try {
+			result = calculateR(outputPath, fs, conf, xUpdated);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		result = Math.pow(result, SQUARE_ROOT_POWER);
 		LOG.info("rNorm = {}", result);
 		return result;

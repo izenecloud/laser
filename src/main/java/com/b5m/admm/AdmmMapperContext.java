@@ -34,18 +34,20 @@ public class AdmmMapperContext {
 	public AdmmMapperContext(String splitId, Vector[] ab) {
 		LOG.info("Initialize AdmmMapperContext, splitId = {}", splitId);
 		this.splitId = splitId;
-		this.a = ab;
-		int numCols = this.a[0].size() - 1;
-		int numRows = this.a.length;
-		b = new double[numRows];
-		for (int row = 0; row < numRows; row++) {
-			this.b[row] = this.a[row].get(numCols);
-			this.a[row].set(numCols, 0.0);
-		}
+		if (null != ab) {
+			this.a = ab;
+			int numCols = this.a[0].size() - 1;
+			int numRows = this.a.length;
+			b = new double[numRows];
+			for (int row = 0; row < numRows; row++) {
+				this.b[row] = this.a[row].get(numCols);
+				this.a[row].set(numCols, 0.0);
+			}
 
-		uInitial = new double[numCols];
-		xInitial = new double[numCols];
-		zInitial = new double[numCols];
+			uInitial = new double[numCols];
+			xInitial = new double[numCols];
+			zInitial = new double[numCols];
+		}
 
 		rho = 1.0;
 		lambdaValue = LAMBDA_VALUE;
@@ -66,13 +68,15 @@ public class AdmmMapperContext {
 			double lambdaValue, double primalObjectiveValue, double rNorm,
 			double sNorm) {
 		this.splitId = splitId;
-		this.a = ab;
-		int numCols = this.a[0].size() - 1;
-		int numRows = this.a.length;
-		b = new double[numRows];
-		for (int row = 0; row < numRows; row++) {
-			b[row] = a[row].get(numCols);
-			a[row].set(numCols, 0.0);
+		if (null != ab) {
+			this.a = ab;
+			int numCols = this.a[0].size() - 1;
+			int numRows = this.a.length;
+			b = new double[numRows];
+			for (int row = 0; row < numRows; row++) {
+				b[row] = a[row].get(numCols);
+				a[row].set(numCols, 0.0);
+			}
 		}
 
 		this.uInitial = uInitial;

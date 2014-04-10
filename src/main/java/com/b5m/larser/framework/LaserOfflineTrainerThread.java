@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory;
 import com.b5m.admm.AdmmOptimizerDriver;
 import com.b5m.conf.Configuration;
 import com.b5m.larser.feature.offline.OfflineFeatureDriver;
-import com.b5m.larser.offline.LaserOfflineResultWriter;
+import com.b5m.larser.offline.topn.LaserOfflineResultWriter;
 
 public class LaserOfflineTrainerThread {
 	private static final Logger LOG = LoggerFactory

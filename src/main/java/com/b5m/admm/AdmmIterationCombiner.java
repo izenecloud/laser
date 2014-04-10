@@ -2,26 +2,24 @@ package com.b5m.admm;
 
 import java.io.IOException;
 
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.mapreduce.Reducer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class AdmmIterationCombiner
 		extends
 		Reducer<NullWritable, AdmmReducerContextWritable, NullWritable, AdmmReducerContextWritable> {
-
-	private boolean regularizeIntercept;
+	private static final Logger LOG = LoggerFactory
+			.getLogger(AdmmIterationCombiner.class);
 	private double[] zUpdated;
 	private long count;
 	private double rho;
 	private double lambda;
-	private double zMultiplier;
 
 	@Override
 	protected void setup(Context context) throws IOException,
 			InterruptedException {
-		Configuration conf = context.getConfiguration();
-		regularizeIntercept = conf.getBoolean("regularize.intercept", false);
 		zUpdated = null;
 		count = 0;
 	}
@@ -50,8 +48,8 @@ public class AdmmIterationCombiner
 	protected void cleanup(Context context) throws IOException,
 			InterruptedException {
 		AdmmReducerContext reducerContext = new AdmmReducerContext(null, null,
-				null, zUpdated, 0.0, rho, lambda, (long) 0);
-
+				null, zUpdated, 0.0, rho, lambda, count);
+		LOG.info("Combine {} => 1", count);
 		context.write(NullWritable.get(), new AdmmReducerContextWritable(
 				reducerContext));
 	}

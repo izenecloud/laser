@@ -133,7 +133,7 @@ public class AdmmIterationMapper
 					reducerContext.getXUpdated()));
 			writer.close(context);
 
-			conf.set("com.b5m.admm.iteration.output.name", "U" + this.splitId);
+			conf.set("com.b5m.admm.iteration.output.name", "U-" + this.splitId);
 			writer = (RecordWriter<NullWritable, DoubleArrayWritable>) context
 					.getOutputFormatClass().newInstance()
 					.getRecordWriter(context);

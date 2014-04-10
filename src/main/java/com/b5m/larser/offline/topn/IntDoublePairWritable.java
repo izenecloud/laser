@@ -1,4 +1,4 @@
-package com.b5m.larser.offline;
+package com.b5m.larser.offline.topn;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -6,16 +6,16 @@ import java.io.IOException;
 
 import org.apache.hadoop.io.WritableComparable;
 
-public class DoubleIntPairWritable implements
-		WritableComparable<DoubleIntPairWritable> {
+class IntDoublePairWritable implements
+		WritableComparable<IntDoublePairWritable> {
 
 	private int key;
 	private double value;
 
-	public DoubleIntPairWritable() {
+	public IntDoublePairWritable() {
 	}
 
-	public DoubleIntPairWritable(int k, double v) {
+	public IntDoublePairWritable(int k, double v) {
 		this.key = k;
 		this.value = v;
 	}
@@ -46,7 +46,7 @@ public class DoubleIntPairWritable implements
 		return value;
 	}
 
-	public int compareTo(DoubleIntPairWritable o) {
+	public int compareTo(IntDoublePairWritable o) {
 		if (this.value > o.value) {
 			return 1;
 		} else if (this.value < o.value) {

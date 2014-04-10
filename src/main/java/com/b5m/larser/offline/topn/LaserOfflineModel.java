@@ -1,4 +1,4 @@
-package com.b5m.larser.offline;
+package com.b5m.larser.offline.topn;
 
 import org.msgpack.annotation.Message;
 

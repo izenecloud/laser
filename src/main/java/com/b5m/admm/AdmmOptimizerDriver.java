@@ -1,6 +1,5 @@
 package com.b5m.admm;
 
-import com.b5m.larser.feature.offline.OfflineFeatureDriver;
 import com.google.common.base.Optional;
 
 import org.apache.hadoop.conf.Configuration;
@@ -97,7 +96,6 @@ public class AdmmOptimizerDriver {
 				admmOptimizerDriverArguments.getOutputPath());
 		String intermediateHdfsBaseString = finalOutputBasePath.toString()
 				+ "/tmp";
-		int numFeatures = admmOptimizerDriverArguments.getNumFeatures();
 		int iterationsMaximum = Optional.fromNullable(
 				admmOptimizerDriverArguments.getIterationsMaximum()).or(
 				DEFAULT_ADMM_ITERATIONS_MAX);
@@ -109,8 +107,6 @@ public class AdmmOptimizerDriver {
 		boolean regularizeIntercept = Optional.fromNullable(
 				admmOptimizerDriverArguments.getRegularizeIntercept())
 				.or(false);
-		String columnsToExclude = Optional.fromNullable(
-				admmOptimizerDriverArguments.getColumnsToExclude()).or("");
 
 		int iterationNumber = 0;
 		boolean isFinalIteration = false;
@@ -234,7 +230,6 @@ public class AdmmOptimizerDriver {
 		conf.setBoolean("regularize.intercept", regularizeIntercept);
 		conf.setFloat("regularization.factor", regularizationFactor);
 
-		conf.set("mapred.admin.map.child.java.opts", "Xmx4096M");
 		Job job = new Job(conf);
 		job.setJarByClass(AdmmOptimizerDriver.class);
 		job.setJobName("ADMM Optimizer " + iterationNumber);
@@ -254,6 +249,7 @@ public class AdmmOptimizerDriver {
 		job.setMapperClass(AdmmIterationMapper.class);
 		job.setCombinerClass(AdmmIterationCombiner.class);
 		job.setReducerClass(AdmmIterationReducer.class);
+//		job.setNumReduceTasks(12);
 
 		HadoopUtil.delete(conf, currentHdfsPath);
 		boolean succeeded = job.waitForCompletion(true);

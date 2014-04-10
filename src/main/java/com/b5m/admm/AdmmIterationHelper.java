@@ -10,12 +10,6 @@ import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
-import org.apache.mahout.common.Pair;
-import org.apache.mahout.common.iterator.sequencefile.PathType;
-import org.apache.mahout.common.iterator.sequencefile.SequenceFileDirIterable;
-import org.apache.mahout.math.IndexException;
-import org.apache.mahout.math.Matrix;
-import org.apache.mahout.math.SparseRowMatrix;
 import org.codehaus.jackson.map.ObjectMapper;
 
 import java.io.IOException;
@@ -27,20 +21,19 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
+import static com.b5m.HDFSHelper.*;
+
 public final class AdmmIterationHelper {
 
 	private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 	private static final Pattern COMPILE = Pattern.compile(",");
 	private static final Logger LOG = Logger
 			.getLogger(AdmmIterationHelper.class.getName());
-	private static final Pattern TAB_PATTERN = Pattern.compile("\t");
-	private static final Pattern NEWLINE_PATTERN = Pattern.compile("\\n");
-	private static final Pattern SPACE_PATTERN = Pattern.compile("\\s+");
-	private static final Pattern COLON_PATTERN = Pattern.compile(":");
 
 	private AdmmIterationHelper() {
 	}
 
+	@SuppressWarnings("deprecation")
 	public static AdmmMapperContext readPreviousAdmmMapperContext(
 			String splitId, Path previousIntermediateOutputLocationPath,
 			FileSystem fs, Configuration conf) throws IOException {
@@ -56,7 +49,7 @@ public final class AdmmIterationHelper {
 
 		Path previousXPath = new Path(previousIntermediateOutputLocationPath,
 				"X-" + splitId);
-		reader = new SequenceFile.Reader(fs, previousUPath, conf);
+		reader = new SequenceFile.Reader(fs, previousXPath, conf);
 		DoubleArrayWritable xval = new DoubleArrayWritable();
 		reader.next(key, xval);
 		double[] xUpdated = xval.get();
@@ -64,10 +57,11 @@ public final class AdmmIterationHelper {
 
 		Path previousZPath = new Path(previousIntermediateOutputLocationPath,
 				"Z");
-		reader = new SequenceFile.Reader(fs, previousUPath, conf);
+		SequenceFile.Reader reduceContextReader = new SequenceFile.Reader(fs,
+				previousZPath, conf);
 		AdmmReducerContextWritable reduceContextWritable = new AdmmReducerContextWritable();
-		reader.next(key, reduceContextWritable);
-		reader.close();
+		reduceContextReader.next(key, reduceContextWritable);
+		reduceContextReader.close();
 
 		AdmmReducerContext reduceContext = reduceContextWritable.get();
 		double[] zUpdated = reduceContext.getZUpdated();
@@ -82,22 +76,28 @@ public final class AdmmIterationHelper {
 		return mapperContext;
 	}
 
+	@SuppressWarnings("deprecation")
 	public static double calculateS(Path prevOutput, FileSystem fs,
-			Configuration conf, double[] xUpdatedAverage) {
+			Configuration conf, double[] xUpdatedAverage) throws IOException {
 		double[] xPreviousAverage = null;
+		Writable key = NullWritable.get();
 		long count = 0;
-		for (Pair<Writable, DoubleArrayWritable> row : new SequenceFileDirIterable<Writable, DoubleArrayWritable>(
-				new Path(prevOutput, "X-*"), PathType.GLOB, conf)) {
-			double[] xUpdated = row.getSecond().get();
+
+		DoubleArrayWritable val = new DoubleArrayWritable();
+		for (Path file : getFilePaths(prevOutput, "X-*", fs)) {
+			SequenceFile.Reader reader = new SequenceFile.Reader(fs, file, conf);
+			reader.next(key, val);
+			double[] xUpdated = val.get();
 			if (null == xPreviousAverage) {
-				xPreviousAverage = xUpdated;
-			} else {
-				for (int i = 0; i < xPreviousAverage.length; i++) {
-					xPreviousAverage[i] += xUpdated[i];
-				}
+				xPreviousAverage = new double[xUpdated.length];
 			}
+			for (int i = 0; i < xUpdatedAverage.length; i++) {
+				xPreviousAverage[i] += xUpdated[i];
+			}
+			reader.close();
 			count++;
 		}
+
 		double result = 0.0;
 		// iteration 0
 		if (null == xPreviousAverage) {
@@ -121,14 +121,18 @@ public final class AdmmIterationHelper {
 	}
 
 	public static double calculateR(Path output, FileSystem fs,
-			Configuration conf, double[] xUpdatedAverage) {
+			Configuration conf, double[] xUpdatedAverage) throws IOException {
 		double result = 0.0;
-		for (Pair<Writable, DoubleArrayWritable> row : new SequenceFileDirIterable<Writable, DoubleArrayWritable>(
-				new Path(output, "X-*"), PathType.GLOB, conf)) {
-			double[] thisXUpdated = row.getSecond().get();
+		Writable key = NullWritable.get();
+		DoubleArrayWritable val = new DoubleArrayWritable();
+		for (Path file : getFilePaths(output, "X-*", fs)) {
+			SequenceFile.Reader reader = new SequenceFile.Reader(fs, file, conf);
+			reader.next(key, val);
+			double[] thisXUpdated = val.get();
 			for (int j = 0; j < xUpdatedAverage.length; j++) {
 				result += Math.pow(thisXUpdated[j] - xUpdatedAverage[j], 2);
 			}
+			reader.close();
 		}
 		return result;
 	}
@@ -185,7 +189,6 @@ public final class AdmmIterationHelper {
 		return OBJECT_MAPPER.readValue(json, AdmmReducerContext.class);
 	}
 
-	
 	public static Set<Integer> getColumnsToExclude(String columnsToExcludeString) {
 		String[] columnsToExcludeArray;
 		if (columnsToExcludeString == null || columnsToExcludeString.isEmpty()) {

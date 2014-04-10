@@ -52,8 +52,10 @@ public class AdmmIterationInputFormat<K, V> extends
 			BlockLocation[] blkLocations = fs.getFileBlockLocations(file, 0,
 					length);
 			if ((length != 0) && isSplitable(job, path)) {
-				long splitSize = computeSplitSize(JAVA_OPTS, numMapTasks,
-						goalSize);
+				long blockSize = file.getBlockSize();
+				long splitSize = Math.max(
+						computeSplitSize(JAVA_OPTS, numMapTasks, goalSize),
+						blockSize);
 				long bytesRemaining = length;
 				while (((double) bytesRemaining) / splitSize > SPLIT_SLOP) {
 					int blkIndex = getBlockIndex(blkLocations, length

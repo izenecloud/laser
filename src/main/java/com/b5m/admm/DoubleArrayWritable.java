@@ -9,7 +9,6 @@ import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.Writable;
 
 public class DoubleArrayWritable implements Writable {
-
 	private static final ArrayWritable writer = new ArrayWritable(
 			DoubleWritable.class);
 
@@ -38,7 +37,12 @@ public class DoubleArrayWritable implements Writable {
 	public void readFields(DataInput in) throws IOException {
 		writer.readFields(in);
 		Writable[] arr = writer.get();
-		this.arr = new double[arr.length];
+		if (null == this.arr) {
+			this.arr = new double[arr.length];
+		} else if (this.arr.length != arr.length) {
+			this.arr = null;
+			this.arr = new double[arr.length];
+		}
 		for (int i = 0; i < this.arr.length; i++) {
 			this.arr[i] = ((DoubleWritable) arr[i]).get();
 		}
