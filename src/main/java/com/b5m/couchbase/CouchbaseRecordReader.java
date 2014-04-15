@@ -28,7 +28,6 @@ import com.couchbase.client.TapClient;
 public class CouchbaseRecordReader extends RecordReader<BytesWritable, BytesWritable> {
 	TapClient tapclient;
 	ResponseMessage lastmessage;
-	final UUID uuid = UUID.randomUUID();
 
 	public void close() throws IOException {
 		tapclient.shutdown();
@@ -120,7 +119,7 @@ public class CouchbaseRecordReader extends RecordReader<BytesWritable, BytesWrit
 				"hadoop");
 		tapReq.setVbucketlist(vbids);
 		final String streamName = namebase + "_"
-				+ uuid.toString();
+				+ UUID.randomUUID().toString();
 		tapReq.setName(streamName);
 
 		tapclient = new TapClient(ClientURIList, bucket, password);

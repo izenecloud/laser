@@ -27,7 +27,10 @@ public class LaserOfflineTopNDriver {
 				.getMsgpackAddress());
 		conf.setInt("com.b5m.msgpack.port", com.b5m.conf.Configuration
 				.getInstance().getMsgpackPort());
-		conf.set("com.b5m.msgpack.method", "");
+		conf.set("com.b5m.msgpack.method", "updateTopNCluster");
+		conf.set("com.b5m.laser.offline.topn.offline.model",
+				com.b5m.conf.Configuration.getInstance()
+						.getLaserOfflineOutput().toString());
 
 		Job job = Job.getInstance(conf);
 		job.setJarByClass(LaserOfflineTopNDriver.class);
@@ -39,8 +42,8 @@ public class LaserOfflineTopNDriver {
 		job.setOutputValueClass(PriorityQueue.class);
 
 		job.setMapperClass(LaserOfflineTopNMapper.class);
-		job.setReducerClass(Reducer.class);
-
+		job.setNumReduceTasks(0);
+		
 		boolean succeeded = job.waitForCompletion(true);
 		if (!succeeded) {
 			throw new IllegalStateException("Job failed!");

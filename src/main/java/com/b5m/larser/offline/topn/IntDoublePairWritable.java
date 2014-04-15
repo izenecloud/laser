@@ -6,7 +6,7 @@ import java.io.IOException;
 
 import org.apache.hadoop.io.WritableComparable;
 
-class IntDoublePairWritable implements
+public class IntDoublePairWritable implements
 		WritableComparable<IntDoublePairWritable> {
 
 	private int key;

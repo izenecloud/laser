@@ -34,7 +34,7 @@ public class RpcClient {
 
 		ClusterInfoResponse getClusterInfos(ClusterInfoRequest req);
 
-		void updateLaserTopN(PriorityQueue queue);
+		void updateTopNCluster(PriorityQueue queue);
 	}
 
 	public RpcClient() throws UnknownHostException {
@@ -67,7 +67,7 @@ public class RpcClient {
 		return iface.getClusterInfos(req);
 	}
 
-	public void updateLaserTopN(PriorityQueue queue) {
-		iface.updateLaserTopN(queue);
+	public void updateTopNCluster(PriorityQueue queue) {
+		iface.updateTopNCluster(queue);
 	}
 }

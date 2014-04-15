@@ -32,6 +32,7 @@ public class AdmmOptimizerDriver {
 
 	private static final String BETAS_FOLDER_NAME = "betas";
 
+	@SuppressWarnings("deprecation")
 	public static int run(Path signalData, Path output,
 			Float regularizationFactor, Boolean addIntercept,
 			Boolean regularizeIntercept, Integer iterationsMaximum,

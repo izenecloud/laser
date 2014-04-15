@@ -134,8 +134,9 @@
 		<dependency>
 			<groupId>com.couchbase.client</groupId>
 			<artifactId>couchbase-client</artifactId>
-			<version>1.4.0-dp</version>
+			<version>1.3.2</version>
 		</dependency>
+
 		<dependency>
 			<groupId>org.msgpack</groupId>
 			<artifactId>msgpack</artifactId>
@@ -218,8 +219,8 @@
 						</goals>
 						<configuration>
 							<target name="copy-files">
-								<copy file="target/${project.build.finalName}-laser-jar.jar" tofile="${LASER.outputDir}/LASER.jar"
-									overwrite="true" />
+								<copy file="target/${project.build.finalName}-laser-jar.jar"
+									tofile="${LASER.outputDir}/LASER.jar" overwrite="true" />
 								<copy todir="${LASER.outputDir}" overwrite="true" flatten="true">
 									<resources>
 										<file file="src/main/properties/laser.properties.examble" />

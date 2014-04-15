@@ -1,19 +1,19 @@
 {
   "couchbase" : {
-    "cluster":"http://localhost:8091/pools",
-    "bucket":"default",
+    "cluster":"http://10.10.103.123:8091/pools",
+    "bucket":"user_profile",
     "passwd":""
   },
   "metaq":{
-    "zookeeper" : "localhost:2181",
+    "zookeeper" : "10.10.103.24:2181,10.10.103.35:2181,10.10.103.44:2181",
     "topic":"test"
   },
   "msgpack":{
     "ip" : "127.0.0.1",
-    "port" : "6688"
+    "port" : "28611"
   },
   "laser":{
-    "output":"laser",
+    "output":"laser_test",
     "user_feature_dimension":"200",
     "item_feature_dimension":"10000",
     "online_retraining_frequency":"6",

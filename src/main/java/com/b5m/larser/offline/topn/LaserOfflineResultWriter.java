@@ -68,7 +68,7 @@ public class LaserOfflineResultWriter extends AdmmResultWriter {
 
 				writeVector(alpha, new Path(finalOutputPath, "alpha"), hdfs,
 						conf);
-				writeVector(alpha, new Path(finalOutputPath, "alpha"), hdfs,
+				writeVector(beta, new Path(finalOutputPath, "beta"), hdfs,
 						conf);
 				writeMatrix(A, new Path(finalOutputPath, "A"), hdfs, conf);
 			}

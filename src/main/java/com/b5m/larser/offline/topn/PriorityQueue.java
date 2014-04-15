@@ -2,7 +2,7 @@ package com.b5m.larser.offline.topn;
 
 import org.apache.hadoop.io.Writable;
 
-class PriorityQueue extends java.util.PriorityQueue<IntDoublePairWritable> {
+public class PriorityQueue extends java.util.PriorityQueue<IntDoublePairWritable> {
 
 	public PriorityQueue(int initialCapacity) {
 		super(initialCapacity);

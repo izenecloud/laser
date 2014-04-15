@@ -23,7 +23,7 @@ import org.apache.mahout.math.Vector;
 import org.apache.mahout.math.Vector.Element;
 import org.apache.mahout.math.VectorWritable;
 
-public class TrainData {
+public class TestTrainData {
 	private static final Integer NON_ZERO_PER_FEATURE = 100;
 	private static final Integer FEATRUE_DIMENSION = 1000000; // 1M
 	private static final Integer SMAPLE_DIMENSION = 1000000; // 1000M
@@ -112,7 +112,7 @@ public class TrainData {
 		conf.setInt("com.b5m.admm.num.mapTasks", 240);
 
 		Job job = new Job(conf);
-		job.setJarByClass(TrainData.class);
+		job.setJarByClass(TestTrainData.class);
 
 		job.setInputFormatClass(TrainDataInputFormat.class);
 		job.setOutputFormatClass(SequenceFileOutputFormat.class);
@@ -130,5 +130,16 @@ public class TrainData {
 		if (!isSuccess) {
 
 		}
+	}
+
+	public static void main(String[] args) throws Exception {
+		AdmmOptimizerDriverArguments admmOptimizerDriverArguments = new AdmmOptimizerDriverArguments();
+		AdmmOptimizerDriver.parseArgs(args, admmOptimizerDriverArguments);
+
+		String signalDataLocation = admmOptimizerDriverArguments
+				.getSignalPath();
+		Path signalPath = new Path(signalDataLocation);
+		Configuration conf = new Configuration();
+		TestTrainData.randomSequence(new Path("args"), signalPath, conf);
 	}
 }

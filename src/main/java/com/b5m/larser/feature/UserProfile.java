@@ -14,7 +14,6 @@ import org.codehaus.jackson.map.ObjectMapper;
 
 public class UserProfile {
 	private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-	private static final Map<String, Integer> NAME_TO_ID = new HashedMap();
 	@JsonProperty
 	private String uuid;
 
@@ -47,14 +46,8 @@ public class UserProfile {
 		while (iterator.hasNext()) {
 			Map.Entry<String, Double> entry = iterator.next();
 			String key = "page_categories" + entry.getKey();
-			if (NAME_TO_ID.containsKey(key)) {
-				Integer id = NAME_TO_ID.get(key);
-				userFeature.set(id, entry.getValue());
-			} else {
-				Integer id = NAME_TO_ID.size();
-				userFeature.set(id, entry.getValue());
-				NAME_TO_ID.put(key, id);
-			}
+			userFeature.set(Math.abs(key.hashCode() % userFeature.size()),
+					entry.getValue());
 		}
 
 		entrySet = product_categories.entrySet();
@@ -62,14 +55,8 @@ public class UserProfile {
 		while (iterator.hasNext()) {
 			Map.Entry<String, Double> entry = iterator.next();
 			String key = "product_categories" + entry.getKey();
-			if (NAME_TO_ID.containsKey(key)) {
-				Integer id = NAME_TO_ID.get(key);
-				userFeature.set(id, entry.getValue());
-			} else {
-				Integer id = NAME_TO_ID.size();
-				userFeature.set(id, entry.getValue());
-				NAME_TO_ID.put(key, id);
-			}
+			userFeature.set(Math.abs(key.hashCode() % userFeature.size()),
+					entry.getValue());
 		}
 
 		entrySet = product_price.entrySet();
@@ -77,14 +64,8 @@ public class UserProfile {
 		while (iterator.hasNext()) {
 			Map.Entry<String, Double> entry = iterator.next();
 			String key = "product_price" + entry.getKey();
-			if (NAME_TO_ID.containsKey(key)) {
-				Integer id = NAME_TO_ID.get(key);
-				userFeature.set(id, entry.getValue());
-			} else {
-				Integer id = NAME_TO_ID.size();
-				userFeature.set(id, entry.getValue());
-				NAME_TO_ID.put(key, id);
-			}
+			userFeature.set(Math.abs(key.hashCode() % userFeature.size()),
+					entry.getValue());
 		}
 
 		entrySet = product_source.entrySet();
@@ -92,14 +73,8 @@ public class UserProfile {
 		while (iterator.hasNext()) {
 			Map.Entry<String, Double> entry = iterator.next();
 			String key = "product_source" + entry.getKey();
-			if (NAME_TO_ID.containsKey(key)) {
-				Integer id = NAME_TO_ID.get(key);
-				userFeature.set(id, entry.getValue());
-			} else {
-				Integer id = NAME_TO_ID.size();
-				userFeature.set(id, entry.getValue());
-				NAME_TO_ID.put(key, id);
-			}
+			userFeature.set(Math.abs(key.hashCode() % userFeature.size()),
+					entry.getValue());
 		}
 	}
 }

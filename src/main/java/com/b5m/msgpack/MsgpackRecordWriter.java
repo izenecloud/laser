@@ -34,7 +34,11 @@ public class MsgpackRecordWriter<K, V> extends RecordWriter<K, V> {
 	@Override
 	public void write(K key, V value) throws IOException, InterruptedException {
 		// TODO Auto-generated method stub
-		client.callAsyncApply(method, new Object[] { value });
+		//System.out.println(value.getClass());
+		Object[] params = new Object[1];
+		params[0] = value;
+		client.callApply(method, params);
+		//RpcClient.getInstance().updateTopNCluster((PriorityQueue) value);
 	}
 
 }

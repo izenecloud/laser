@@ -55,7 +55,6 @@ public class LaserFeatureListenser implements MessageListener {
 	private long minorVersion = 0;
 
 	private final CouchbaseClient couchbaseClient;
-	private final ItemProfile itemProfileProvider;
 
 	private boolean threadSuspended;
 
@@ -71,7 +70,6 @@ public class LaserFeatureListenser implements MessageListener {
 		initSequenceWriter();
 		List<URI> hosts = Arrays.asList(new URI(url));
 		couchbaseClient = new CouchbaseClient(hosts, bucket, passwd);
-		itemProfileProvider = new ItemProfile();
 		threadSuspended = false;
 	}
 
@@ -156,7 +154,6 @@ public class LaserFeatureListenser implements MessageListener {
 	}
 
 	public Executor getExecutor() {
-		// TODO Auto-generated method stub
 		return null;
 	}
 

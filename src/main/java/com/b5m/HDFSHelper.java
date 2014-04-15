@@ -28,6 +28,7 @@ public final class HDFSHelper {
 			Configuration conf) throws IOException {
 		FSDataOutputStream out = fs.create(path);
 		VectorWritable.writeVector(out, v);
+		out.close();
 	}
 
 	public static Matrix readMatrix(Path path, FileSystem fs, Configuration conf)
@@ -40,6 +41,7 @@ public final class HDFSHelper {
 			Configuration conf) throws IOException {
 		FSDataOutputStream out = fs.create(path);
 		MatrixWritable.writeMatrix(out, m);
+		out.close();
 	}
 
 	public static void deleteFiles(Path path, String filePattern, FileSystem fs)

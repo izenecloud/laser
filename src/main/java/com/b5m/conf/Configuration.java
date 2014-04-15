@@ -53,6 +53,7 @@ public class Configuration {
 		this.couchbase = conf.couchbase;
 		this.metaq = conf.metaq;
 		this.laser = conf.laser;
+		this.msgpack = conf.msgpack;
 		String baseOutput = laser.get("output");
 		metaqFolder = new Path(baseOutput, METAQ_FOLDER_NAME);
 		offlineFolder = new Path(baseOutput, OFFLINE_FOLDER_NAME);
