@@ -32,9 +32,10 @@ public class RpcClient {
 
 		void updateLaserOnlineModel(LaserOnlineModel model);
 
-		ClusterInfoResponse getClusterInfos(ClusterInfoRequest req);
+		ClusterInfoResponse getClusteringInfos(ClusterInfoRequest req);
 
 		void updateTopNCluster(PriorityQueue queue);
+
 	}
 
 	public RpcClient() throws UnknownHostException {
@@ -42,7 +43,7 @@ public class RpcClient {
 		EventLoop loop = EventLoop.defaultEventLoop();
 		client = new Client(conf.getMsgpackAddress(), conf.getMsgpackPort(),
 				loop);
-		client.setRequestTimeout(1);
+		client.setRequestTimeout(100000);
 
 		iface = client.proxy(RPCInterface.class);
 	}
@@ -64,10 +65,11 @@ public class RpcClient {
 	}
 
 	public ClusterInfoResponse getClusterInfos(ClusterInfoRequest req) {
-		return iface.getClusterInfos(req);
+		return iface.getClusteringInfos(req);
 	}
 
 	public void updateTopNCluster(PriorityQueue queue) {
 		iface.updateTopNCluster(queue);
 	}
+
 }

@@ -41,9 +41,6 @@ public class LaserOfflineTopNMapper
 	private int TOP_N;
 	PriorityQueue queue;
 
-	private static final Logger LOG = LoggerFactory
-			.getLogger(LaserOfflineTopNMapper.class);
-
 	protected void setup(Context context) throws IOException,
 			InterruptedException {
 		Configuration conf = context.getConfiguration();
@@ -58,33 +55,25 @@ public class LaserOfflineTopNMapper
 		AC = new LinkedList<IntVector>();
 		CBeta = new LinkedList<Double>();
 
-		for (int i = 0; i < 2000; i++) {
+		ClusterInfoRequest req = new ClusterInfoRequest();
+		ClusterInfoResponse response = RpcClient.getInstance().getClusterInfos(
+				req);
+		Iterator<ClusterInfo> iterator = response.iterator();
+		while (iterator.hasNext()) {
+			ClusterInfo info = iterator.next();
+			com.b5m.larser.offline.topn.ClusterInfo cluster = new com.b5m.larser.offline.topn.ClusterInfo(
+					info.clusterHash, info.pows);
+			// A * Cj
 			Vector acj = new DenseVector(A.numRows());
-			AC.add(new IntVector(i, acj));
-			CBeta.add(0.5);
-		}
+			for (int row = 0; row < A.numRows(); row++) {
+				Vector ai = A.viewRow(row);
+				acj.set(row, cluster.getClusterFeatureVector().dot(ai));
+			}
+			AC.add(new IntVector(cluster.getClusterHash(), acj));
 
-		// ClusterInfoRequest req = new ClusterInfoRequest();
-		// ClusterInfoResponse response =
-		// RpcClient.getInstance().getClusterInfos(
-		// req);
-		// Iterator<ClusterInfo> iterator = response.iterator();
-		// while (iterator.hasNext()) {
-		// ClusterInfo info = iterator.next();
-		// com.b5m.larser.offline.topn.ClusterInfo cluster = new
-		// com.b5m.larser.offline.topn.ClusterInfo(
-		// info.clusterHash, info.pows);
-		// // A * Cj
-		// Vector acj = new DenseVector(A.numRows());
-		// for (int row = 0; row < A.numRows(); row++) {
-		// Vector ai = A.viewRow(row);
-		// acj.set(row, cluster.getClusterFeatureVector().dot(ai));
-		// }
-		// AC.add(new IntVector(cluster.getClusterHash(), acj));
-		//
-		// // Cj * beta
-		// CBeta.add(cluster.getClusterFeatureVector().dot(beta));
-		// }
+			// Cj * beta
+			CBeta.add(cluster.getClusterFeatureVector().dot(beta));
+		}
 
 		userFeature = new SequentialAccessSparseVector(A.numRows());
 
@@ -117,9 +106,7 @@ public class LaserOfflineTopNMapper
 			}
 		}
 
-	
-
-		context.write(NullWritable.get(),
-				new com.b5m.msgpack.PriorityQueue(new String(key.get()), queue));
+		context.write(NullWritable.get(), new com.b5m.msgpack.PriorityQueue(
+				new String(key.get()), queue));
 	}
 }

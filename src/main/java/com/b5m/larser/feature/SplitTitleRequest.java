@@ -1,12 +1,16 @@
 package com.b5m.larser.feature;
 
-import org.msgpack.annotation.MessagePackBeans;
+import org.msgpack.annotation.Message;
 
-@MessagePackBeans
+
+@Message
 public class SplitTitleRequest {
 
-	private final String tilte;
+	private String tilte;
 
+	public SplitTitleRequest() {
+		
+	}
 	public SplitTitleRequest(String title) {
 		this.tilte = title;
 	}

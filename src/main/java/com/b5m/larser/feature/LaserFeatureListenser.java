@@ -8,6 +8,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executor;
 
+import org.apache.avro.AvroRuntimeException;
+import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.io.BinaryDecoder;
 import org.apache.avro.io.DatumReader;
 import org.apache.avro.io.DecoderFactory;
@@ -20,7 +22,6 @@ import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.mahout.math.SequentialAccessSparseVector;
 import org.apache.mahout.math.Vector;
-import org.apache.mahout.math.VectorWritable;
 import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.map.JsonMappingException;
 
@@ -39,10 +40,6 @@ public class LaserFeatureListenser implements MessageListener {
 	private final DatumReader<B5MEvent> reader = new SpecificDatumReader<B5MEvent>(
 			B5MEvent.SCHEMA$);
 
-	@SuppressWarnings("deprecation")
-	private final DecoderFactory decoderFactor = DecoderFactory
-			.defaultFactory();
-	private BinaryDecoder decorder = null;
 	private final B5MEvent b5mEvent = new B5MEvent();
 
 	private final int itemDimension;
@@ -143,13 +140,14 @@ public class LaserFeatureListenser implements MessageListener {
 			}
 		}
 		byte[] data = message.getData();
-		decorder = decoderFactor.binaryDecoder(data, decorder);
-		try {
-			reader.read(b5mEvent, decorder);
-			write(b5mEvent);
 
-		} catch (IOException e) {
-			e.printStackTrace();
+		BinaryDecoder decoder = DecoderFactory.get().binaryDecoder(data, null);
+		try {
+			reader.read(b5mEvent, decoder);
+			write(b5mEvent);
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
 		}
 	}
 
@@ -175,12 +173,27 @@ public class LaserFeatureListenser implements MessageListener {
 		}
 		String user = uuid.toString();
 
+		String item = null;
 		CharSequence title = args.get(ITEM_LABEL);
 		if (null == title) {
+			// item = "";
+			return;
+		} else {
+			item = title.toString();
+		}
+
+		// if (2000 != Integer.valueOf(logType.toString())) {
+		// // System.out.println(logType.toString());
+		// return;
+		// }
+		Integer action = 1;
+		if (108 == Integer.valueOf(actionId.toString())) {
+			action = -1;
+		} else if (103 == Integer.valueOf(actionId.toString())) {
+			action = 1;
+		} else {
 			return;
 		}
-		Integer action = 1;
-		String item = title.toString();
 		Vector userFeature = new SequentialAccessSparseVector(userDimension);
 		setUserFeature(user, userFeature);
 		// setItemFeature(item, feature);
@@ -192,9 +205,19 @@ public class LaserFeatureListenser implements MessageListener {
 
 	private void setUserFeature(String user, Vector feature)
 			throws JsonParseException, JsonMappingException, IOException {
-		String jsonValue = couchbaseClient.get(user).toString();
-		UserProfile userProfile = UserProfile.createUserProfile(jsonValue);
-		userProfile.setUserFeature(feature);
+		try {
+			Object res = couchbaseClient.get(user);
+			if (null == res) {
+				return;
+			}
+
+			String jsonValue = res.toString();
+			UserProfile userProfile = UserProfile.createUserProfile(jsonValue);
+			userProfile.setUserFeature(feature);
+		} catch (RuntimeException e) {
+			// TODO timeout
+			// System.out.println(user);
+		}
 	}
 
 	private void setItemFeature(String item, Vector feature) {

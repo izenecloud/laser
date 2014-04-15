@@ -32,7 +32,7 @@ public class LaserMetaqThreadIT {
 	public void test() throws IOException, URISyntaxException,
 			MetaClientException, InterruptedException {
 		metaq.start();
-		Thread.sleep(100000);
+		Thread.sleep(1000000);
 		metaq.exit();
 		Path metaqOutput = Configuration.getInstance().getMetaqOutput();
 		assertTrue(fs.exists(metaqOutput));

@@ -1,13 +1,13 @@
 package com.b5m.msgpack;
 
 import java.util.Iterator;
-import java.util.Vector;
+import java.util.List;
 
 import org.msgpack.annotation.Message;
 
 @Message
 public class ClusterInfoResponse {
-	private Vector<ClusterInfo> clusterInfo;
+	private List<ClusterInfo> clusterInfo;
 
 	public Iterator<ClusterInfo> iterator() {
 		return clusterInfo.iterator();

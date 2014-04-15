@@ -1,7 +1,6 @@
 package com.b5m.larser.framework;
 
 import java.io.IOException;
-import java.net.URISyntaxException;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -56,8 +55,8 @@ public class LaserMetaqThread {
 			listener = new LaserFeatureListenser(conf.getCouchbaseCluster(),
 					conf.getCouchbaseBucket(), conf.getCouchbasePassword(),
 					metaqOutput, fs, hadoopConf,
-					conf.getUserFeatureDimension(),
-					conf.getItemFeatureDimension());
+					conf.getItemFeatureDimension(),
+					conf.getUserFeatureDimension());
 
 		} catch (Exception e) {
 			throw new IOException(e.getCause());
