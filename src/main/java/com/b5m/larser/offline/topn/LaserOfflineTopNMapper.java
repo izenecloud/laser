@@ -1,31 +1,30 @@
 package com.b5m.larser.offline.topn;
 
 import java.io.IOException;
+import java.net.UnknownHostException;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 
-import org.apache.commons.collections.map.HashedMap;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.mapreduce.Mapper;
-import org.apache.mahout.math.DenseMatrix;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Matrix;
 import org.apache.mahout.math.SequentialAccessSparseVector;
 import org.apache.mahout.math.Vector;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.msgpack.MessagePack;
+import org.msgpack.rpc.Client;
+import org.msgpack.rpc.loop.EventLoop;
+import org.msgpack.type.Value;
 
 import com.b5m.larser.feature.UserProfile;
 import com.b5m.msgpack.ClusterInfo;
 import com.b5m.msgpack.ClusterInfoRequest;
 import com.b5m.msgpack.ClusterInfoResponse;
-import com.b5m.msgpack.RpcClient;
 
 import static com.b5m.HDFSHelper.readMatrix;
 import static com.b5m.HDFSHelper.readVector;
@@ -55,9 +54,25 @@ public class LaserOfflineTopNMapper
 		AC = new LinkedList<IntVector>();
 		CBeta = new LinkedList<Double>();
 
-		ClusterInfoRequest req = new ClusterInfoRequest();
-		ClusterInfoResponse response = RpcClient.getInstance().getClusterInfos(
-				req);
+		EventLoop loop = EventLoop.defaultEventLoop();
+		Client client = null;
+		try {
+			client = new Client(conf.get("com.b5m.msgpack.ip"), conf.getInt(
+					"com.b5m.msgpack.port", 0), loop);
+		} catch (UnknownHostException e) {
+			e.printStackTrace();
+		}
+
+		Object[] args = new Object[1];
+		args[0] = new ClusterInfoRequest();
+
+		MessagePack msgpack = new MessagePack();
+		msgpack.register(ClusterInfoResponse.class);
+
+		Value res = client.callApply("getClusteringInfos", args);
+		ClusterInfoResponse response = new org.msgpack.unpacker.Converter(
+				msgpack, res).read(ClusterInfoResponse.class);
+
 		Iterator<ClusterInfo> iterator = response.iterator();
 		while (iterator.hasNext()) {
 			ClusterInfo info = iterator.next();
