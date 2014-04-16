@@ -13,6 +13,7 @@ import com.b5m.admm.AdmmOptimizerDriver;
 import com.b5m.conf.Configuration;
 import com.b5m.larser.feature.offline.OfflineFeatureDriver;
 import com.b5m.larser.offline.topn.LaserOfflineResultWriter;
+import com.b5m.larser.offline.topn.LaserOfflineTopNDriver;
 
 public class LaserOfflineTrainerThread {
 	private static final Logger LOG = LoggerFactory
@@ -88,6 +89,9 @@ public class LaserOfflineTrainerThread {
 				LaserOfflineResultWriter writer = new LaserOfflineResultWriter();
 				writer.write(conf, outputPath.getFileSystem(conf), new Path(
 						admmOutput, "ADMM"), outputPath);
+
+				LOG.info("calculating offline topn clusters for each user, write results to msgpack");
+				LaserOfflineTopNDriver.run(3, conf);
 
 			} catch (ClassNotFoundException e) {
 				// TODO Auto-generated catch block

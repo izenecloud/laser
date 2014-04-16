@@ -137,7 +137,7 @@ public class AdmmOptimizerDriver {
 			if (isFinalIteration) {
 				Path finalOutput = new Path(finalOutputBasePath,
 						ITERATION_FOLDER_NAME_FINAL);
-				fs.delete(finalOutput);
+				fs.delete(finalOutput, true);
 				fs.rename(currentHdfsResultsPath, finalOutput);
 				Path finalOutputBetas = new Path(finalOutputBasePath,
 						BETAS_FOLDER_NAME);
@@ -250,7 +250,7 @@ public class AdmmOptimizerDriver {
 		job.setMapperClass(AdmmIterationMapper.class);
 		job.setCombinerClass(AdmmIterationCombiner.class);
 		job.setReducerClass(AdmmIterationReducer.class);
-//		job.setNumReduceTasks(12);
+		// job.setNumReduceTasks(12);
 
 		HadoopUtil.delete(conf, currentHdfsPath);
 		boolean succeeded = job.waitForCompletion(true);

@@ -12,7 +12,6 @@ import org.codehaus.jackson.map.ObjectMapper;
 public class Configuration {
 	private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 	private static final String METAQ_FOLDER_NAME = "metaq_folder";
-	private static final String OFFLINE_FOLDER_NAME = "offline_folder";
 	private static final String ONLINE_MODEL_FOLDER = "online_model_folder";
 	private static final String OFFLINE_MODEL_FOLDER = "offline_model_folder";
 
@@ -55,7 +54,6 @@ public class Configuration {
 		this.msgpack = conf.msgpack;
 		String baseOutput = laser.get("output");
 		metaqFolder = new Path(baseOutput, METAQ_FOLDER_NAME);
-		offlineFolder = new Path(baseOutput, OFFLINE_FOLDER_NAME);
 		onlineModelFolder = new Path(baseOutput, ONLINE_MODEL_FOLDER);
 		offlineModelFolder = new Path(baseOutput, OFFLINE_MODEL_FOLDER);
 		isLoad = true;
