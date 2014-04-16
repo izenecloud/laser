@@ -5,7 +5,6 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.commons.collections.map.HashedMap;
 import org.apache.mahout.math.Vector;
 import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.annotate.JsonProperty;
@@ -46,8 +45,9 @@ public class UserProfile {
 		while (iterator.hasNext()) {
 			Map.Entry<String, Double> entry = iterator.next();
 			String key = "page_categories" + entry.getKey();
-			userFeature.set(Math.abs(key.hashCode() % userFeature.size()),
-					entry.getValue());
+
+			Integer id = UserProfileHelper.getInstance().map(key);
+			userFeature.set(id, entry.getValue());
 		}
 
 		entrySet = product_categories.entrySet();
@@ -55,8 +55,8 @@ public class UserProfile {
 		while (iterator.hasNext()) {
 			Map.Entry<String, Double> entry = iterator.next();
 			String key = "product_categories" + entry.getKey();
-			userFeature.set(Math.abs(key.hashCode() % userFeature.size()),
-					entry.getValue());
+			Integer id = UserProfileHelper.getInstance().map(key);
+			userFeature.set(id, entry.getValue());
 		}
 
 		entrySet = product_price.entrySet();
@@ -64,8 +64,9 @@ public class UserProfile {
 		while (iterator.hasNext()) {
 			Map.Entry<String, Double> entry = iterator.next();
 			String key = "product_price" + entry.getKey();
-			userFeature.set(Math.abs(key.hashCode() % userFeature.size()),
-					entry.getValue());
+			Integer id = UserProfileHelper.getInstance().map(key);
+			userFeature.set(id, entry.getValue());
+
 		}
 
 		entrySet = product_source.entrySet();
@@ -73,8 +74,9 @@ public class UserProfile {
 		while (iterator.hasNext()) {
 			Map.Entry<String, Double> entry = iterator.next();
 			String key = "product_source" + entry.getKey();
-			userFeature.set(Math.abs(key.hashCode() % userFeature.size()),
-					entry.getValue());
+			Integer id = UserProfileHelper.getInstance().map(key);
+			userFeature.set(id, entry.getValue());
+
 		}
 	}
 }
