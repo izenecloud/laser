@@ -1,14 +1,18 @@
 package com.b5m.larser.offline.topn;
 
+import java.io.DataOutputStream;
 import java.io.IOException;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.mapreduce.Job;
-import org.apache.hadoop.mapreduce.Reducer;
+import org.apache.hadoop.mapreduce.filecache.DistributedCache;
 
 import com.b5m.couchbase.CouchbaseConfig;
 import com.b5m.couchbase.CouchbaseInputFormat;
+import com.b5m.larser.feature.UserProfileHelper;
 import com.b5m.msgpack.MsgpackOutputFormat;
 
 public class LaserOfflineTopNDriver {
@@ -32,8 +36,16 @@ public class LaserOfflineTopNDriver {
 				com.b5m.conf.Configuration.getInstance()
 						.getLaserOfflineOutput().toString());
 
+		Path serializePath = com.b5m.conf.Configuration.getInstance()
+				.getUserFeatureSerializePath();
+		FileSystem fs = serializePath.getFileSystem(conf);
+		DataOutputStream out = fs.create(serializePath);
+		UserProfileHelper.getInstance().write(out);
+		out.close();
+
 		Job job = Job.getInstance(conf);
 		job.setJarByClass(LaserOfflineTopNDriver.class);
+		job.addCacheFile(serializePath.toUri());
 
 		job.setInputFormatClass(CouchbaseInputFormat.class);
 		job.setOutputFormatClass(MsgpackOutputFormat.class);
@@ -43,7 +55,7 @@ public class LaserOfflineTopNDriver {
 
 		job.setMapperClass(LaserOfflineTopNMapper.class);
 		job.setNumReduceTasks(0);
-		
+
 		boolean succeeded = job.waitForCompletion(true);
 		if (!succeeded) {
 			throw new IllegalStateException("Job failed!");

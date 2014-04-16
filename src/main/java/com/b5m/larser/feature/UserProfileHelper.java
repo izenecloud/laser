@@ -8,7 +8,7 @@ import java.io.ObjectOutputStream;
 import java.util.HashMap;
 import java.util.Map;
 
-final class UserProfileHelper {
+final public class UserProfileHelper {
 	private static UserProfileHelper helper = null;
 
 	public static synchronized UserProfileHelper getInstance() {
@@ -24,18 +24,23 @@ final class UserProfileHelper {
 		userFeatureMap = new HashMap<String, Integer>();
 	}
 
-	public Integer map(String key) {
+	public synchronized Integer map(String key, Boolean add) {
 		if (userFeatureMap.containsKey(key)) {
 			return userFeatureMap.get(key);
 		}
-		Integer val = userFeatureMap.size();
-		userFeatureMap.put(key, val);
-		return val;
+		if (add) {
+			Integer val = userFeatureMap.size();
+			userFeatureMap.put(key, val);
+			return val;
+		}
+		return null;
 	}
 
 	public void write(DataOutputStream out) throws IOException {
 		ObjectOutputStream oos = new ObjectOutputStream(out);
-		oos.writeObject(userFeatureMap);
+		synchronized (this) {
+			oos.writeObject(userFeatureMap);
+		}
 		oos.close();
 	}
 

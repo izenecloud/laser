@@ -1,17 +1,15 @@
 package com.b5m.lr;
 
 import java.io.IOException;
+import java.util.List;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.IntWritable;
-import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
-import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
-import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
-import org.apache.mahout.common.HadoopUtil;
+
+import com.b5m.msgpack.MsgpackOutputFormat;
 
 public class LrIterationDriver {
 	public static int run(Path input, Path output, Float regularizationFactor,
@@ -25,22 +23,25 @@ public class LrIterationDriver {
 			conf.setDouble("lr.iteration.regulariztion.factor",
 					regularizationFactor);
 		}
-		Job job = new Job(conf);
+		conf.set("com.b5m.msgpack.ip", com.b5m.conf.Configuration.getInstance()
+				.getMsgpackAddress());
+		conf.setInt("com.b5m.msgpack.port", com.b5m.conf.Configuration
+				.getInstance().getMsgpackPort());
+		conf.set("com.b5m.msgpack.method", "updateLaserOnlineModel");
+
+		Job job = Job.getInstance(conf);
 		job.setJarByClass(LrIterationDriver.class);
 
 		FileInputFormat.setInputPaths(job, input);
-		FileOutputFormat.setOutputPath(job, output);
+
+		job.setOutputFormatClass(MsgpackOutputFormat.class);
+		job.setOutputKeyClass(String.class);
+		job.setOutputValueClass(List.class);
 
 		job.setInputFormatClass(SequenceFileInputFormat.class);
-		job.setOutputFormatClass(SequenceFileOutputFormat.class);
-
-		job.setOutputKeyClass(IntWritable.class);
-		job.setOutputValueClass(LrIterationMapContextWritable.class);
-
 		job.setMapperClass(LrIterationMapper.class);
 		job.setNumReduceTasks(0);
 
-		HadoopUtil.delete(conf, output);
 		boolean succeeded = job.waitForCompletion(true);
 		if (!succeeded) {
 			throw new IllegalStateException("Job failed!");

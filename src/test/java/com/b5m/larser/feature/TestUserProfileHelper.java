@@ -30,9 +30,9 @@ public class TestUserProfileHelper {
 	public void test() throws ClassNotFoundException, IOException {
 		UserProfileHelper helper = UserProfileHelper.getInstance();
 		String key1 = "page_categories玩乐爱好";
-		Integer val1 = helper.map(key1);
+		Integer val1 = helper.map(key1, true);
 		String key2 = "page_categories运动户外";
-		Integer val2 = helper.map(key2);
+		Integer val2 = helper.map(key2, true);
 
 		Path metaq = Configuration.getInstance().getMetaqOutput();
 		Path serializePath = new Path(metaq, "USER_FEATURE_MAP");
@@ -49,8 +49,8 @@ public class TestUserProfileHelper {
 		helper = UserProfileHelper.read(in);
 		in.close();
 
-		assertEquals(val2, helper.map(key2));
-		assertEquals(val1, helper.map(key1));
+		assertEquals(val2, helper.map(key2, false));
+		assertEquals(val1, helper.map(key1, false));
 	}
 
 	@AfterTest

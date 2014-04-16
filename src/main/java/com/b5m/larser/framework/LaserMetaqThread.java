@@ -1,5 +1,6 @@
 package com.b5m.larser.framework;
 
+import java.io.DataOutputStream;
 import java.io.IOException;
 
 import org.apache.hadoop.fs.FileSystem;
@@ -7,6 +8,7 @@ import org.apache.hadoop.fs.Path;
 
 import com.b5m.conf.Configuration;
 import com.b5m.larser.feature.LaserFeatureListenser;
+import com.b5m.larser.feature.UserProfileHelper;
 import com.b5m.metaq.Consumer;
 import com.taobao.metamorphosis.exception.MetaClientException;
 
@@ -36,8 +38,17 @@ public class LaserMetaqThread {
 			}
 		}
 
-		public void exit() {
+		public void exit() throws IOException {
 			consumer.shutdown();
+
+			Path serializePath = Configuration.getInstance()
+					.getUserFeatureSerializePath();
+			FileSystem fs = serializePath
+					.getFileSystem(new org.apache.hadoop.conf.Configuration());
+			DataOutputStream out = fs.create(serializePath);
+
+			UserProfileHelper.getInstance().write(out);
+			out.close();
 		}
 	}
 
@@ -67,7 +78,7 @@ public class LaserMetaqThread {
 		thread.start();
 	}
 
-	public void exit() {
+	public void exit() throws IOException {
 		thread.exit();
 	}
 

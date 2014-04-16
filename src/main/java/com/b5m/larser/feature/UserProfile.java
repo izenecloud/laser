@@ -39,15 +39,18 @@ public class UserProfile {
 		return OBJECT_MAPPER.readValue(jsonValue, UserProfile.class);
 	}
 
-	public void setUserFeature(Vector userFeature) {
+	public void setUserFeature(Vector userFeature,
+			final UserProfileHelper helper, Boolean add) {
 		Set<Map.Entry<String, Double>> entrySet = page_categories.entrySet();
 		Iterator<Map.Entry<String, Double>> iterator = entrySet.iterator();
 		while (iterator.hasNext()) {
 			Map.Entry<String, Double> entry = iterator.next();
 			String key = "page_categories" + entry.getKey();
 
-			Integer id = UserProfileHelper.getInstance().map(key);
-			userFeature.set(id, entry.getValue());
+			Integer id = helper.map(key, add);
+			if (null != id) {
+				userFeature.set(id, entry.getValue());
+			}
 		}
 
 		entrySet = product_categories.entrySet();
@@ -55,8 +58,10 @@ public class UserProfile {
 		while (iterator.hasNext()) {
 			Map.Entry<String, Double> entry = iterator.next();
 			String key = "product_categories" + entry.getKey();
-			Integer id = UserProfileHelper.getInstance().map(key);
-			userFeature.set(id, entry.getValue());
+			Integer id = helper.map(key, add);
+			if (null != id) {
+				userFeature.set(id, entry.getValue());
+			}
 		}
 
 		entrySet = product_price.entrySet();
@@ -64,9 +69,10 @@ public class UserProfile {
 		while (iterator.hasNext()) {
 			Map.Entry<String, Double> entry = iterator.next();
 			String key = "product_price" + entry.getKey();
-			Integer id = UserProfileHelper.getInstance().map(key);
-			userFeature.set(id, entry.getValue());
-
+			Integer id = helper.map(key, add);
+			if (null != id) {
+				userFeature.set(id, entry.getValue());
+			}
 		}
 
 		entrySet = product_source.entrySet();
@@ -74,9 +80,10 @@ public class UserProfile {
 		while (iterator.hasNext()) {
 			Map.Entry<String, Double> entry = iterator.next();
 			String key = "product_source" + entry.getKey();
-			Integer id = UserProfileHelper.getInstance().map(key);
-			userFeature.set(id, entry.getValue());
-
+			Integer id = helper.map(key, add);
+			if (null != id) {
+				userFeature.set(id, entry.getValue());
+			}
 		}
 	}
 }

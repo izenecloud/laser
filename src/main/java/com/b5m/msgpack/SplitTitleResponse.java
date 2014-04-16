@@ -1,4 +1,4 @@
-package com.b5m.larser.feature;
+package com.b5m.msgpack;
 
 import java.util.Map;
 

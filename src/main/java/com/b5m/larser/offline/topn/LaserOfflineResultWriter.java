@@ -17,8 +17,6 @@ import org.apache.mahout.math.Vector;
 import com.b5m.admm.AdmmReducerContext;
 import com.b5m.admm.AdmmReducerContextWritable;
 import com.b5m.admm.AdmmResultWriter;
-import com.b5m.msgpack.MsgpackMatrix;
-import com.b5m.msgpack.MsgpackVector;
 import com.b5m.msgpack.RpcClient;
 
 import static com.b5m.HDFSHelper.*;
@@ -68,31 +66,31 @@ public class LaserOfflineResultWriter extends AdmmResultWriter {
 
 				writeVector(alpha, new Path(finalOutputPath, "alpha"), hdfs,
 						conf);
-				writeVector(beta, new Path(finalOutputPath, "beta"), hdfs,
-						conf);
+				writeVector(beta, new Path(finalOutputPath, "beta"), hdfs, conf);
 				writeMatrix(A, new Path(finalOutputPath, "A"), hdfs, conf);
 			}
-			{
-				MsgpackVector alpha = new MsgpackVector(userDimension);
-				for (int i = 0; i < userDimension; i++) {
-					alpha.set(i, z[i]);
-				}
-				MsgpackVector beta = new MsgpackVector(itemDimension);
-				for (int i = userDimension; i < userDimension + itemDimension; i++) {
-					beta.set(i, z[i]);
-				}
-				MsgpackMatrix A = new MsgpackMatrix(userDimension,
-						itemDimension);
-				for (int row = 0; row < userDimension; row++) {
-					for (int col = 0; col < itemDimension; col++) {
-						A.set(row, col, z[row * itemDimension + col
-								+ userDimension * itemDimension]);
-					}
-				}
-
-				LaserOfflineModel model = new LaserOfflineModel(alpha, beta, A);
-				RpcClient.getInstance().updateLaserOfflineModel(model);
-			}
+			// {
+			// MsgpackVector alpha = new MsgpackVector(userDimension);
+			// for (int i = 0; i < userDimension; i++) {
+			// alpha.set(i, z[i]);
+			// }
+			// MsgpackVector beta = new MsgpackVector(itemDimension);
+			// for (int i = userDimension; i < userDimension + itemDimension;
+			// i++) {
+			// beta.set(i, z[i]);
+			// }
+			// MsgpackMatrix A = new MsgpackMatrix(userDimension,
+			// itemDimension);
+			// for (int row = 0; row < userDimension; row++) {
+			// for (int col = 0; col < itemDimension; col++) {
+			// A.set(row, col, z[row * itemDimension + col
+			// + userDimension * itemDimension]);
+			// }
+			// }
+			//
+			// LaserOfflineModel model = new LaserOfflineModel(alpha, beta, A);
+			// RpcClient.getInstance().updateLaserOfflineModel(model);
+			// }
 			break;
 		}
 	}

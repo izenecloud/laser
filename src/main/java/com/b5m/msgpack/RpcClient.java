@@ -6,10 +6,6 @@ import org.msgpack.rpc.Client;
 import org.msgpack.rpc.loop.EventLoop;
 
 import com.b5m.conf.Configuration;
-import com.b5m.larser.feature.SplitTitleRequest;
-import com.b5m.larser.feature.SplitTitleResponse;
-import com.b5m.larser.offline.topn.LaserOfflineModel;
-import com.b5m.larser.online.LaserOnlineModel;
 
 public class RpcClient {
 	private static RpcClient rpcClient = null;
@@ -27,10 +23,6 @@ public class RpcClient {
 
 	static interface RPCInterface {
 		SplitTitleResponse spliteTitle(SplitTitleRequest request);
-
-		void updateLaserOfflineModel(LaserOfflineModel model);
-
-		void updateLaserOnlineModel(LaserOnlineModel model);
 
 		ClusterInfoResponse getClusteringInfos(ClusterInfoRequest req);
 
@@ -50,14 +42,6 @@ public class RpcClient {
 
 	public void close() {
 		client.close();
-	}
-
-	public void updateLaserOfflineModel(LaserOfflineModel model) {
-		iface.updateLaserOfflineModel(model);
-	}
-
-	public void updateLaserOnlineModel(LaserOnlineModel model) {
-		iface.updateLaserOnlineModel(model);
 	}
 
 	public SplitTitleResponse spliteTitle(SplitTitleRequest request) {

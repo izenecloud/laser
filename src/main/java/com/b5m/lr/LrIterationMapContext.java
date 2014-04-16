@@ -4,8 +4,6 @@ import org.apache.mahout.math.Vector;
 
 public class LrIterationMapContext {
 	private static final double LAMBDA_VALUE = 1e-6;
-	private int itemId;
-
 	private Vector[] a;
 
 	private double[] b;
@@ -16,13 +14,12 @@ public class LrIterationMapContext {
 
 	private double lambdaValue;
 
-	public LrIterationMapContext(int itemId, Vector[] ab) {
-		this.itemId = itemId;
+	public LrIterationMapContext(Vector[] ab) {
 		this.a = ab;
 		int numCols = this.a[0].size() - 1;
 		int numRows = this.a.length;
 		this.b = new double[numRows];
-		
+
 		for (int row = 0; row < numRows; row++) {
 			this.b[row] = this.a[row].get(numCols);
 			this.a[row].set(numCols, 0.0);
@@ -32,19 +29,17 @@ public class LrIterationMapContext {
 		lambdaValue = LAMBDA_VALUE;
 	}
 
-	public LrIterationMapContext(int itemId, Vector[] ab, double rho) {
-		this(itemId, ab);
+	public LrIterationMapContext(Vector[] ab, double rho) {
 		this.rho = rho;
 	}
 
-	public LrIterationMapContext(int itemId, Vector[] ab, double[] x,
-			double rho, double lambdaValue) {
-		this.itemId = itemId;
+	public LrIterationMapContext(Vector[] ab, double[] x, double rho,
+			double lambdaValue) {
 		this.a = ab;
 		int numCols = this.a[0].size() - 1;
 		int numRows = this.a.length;
 		this.b = new double[numRows];
-		
+
 		for (int row = 0; row < numRows; row++) {
 			this.b[row] = this.a[row].get(numCols);
 			this.a[row].set(numCols, 0.0);
@@ -56,9 +51,8 @@ public class LrIterationMapContext {
 		this.lambdaValue = lambdaValue;
 	}
 
-	public LrIterationMapContext(int itemId, Vector[] a, double[] b,
-			double[] x, double rho, double lambdaValue) {
-		this.itemId = itemId;
+	public LrIterationMapContext(Vector[] a, double[] b, double[] x,
+			double rho, double lambdaValue) {
 		this.a = a;
 		this.b = b;
 		this.x = x;
@@ -70,7 +64,6 @@ public class LrIterationMapContext {
 	}
 
 	public void setLrIterationMapContext(LrIterationMapContext context) {
-		this.itemId = context.itemId;
 		this.a = context.a;
 		this.b = context.b;
 		this.x = context.x;

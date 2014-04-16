@@ -10,8 +10,6 @@ import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 
 import com.b5m.conf.Configuration;
-import com.b5m.larser.feature.SplitTitleRequest;
-import com.b5m.larser.feature.SplitTitleResponse;
 
 import static org.testng.Assert.*;
 

@@ -5,7 +5,9 @@ import java.util.Iterator;
 import java.util.Map;
 
 import org.apache.mahout.math.Vector;
+
 import com.b5m.msgpack.RpcClient;
+import com.b5m.msgpack.SplitTitleRequest;
 
 public class ItemProfile {
 

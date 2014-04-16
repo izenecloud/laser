@@ -5,7 +5,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.mahout.math.Vector;
@@ -13,9 +13,8 @@ import org.apache.mahout.math.VectorWritable;
 
 import edu.stanford.nlp.optimization.QNMinimizer;
 
-public class LrIterationMapper
-		extends
-		Mapper<IntWritable, ListWritable, IntWritable, LrIterationMapContextWritable> {
+public class LrIterationMapper extends
+		Mapper<Text, ListWritable, String, List<Float>> {
 	// private static final Logger LOG = LoggerFactory
 	// .getLogger(LrIterationMapper.class);
 	private static final double DEFAULT_REGULARIZATION_FACTOR = 0.000001f;
@@ -32,13 +31,12 @@ public class LrIterationMapper
 				"lr.iteration.regulariztion.factor",
 				DEFAULT_REGULARIZATION_FACTOR);
 		lbfgs = new QNMinimizer();
-		//lbfgs.useBacktracking();
+		// lbfgs.useBacktracking();
 		lbfgs.setRobustOptions();
 	}
 
-	protected void map(IntWritable key, ListWritable valueWritable,
-			Context context) throws IOException, InterruptedException {
-		int itemId = key.get();
+	protected void map(Text key, ListWritable valueWritable, Context context)
+			throws IOException, InterruptedException {
 		Vector[] inputSplitData = new Vector[valueWritable.get().size()];
 
 		List<Writable> value = valueWritable.get();
@@ -51,10 +49,16 @@ public class LrIterationMapper
 			inputSplitData[row] = v;
 			row++;
 		}
-		LrIterationMapContext mapContext = new LrIterationMapContext(itemId,
+		LrIterationMapContext mapContext = new LrIterationMapContext(
 				inputSplitData);
 		mapContext = localMapperOptimization(mapContext);
-		context.write(key, new LrIterationMapContextWritable(mapContext));
+
+		double[] x = mapContext.getX();
+		List<Float> args = new java.util.Vector<Float>(x.length);
+		for (int i = 0; i < x.length; i++) {
+			args.add(i, Float.valueOf(Double.toString(x[i])));
+		}
+		context.write(key.toString(), args);
 	}
 
 	private LrIterationMapContext localMapperOptimization(

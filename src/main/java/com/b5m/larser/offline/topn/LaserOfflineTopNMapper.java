@@ -1,5 +1,6 @@
 package com.b5m.larser.offline.topn;
 
+import java.io.DataInputStream;
 import java.io.IOException;
 import java.net.UnknownHostException;
 import java.util.Iterator;
@@ -12,6 +13,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.mapreduce.Mapper;
+import org.apache.hadoop.mapreduce.filecache.DistributedCache;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Matrix;
 import org.apache.mahout.math.SequentialAccessSparseVector;
@@ -22,6 +24,7 @@ import org.msgpack.rpc.loop.EventLoop;
 import org.msgpack.type.Value;
 
 import com.b5m.larser.feature.UserProfile;
+import com.b5m.larser.feature.UserProfileHelper;
 import com.b5m.msgpack.ClusterInfo;
 import com.b5m.msgpack.ClusterInfoRequest;
 import com.b5m.msgpack.ClusterInfoResponse;
@@ -39,6 +42,8 @@ public class LaserOfflineTopNMapper
 
 	private int TOP_N;
 	PriorityQueue queue;
+
+	private UserProfileHelper helper;
 
 	protected void setup(Context context) throws IOException,
 			InterruptedException {
@@ -94,13 +99,22 @@ public class LaserOfflineTopNMapper
 
 		TOP_N = conf.getInt("laser.offline.topn.n", 5);
 		queue = new PriorityQueue(TOP_N);
+
+		Path serializePath = context.getLocalCacheFiles()[0];
+		DataInputStream in = fs.open(serializePath);
+		try {
+			helper = UserProfileHelper.read(in);
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		}
+		in.close();
 	}
 
 	protected void map(BytesWritable key, BytesWritable value, Context context)
 			throws IOException, InterruptedException {
 		UserProfile user = UserProfile
 				.createUserProfile(new String(value.get()));
-		user.setUserFeature(userFeature);
+		user.setUserFeature(userFeature, helper, false);
 
 		Iterator<IntVector> acIterator = AC.iterator();
 		Iterator<Double> cBetaIterator = CBeta.iterator();

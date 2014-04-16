@@ -20,6 +20,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.SequenceFile;
+import org.apache.hadoop.io.Text;
 import org.apache.mahout.math.SequentialAccessSparseVector;
 import org.apache.mahout.math.Vector;
 import org.codehaus.jackson.JsonParseException;
@@ -52,6 +53,7 @@ public class LaserFeatureListenser implements MessageListener {
 	private long minorVersion = 0;
 
 	private final CouchbaseClient couchbaseClient;
+	private final UserProfileHelper helper;
 
 	private boolean threadSuspended;
 
@@ -63,6 +65,7 @@ public class LaserFeatureListenser implements MessageListener {
 		this.conf = conf;
 		this.itemDimension = itemDimension;
 		this.userDimension = userDimension;
+		this.helper = UserProfileHelper.getInstance();
 
 		initSequenceWriter();
 		List<URI> hosts = Arrays.asList(new URI(url));
@@ -86,7 +89,7 @@ public class LaserFeatureListenser implements MessageListener {
 					fs,
 					conf,
 					new Path(output, Long.toString(majorVersion) + "-"
-							+ Long.toString(minorVersion)), IntWritable.class,
+							+ Long.toString(minorVersion)), Text.class,
 					RequestWritable.class);
 			threadSuspended = false;
 		}
@@ -108,7 +111,7 @@ public class LaserFeatureListenser implements MessageListener {
 					fs,
 					conf,
 					new Path(output, Long.toString(majorVersion) + "-"
-							+ Long.toString(minorVersion)), IntWritable.class,
+							+ Long.toString(minorVersion)), Text.class,
 					RequestWritable.class);
 			threadSuspended = false;
 		}
@@ -199,8 +202,8 @@ public class LaserFeatureListenser implements MessageListener {
 		// setItemFeature(item, feature);
 		Vector itemFeature = new SequentialAccessSparseVector(itemDimension);
 		setItemFeature(item, itemFeature);
-		writer.append(new IntWritable(user.hashCode()), new RequestWritable(
-				userFeature, itemFeature, action));
+		writer.append(new Text(user), new RequestWritable(userFeature,
+				itemFeature, action));
 	}
 
 	private void setUserFeature(String user, Vector feature)
@@ -213,7 +216,7 @@ public class LaserFeatureListenser implements MessageListener {
 
 			String jsonValue = res.toString();
 			UserProfile userProfile = UserProfile.createUserProfile(jsonValue);
-			userProfile.setUserFeature(feature);
+			userProfile.setUserFeature(feature, helper, true);
 		} catch (RuntimeException e) {
 			// TODO timeout
 			// System.out.println(user);

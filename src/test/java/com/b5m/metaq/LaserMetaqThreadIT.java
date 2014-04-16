@@ -39,7 +39,7 @@ public class LaserMetaqThreadIT {
 	}
 
 	@AfterTest
-	public void cleanup() {
+	public void cleanup() throws IOException {
 		metaq.exit();
 	}
 

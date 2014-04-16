@@ -29,7 +29,6 @@ public class Configuration {
 	Map<String, String> laser;
 
 	private Path metaqFolder;
-	private Path offlineFolder;
 	private Path onlineModelFolder;
 	private Path offlineModelFolder;
 
@@ -86,16 +85,8 @@ public class Configuration {
 		return metaqFolder;
 	}
 
-	public Path getLaserOnlineInput() {
-		return metaqFolder;
-	}
-
 	public Path getLaserOnlineOutput() {
 		return onlineModelFolder;
-	}
-
-	public Path getLaserOfflineInput() {
-		return offlineFolder;
 	}
 
 	public Path getLaserOfflineOutput() {
@@ -112,6 +103,10 @@ public class Configuration {
 
 	public Integer getUserFeatureDimension() {
 		return Integer.valueOf(laser.get("user_feature_dimension"));
+	}
+
+	public Path getUserFeatureSerializePath() {
+		return new Path(metaqFolder, "USER_FEATURE_MAP");
 	}
 
 	public Integer getItemFeatureDimension() {
@@ -147,7 +142,7 @@ public class Configuration {
 	}
 
 	public Integer getMsgpackPort() {
-		String port =  msgpack.get("port");
+		String port = msgpack.get("port");
 		if (null == port) {
 			return null;
 		}
