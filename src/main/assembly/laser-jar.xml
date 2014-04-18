@@ -33,6 +33,8 @@
 				<include>org.kohsuke.jetbrains:annotations</include>
 				<include>com.couchbase.client:couchbase-client</include>
 				<include>com.taobao.metamorphosis:metamorphosis-client-extension</include>
+				<include>args4j:args4j</include>
+				<include>org.msgpack:msgpack</include>
 			</includes>
 		</dependencySet>
 	</dependencySets>

@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.fs.Path;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
@@ -31,8 +32,9 @@ public class Laser {
 		Configuration conf = Configuration.getInstance();
 		LOG.info("Load configure, {}", laserArgument.getConfigure());
 		Path path = new Path(laserArgument.getConfigure());
-		FileSystem fs = path
-				.getFileSystem(new org.apache.hadoop.conf.Configuration());
+		FileSystem fs = FileSystem.get(new org.apache.hadoop.conf.Configuration());
+				//path
+				//.getFileSystem(new org.apache.hadoop.conf.Configuration());
 		conf.load(path, fs);
 
 		LOG.info("Start LaserMetaqThread.");

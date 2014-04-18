@@ -5,10 +5,6 @@ import java.net.UnknownHostException;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.msgpack.MessagePack;
-import org.msgpack.rpc.Client;
-import org.msgpack.rpc.loop.EventLoop;
-import org.msgpack.type.Value;
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
@@ -33,29 +29,7 @@ public class ClusterInfosIT {
 	public void test() throws ClassNotFoundException, IOException,
 			InterruptedException {
 		ClusterInfoRequest req = new ClusterInfoRequest();
-		ClusterInfoResponse res_ = RpcClient.getInstance().getClusterInfos(req);
 		assertTrue(null != RpcClient.getInstance().getClusterInfos(req));
-
-		EventLoop loop = EventLoop.defaultEventLoop();
-		Client client = null;
-		try {
-			client = new Client(
-					Configuration.getInstance().getMsgpackAddress(),
-					Configuration.getInstance().getMsgpackPort(), loop);
-			client.setRequestTimeout(10000);
-		} catch (UnknownHostException e) {
-			e.printStackTrace();
-		}
-		Object[] args = new Object[1];
-		args[0] = new ClusterInfoRequest(1000025558);
-
-		MessagePack msgpack = new MessagePack();
-		msgpack.register(ClusterInfoResponse.class);
-		
-		Value res = client.callApply("getClusteringInfos", args);
-		org.msgpack.unpacker.Converter convert = new org.msgpack.unpacker.Converter(
-				msgpack, res);
-		ClusterInfoResponse response = convert.read(ClusterInfoResponse.class);
 	}
 
 	@AfterTest

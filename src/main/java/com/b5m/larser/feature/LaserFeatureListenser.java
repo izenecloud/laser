@@ -8,8 +8,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executor;
 
-import org.apache.avro.AvroRuntimeException;
-import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.io.BinaryDecoder;
 import org.apache.avro.io.DatumReader;
 import org.apache.avro.io.DecoderFactory;
@@ -199,7 +197,6 @@ public class LaserFeatureListenser implements MessageListener {
 		}
 		Vector userFeature = new SequentialAccessSparseVector(userDimension);
 		setUserFeature(user, userFeature);
-		// setItemFeature(item, feature);
 		Vector itemFeature = new SequentialAccessSparseVector(itemDimension);
 		setItemFeature(item, itemFeature);
 		writer.append(new Text(user), new RequestWritable(userFeature,
