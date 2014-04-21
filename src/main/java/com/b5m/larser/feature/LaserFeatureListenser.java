@@ -1,5 +1,7 @@
 package com.b5m.larser.feature;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -51,7 +53,7 @@ public class LaserFeatureListenser implements MessageListener {
 	private long minorVersion = 0;
 
 	private final CouchbaseClient couchbaseClient;
-	private final UserProfileHelper helper;
+	private UserProfileHelper helper;
 
 	private boolean threadSuspended;
 
@@ -63,7 +65,17 @@ public class LaserFeatureListenser implements MessageListener {
 		this.conf = conf;
 		this.itemDimension = itemDimension;
 		this.userDimension = userDimension;
-		this.helper = UserProfileHelper.getInstance();
+		
+		Path serializePath = com.b5m.conf.Configuration.getInstance()
+				.getUserFeatureSerializePath();
+		DataInputStream in = fs.open(serializePath);
+		try {
+			this.helper = UserProfileHelper.read(in);
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		}
+		in.close();
+		
 
 		initSequenceWriter();
 		List<URI> hosts = Arrays.asList(new URI(url));
@@ -130,7 +142,7 @@ public class LaserFeatureListenser implements MessageListener {
 		}
 		synchronized (this) {
 			writer = SequenceFile.createWriter(fs, conf, sequentialPath,
-					IntWritable.class, RequestWritable.class);
+					Text.class, RequestWritable.class);
 		}
 	}
 
@@ -221,6 +233,7 @@ public class LaserFeatureListenser implements MessageListener {
 	}
 
 	private void setItemFeature(String item, Vector feature) {
+		System.out.println(item);
 		ItemProfile.setItemFeature(item, feature);
 	}
 }

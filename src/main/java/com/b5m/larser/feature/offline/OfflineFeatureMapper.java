@@ -3,6 +3,7 @@ package com.b5m.larser.feature.offline;
 import java.io.IOException;
 
 import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.mahout.math.SequentialAccessSparseVector;
 import org.apache.mahout.math.Vector;
@@ -12,12 +13,12 @@ import org.apache.mahout.math.VectorWritable;
 import com.b5m.larser.feature.RequestWritable;
 
 public class OfflineFeatureMapper extends
-		Mapper<IntWritable, RequestWritable, IntWritable, VectorWritable> {
+		Mapper<Text, RequestWritable, Text, VectorWritable> {
 	private Vector offlineFeature = null;
 	private int userDimension;
 	private int itemDimension;
 
-	protected void map(IntWritable key, RequestWritable value, Context context)
+	protected void map(Text key, RequestWritable value, Context context)
 			throws IOException, InterruptedException {
 		Vector userFeature = value.getUserFeature();
 		Vector itemFeature = value.getItemFeature();

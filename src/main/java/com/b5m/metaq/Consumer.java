@@ -31,8 +31,10 @@ public class Consumer {
 		metaClientConfig.setZkConfig(zkConfig);
 		MessageSessionFactory sessionFactory = new MetaMessageSessionFactory(
 				metaClientConfig);
-		final String group = "meta-laser";
-		consumer = sessionFactory.createConsumer(new ConsumerConfig(group));
+		final String group = "metaq-laser";
+		ConsumerConfig consumerConfig  = new ConsumerConfig(group);
+		consumerConfig.setMaxDelayFetchTimeInMills(100);
+		consumer = sessionFactory.createConsumer(consumerConfig);
 	}
 
 	public void subscribe(MessageListener listener) throws MetaClientException {

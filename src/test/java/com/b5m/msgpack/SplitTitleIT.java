@@ -29,7 +29,7 @@ public class SplitTitleIT {
 	@Test
 	public void test() throws ClassNotFoundException, IOException,
 			InterruptedException {
-		SplitTitleRequest req = new SplitTitleRequest("中华 人民 共和国"); 
+		SplitTitleRequest req = new SplitTitleRequest("十二结婚吧 i [http://446964573.qzone.qq.com]"); 
 		SplitTitleResponse res = RpcClient.getInstance().spliteTitle(req);
 		assertFalse(res.getResponse().isEmpty());
 	}
