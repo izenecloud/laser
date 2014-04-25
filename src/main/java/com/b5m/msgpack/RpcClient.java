@@ -25,9 +25,6 @@ public class RpcClient {
 		SplitTitleResponse spliteTitle(SplitTitleRequest request);
 
 		ClusterInfoResponse getClusteringInfos(ClusterInfoRequest req);
-
-		void updateTopNCluster(PriorityQueue queue);
-
 	}
 
 	public RpcClient() throws UnknownHostException {
@@ -51,9 +48,4 @@ public class RpcClient {
 	public ClusterInfoResponse getClusterInfos(ClusterInfoRequest req) {
 		return iface.getClusteringInfos(req);
 	}
-
-	public void updateTopNCluster(PriorityQueue queue) {
-		iface.updateTopNCluster(queue);
-	}
-
 }
