@@ -15,6 +15,7 @@ import org.apache.avro.io.DecoderFactory;
 import org.apache.avro.specific.SpecificDatumReader;
 import org.apache.avro.util.Utf8;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.SequenceFile;
@@ -30,6 +31,8 @@ import com.b5m.flume.B5MEvent;
 import com.couchbase.client.CouchbaseClient;
 import com.taobao.metamorphosis.Message;
 import com.taobao.metamorphosis.client.consumer.MessageListener;
+
+import edu.stanford.nlp.io.EncodingPrintWriter.out;
 
 public class LaserFeatureListenser implements MessageListener {
 	private static final Logger LOG = LoggerFactory
@@ -128,13 +131,33 @@ public class LaserFeatureListenser implements MessageListener {
 
 	@SuppressWarnings("deprecation")
 	private synchronized void initSequenceWriter() throws IOException {
+
+		try {
+			FileStatus[] files = fs.listStatus(output);
+
+			for (FileStatus file : files) {
+				String name = file.getPath().getName();
+				String[] versions = name.split("-");
+				if (versions.length != 2) {
+					continue;
+				}
+				Long majorVersion = Long.valueOf(versions[0]);
+				if (this.majorVersion < majorVersion) {
+					this.majorVersion = majorVersion;
+				}
+				Long minorVersion = Long.valueOf(versions[1]);
+				if (this.minorVersion < minorVersion) {
+					this.minorVersion = minorVersion;
+				}
+			}
+		} catch (IOException e) {
+			LOG.debug("{} doesn't exist", output);
+		}
+
 		Path sequentialPath = new Path(output, Long.toString(majorVersion)
 				+ "-" + Long.toString(minorVersion));
-		while (fs.exists(sequentialPath)) {
-			minorVersion++;
-			sequentialPath = new Path(output, Long.toString(majorVersion) + "-"
-					+ Long.toString(minorVersion));
-		}
+
+		LOG.debug("writing data to {}", sequentialPath);
 		writer = SequenceFile.createWriter(fs, conf, sequentialPath,
 				Text.class, RequestWritable.class);
 	}
