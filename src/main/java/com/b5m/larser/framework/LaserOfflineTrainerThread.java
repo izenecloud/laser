@@ -37,7 +37,8 @@ public class LaserOfflineTrainerThread {
 		Configuration conf = Configuration.getInstance();
 		Long freq = conf.getLaserOfflineRetrainingFreqency() * 1000;
 
-		timer.scheduleAtFixedRate(new LaserOfflineTrainTask(), freq, freq);
+		// process remain data
+		timer.scheduleAtFixedRate(new LaserOfflineTrainTask(), 0, freq);
 	}
 
 	public void exit() {

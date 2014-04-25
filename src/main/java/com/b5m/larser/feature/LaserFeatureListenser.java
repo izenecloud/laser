@@ -116,6 +116,7 @@ public class LaserFeatureListenser implements MessageListener {
 		writer.close();
 
 		majorVersion++;
+		minorVersion = 0;
 		writer = SequenceFile.createWriter(
 				fs,
 				conf,
@@ -154,6 +155,7 @@ public class LaserFeatureListenser implements MessageListener {
 			LOG.debug("{} doesn't exist", output);
 		}
 
+		minorVersion++;
 		Path sequentialPath = new Path(output, Long.toString(majorVersion)
 				+ "-" + Long.toString(minorVersion));
 
