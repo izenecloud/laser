@@ -32,7 +32,7 @@
 				<include>org.codehaus.jackson:jackson-mapper-asl</include>
 				<include>org.kohsuke.jetbrains:annotations</include>
 				<include>com.couchbase.client:couchbase-client</include>
-				<include>com.taobao.metamorphosis:metamorphosis-client-extension</include>
+				<include>com.taobao.metamorphosis:metamorphosis-client</include>
 				<include>args4j:args4j</include>
 				<include>org.msgpack:msgpack</include>
 				<include>com.google.guava:guava</include>

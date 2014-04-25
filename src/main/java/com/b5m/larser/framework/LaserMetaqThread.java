@@ -5,6 +5,8 @@ import java.io.IOException;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.b5m.conf.Configuration;
 import com.b5m.larser.feature.LaserFeatureListenser;
@@ -13,6 +15,8 @@ import com.b5m.metaq.Consumer;
 import com.taobao.metamorphosis.exception.MetaClientException;
 
 public class LaserMetaqThread {
+	private static final Logger LOG = LoggerFactory
+			.getLogger(LaserMetaqThread.class);
 	private static LaserMetaqThread metaqThread = null;
 
 	public static synchronized LaserMetaqThread getInstance()
@@ -32,6 +36,7 @@ public class LaserMetaqThread {
 
 		public void run() {
 			try {
+				LOG.info("prepare to subscrible metaq, listener = {}", listener);
 				consumer.subscribe(listener);
 			} catch (MetaClientException e) {
 				e.printStackTrace();
@@ -49,6 +54,7 @@ public class LaserMetaqThread {
 
 			UserProfileHelper.getInstance().write(out);
 			out.close();
+			// LOG.info(UserProfileHelper.getInstance().toString());
 		}
 	}
 
@@ -57,7 +63,6 @@ public class LaserMetaqThread {
 
 	private LaserMetaqThread() throws IOException {
 		try {
-			thread = new LaserMetaqTask();
 			Configuration conf = Configuration.getInstance();
 			org.apache.hadoop.conf.Configuration hadoopConf = new org.apache.hadoop.conf.Configuration();
 			Path metaqOutput = conf.getMetaqOutput();
@@ -68,6 +73,7 @@ public class LaserMetaqThread {
 					metaqOutput, fs, hadoopConf,
 					conf.getItemFeatureDimension(),
 					conf.getUserFeatureDimension());
+			thread = new LaserMetaqTask();
 
 		} catch (Exception e) {
 			throw new IOException(e.getCause());

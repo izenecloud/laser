@@ -150,8 +150,8 @@
 
 		<dependency>
 			<groupId>com.taobao.metamorphosis</groupId>
-			<artifactId>metamorphosis-client-extension</artifactId>
-			<version>1.4.3</version>
+			<artifactId>metamorphosis-client</artifactId>
+			<version>1.4.6.2</version>
 		</dependency>
 
 		<dependency>

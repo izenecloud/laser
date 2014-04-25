@@ -35,7 +35,7 @@ public class LaserOfflineTrainerThread {
 
 	public void start() {
 		Configuration conf = Configuration.getInstance();
-		Long freq = conf.getLaserOnlineRetrainingFreqency() * 1000;
+		Long freq = conf.getLaserOfflineRetrainingFreqency() * 1000;
 
 		timer.scheduleAtFixedRate(new LaserOfflineTrainTask(), freq, freq);
 	}
@@ -58,6 +58,7 @@ public class LaserOfflineTrainerThread {
 			this.addIntercept = conf.addIntercept();
 			this.iterationsMaximum = conf.getMaxIteration();
 			this.conf = new org.apache.hadoop.conf.Configuration();
+			this.conf.set("mapred.job.queue.name", "sf1");
 		}
 
 		@Override

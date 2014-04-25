@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,6 +61,26 @@ public class LaserOnlineTrainerThread {
 		@Override
 		public void run() {
 			try {
+				Path offlineModelPath = Configuration.getInstance()
+						.getLaserOfflineOutput();
+				FileSystem fs = offlineModelPath.getFileSystem(conf);
+
+				if (!fs.exists(offlineModelPath)) {
+					LOG.info("Laser offline model does not exit");
+					return;
+				}
+
+				Path offlineOutput = com.b5m.conf.Configuration.getInstance()
+						.getLaserOfflineOutput();
+				Path delta = new Path(offlineOutput, "delta");
+				Path beta = new Path(offlineOutput, "beta");
+				Path A = new Path(offlineOutput, "A");
+				if (!fs.exists(A) || !fs.exists(beta) || fs.exists(delta)) {
+
+					LOG.info("Laser offline model does not exit");
+					return;
+				}
+
 				final LaserMetaqThread metaqThread = LaserMetaqThread
 						.getInstance();
 				long minorVersion = metaqThread.getMinorVersion();
@@ -70,25 +91,15 @@ public class LaserOnlineTrainerThread {
 						"Update MetaQ's output path, minor version from {} to {}",
 						minorVersion, metaqThread.getMinorVersion());
 
-				try {
-					Path signalPath = new Path(input,
-							Long.toString(majorVersion) + "-"
-									+ Long.toString(minorVersion));
-					LOG.info(
-							"Retraining Laser's Online Model, results is flushed to {}",
-							output);
-					LaserOnlineModelTrainer.run(signalPath, output,
-							regularizationFactor, addIntercept, conf);
-
-				} catch (ClassNotFoundException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-			} catch (IOException e) {
-				e.printStackTrace();
+				Path signalPath = new Path(input, Long.toString(majorVersion)
+						+ "-" + Long.toString(minorVersion));
+				LOG.info(
+						"Retraining Laser's Online Model, results is flushed to {}",
+						output);
+				LaserOnlineModelTrainer.run(signalPath, output,
+						regularizationFactor, addIntercept, conf);
+			} catch (Exception e) {
+				LOG.info("LaserOnlineTrainerTask failed, {}", e.getStackTrace());
 			}
 		}
 	}

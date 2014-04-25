@@ -27,7 +27,7 @@ public class TestUserProfileHelper {
 	}
 
 	@Test
-	public void test() throws ClassNotFoundException, IOException {
+	public void load() throws ClassNotFoundException, IOException {
 		UserProfileHelper helper = UserProfileHelper.getInstance();
 		String key1 = "page_categories玩乐爱好";
 		Integer val1 = helper.map(key1, true);

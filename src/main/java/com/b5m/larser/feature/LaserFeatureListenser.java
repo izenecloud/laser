@@ -1,7 +1,6 @@
 package com.b5m.larser.feature;
 
 import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -18,13 +17,14 @@ import org.apache.avro.util.Utf8;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Text;
 import org.apache.mahout.math.SequentialAccessSparseVector;
 import org.apache.mahout.math.Vector;
 import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.map.JsonMappingException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.b5m.flume.B5MEvent;
 import com.couchbase.client.CouchbaseClient;
@@ -32,7 +32,8 @@ import com.taobao.metamorphosis.Message;
 import com.taobao.metamorphosis.client.consumer.MessageListener;
 
 public class LaserFeatureListenser implements MessageListener {
-
+	private static final Logger LOG = LoggerFactory
+			.getLogger(LaserFeatureListenser.class);
 	private final Utf8 LOG_TYPE_LABEL = new Utf8("lt");
 	private final Utf8 ACTION_ID_LABEL = new Utf8("ad");
 	private final Utf8 ITEM_LABEL = new Utf8("tt");
@@ -55,8 +56,6 @@ public class LaserFeatureListenser implements MessageListener {
 	private final CouchbaseClient couchbaseClient;
 	private UserProfileHelper helper;
 
-	private boolean threadSuspended;
-
 	public LaserFeatureListenser(String url, String bucket, String passwd,
 			Path output, FileSystem fs, Configuration conf, int itemDimension,
 			int userDimension) throws IOException, URISyntaxException {
@@ -65,44 +64,44 @@ public class LaserFeatureListenser implements MessageListener {
 		this.conf = conf;
 		this.itemDimension = itemDimension;
 		this.userDimension = userDimension;
-		
+
 		Path serializePath = com.b5m.conf.Configuration.getInstance()
 				.getUserFeatureSerializePath();
-		DataInputStream in = fs.open(serializePath);
-		try {
-			this.helper = UserProfileHelper.read(in);
-		} catch (ClassNotFoundException e) {
-			e.printStackTrace();
+		if (fs.exists(serializePath)) {
+			DataInputStream in = fs.open(serializePath);
+			try {
+				this.helper = UserProfileHelper.read(in);
+				// System.out.println(this.helper.toString());
+			} catch (ClassNotFoundException e) {
+				e.printStackTrace();
+				this.helper = UserProfileHelper.getInstance();
+			}
+			in.close();
+		} else {
+			this.helper = UserProfileHelper.getInstance();
 		}
-		in.close();
-		
 
 		initSequenceWriter();
 		List<URI> hosts = Arrays.asList(new URI(url));
 		couchbaseClient = new CouchbaseClient(hosts, bucket, passwd);
-		threadSuspended = false;
 	}
 
-	public void shutdown() {
+	public synchronized void shutdown() {
 		couchbaseClient.shutdown();
 	}
 
 	@SuppressWarnings("deprecation")
-	public void incrMinorVersion() throws IOException {
-		synchronized (this) {
-			writer.close();
-			threadSuspended = true;
-		}
+	public synchronized void incrMinorVersion() throws IOException {
+		writer.close();
+
 		minorVersion++;
-		synchronized (this) {
-			writer = SequenceFile.createWriter(
-					fs,
-					conf,
-					new Path(output, Long.toString(majorVersion) + "-"
-							+ Long.toString(minorVersion)), Text.class,
-					RequestWritable.class);
-			threadSuspended = false;
-		}
+		writer = SequenceFile.createWriter(
+				fs,
+				conf,
+				new Path(output, Long.toString(majorVersion) + "-"
+						+ Long.toString(minorVersion)), Text.class,
+				RequestWritable.class);
+
 	}
 
 	public synchronized long geMinorVersion() {
@@ -110,21 +109,17 @@ public class LaserFeatureListenser implements MessageListener {
 	}
 
 	@SuppressWarnings("deprecation")
-	public void incrMajorVersion() throws IOException {
-		synchronized (this) {
-			writer.close();
-			threadSuspended = true;
-		}
+	public synchronized void incrMajorVersion() throws IOException {
+		writer.close();
+
 		majorVersion++;
-		synchronized (this) {
-			writer = SequenceFile.createWriter(
-					fs,
-					conf,
-					new Path(output, Long.toString(majorVersion) + "-"
-							+ Long.toString(minorVersion)), Text.class,
-					RequestWritable.class);
-			threadSuspended = false;
-		}
+		writer = SequenceFile.createWriter(
+				fs,
+				conf,
+				new Path(output, Long.toString(majorVersion) + "-"
+						+ Long.toString(minorVersion)), Text.class,
+				RequestWritable.class);
+
 	}
 
 	public synchronized long geMajorVersion() {
@@ -132,7 +127,7 @@ public class LaserFeatureListenser implements MessageListener {
 	}
 
 	@SuppressWarnings("deprecation")
-	private void initSequenceWriter() throws IOException {
+	private synchronized void initSequenceWriter() throws IOException {
 		Path sequentialPath = new Path(output, Long.toString(majorVersion)
 				+ "-" + Long.toString(minorVersion));
 		while (fs.exists(sequentialPath)) {
@@ -140,27 +135,21 @@ public class LaserFeatureListenser implements MessageListener {
 			sequentialPath = new Path(output, Long.toString(majorVersion) + "-"
 					+ Long.toString(minorVersion));
 		}
-		synchronized (this) {
-			writer = SequenceFile.createWriter(fs, conf, sequentialPath,
-					Text.class, RequestWritable.class);
-		}
+		writer = SequenceFile.createWriter(fs, conf, sequentialPath,
+				Text.class, RequestWritable.class);
 	}
 
-	public void recieveMessages(Message message) {
-		synchronized (this) {
-			while (threadSuspended) {
-
-			}
-		}
+	public synchronized void recieveMessages(Message message) {
 		byte[] data = message.getData();
 
 		BinaryDecoder decoder = DecoderFactory.get().binaryDecoder(data, null);
 		try {
 			reader.read(b5mEvent, decoder);
 			write(b5mEvent);
-		} catch (IOException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
+		} catch (Exception e) {
+			e.printStackTrace();
+			// System.out.println(b5mEvent.toString());
+			// System.out.println(b5mEvent.getArgs().toString());
 		}
 	}
 
@@ -169,6 +158,7 @@ public class LaserFeatureListenser implements MessageListener {
 	}
 
 	private void write(B5MEvent b5mEvent) throws IOException {
+		LOG.debug(b5mEvent.toString());
 		Map<CharSequence, CharSequence> args = b5mEvent.getArgs();
 		// TODO filter by logtype and action
 		CharSequence logType = args.get(LOG_TYPE_LABEL);
@@ -202,6 +192,7 @@ public class LaserFeatureListenser implements MessageListener {
 		Integer action = 1;
 		if (108 == Integer.valueOf(actionId.toString())) {
 			action = -1;
+			// return;
 		} else if (103 == Integer.valueOf(actionId.toString())) {
 			action = 1;
 		} else {
@@ -233,7 +224,6 @@ public class LaserFeatureListenser implements MessageListener {
 	}
 
 	private void setItemFeature(String item, Vector feature) {
-		System.out.println(item);
 		ItemProfile.setItemFeature(item, feature);
 	}
 }

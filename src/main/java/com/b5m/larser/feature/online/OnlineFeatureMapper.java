@@ -6,6 +6,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Matrix;
@@ -13,17 +14,21 @@ import org.apache.mahout.math.SequentialAccessSparseVector;
 import org.apache.mahout.math.Vector;
 import org.apache.mahout.math.Vector.Element;
 import org.apache.mahout.math.VectorWritable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.b5m.larser.feature.RequestWritable;
 
 import static com.b5m.HDFSHelper.*;
 
 public class OnlineFeatureMapper extends
-		Mapper<IntWritable, RequestWritable, IntWritable, VectorWritable> {
-	private Vector delta;
-	private Vector beta;
-	private Vector ACj;
-	private Matrix A;
+		Mapper<IntWritable, RequestWritable, Text, VectorWritable> {
+	private static final Logger LOG = LoggerFactory
+			.getLogger(OnlineFeatureMapper.class);
+	private Vector delta = null;
+	private Vector beta = null;
+	private Vector ACj = null;
+	private Matrix A = null;
 
 	protected void setup(Context context) throws IOException,
 			InterruptedException {
@@ -34,15 +39,19 @@ public class OnlineFeatureMapper extends
 		Path delta = new Path(offlinePath, "delta");
 		Path beta = new Path(offlinePath, "beta");
 		Path A = new Path(offlinePath, "A");
-		FileSystem fs = delta.getFileSystem(conf);
-		this.delta = readVector(delta, fs, conf);
-		this.beta = readVector(beta, fs, conf);
-		this.A = readMatrix(A, fs, conf);
+		try {
+			FileSystem fs = delta.getFileSystem(conf);
+			this.delta = readVector(delta, fs, conf);
+			this.beta = readVector(beta, fs, conf);
+			this.A = readMatrix(A, fs, conf);
+		} catch (IOException e) {
+			LOG.error("Laser's offline model doesn't exist");
+			throw e;
+		}
 		ACj = new DenseVector(this.delta.size());
-
 	}
 
-	protected void map(IntWritable key, RequestWritable value, Context context)
+	protected void map(Text key, RequestWritable value, Context context)
 			throws IOException, InterruptedException {
 		// first order offset
 		Vector userFeature = value.getUserFeature();

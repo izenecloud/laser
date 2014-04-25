@@ -28,12 +28,14 @@ public class Consumer {
 		final MetaClientConfig metaClientConfig = new MetaClientConfig();
 		final ZKConfig zkConfig = new ZKConfig();
 		zkConfig.zkConnect = Configuration.getInstance().getMetaqZookeeper();
+		zkConfig.zkRoot = "/meta";
+
 		metaClientConfig.setZkConfig(zkConfig);
 		MessageSessionFactory sessionFactory = new MetaMessageSessionFactory(
 				metaClientConfig);
-		final String group = "metaq-laser";
+		final String group = "metaq-example";
 		ConsumerConfig consumerConfig  = new ConsumerConfig(group);
-		consumerConfig.setMaxDelayFetchTimeInMills(100);
+		consumerConfig.setMaxDelayFetchTimeInMills(1000);
 		consumer = sessionFactory.createConsumer(consumerConfig);
 	}
 

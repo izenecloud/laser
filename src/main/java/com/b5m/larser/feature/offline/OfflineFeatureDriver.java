@@ -4,7 +4,6 @@ import java.io.IOException;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Reducer;
@@ -42,8 +41,9 @@ public class OfflineFeatureDriver {
 		job.setOutputValueClass(VectorWritable.class);
 
 		job.setMapperClass(OfflineFeatureMapper.class);
-		job.setCombinerClass(Reducer.class);
-		job.setReducerClass(Reducer.class);
+		job.setNumReduceTasks(0);
+//		job.setCombinerClass(Reducer.class);
+//		job.setReducerClass(Reducer.class);
 		HadoopUtil.delete(conf, output);
 		boolean succeeded = job.waitForCompletion(true);
 		if (!succeeded) {

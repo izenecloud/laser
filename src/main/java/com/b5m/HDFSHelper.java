@@ -49,7 +49,7 @@ public final class HDFSHelper {
 		FileStatus[] fileStatus = fs.listStatus(path, new GlobFilter(
 				filePattern));
 		for (FileStatus file : fileStatus) {
-			fs.delete(file.getPath());
+			fs.delete(file.getPath(), true);
 		}
 	}
 

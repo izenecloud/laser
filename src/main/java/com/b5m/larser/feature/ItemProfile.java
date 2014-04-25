@@ -1,6 +1,5 @@
 package com.b5m.larser.feature;
 
-import java.net.UnknownHostException;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -16,9 +15,8 @@ public class ItemProfile {
 		try {
 			res = RpcClient.getInstance()
 					.spliteTitle(new SplitTitleRequest(title)).getResponse();
-		} catch (UnknownHostException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		} catch (Exception e) {
+			return;
 		}
 		Iterator<Map.Entry<Integer, Float>> iterator = res.entrySet()
 				.iterator();

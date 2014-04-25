@@ -9,6 +9,8 @@ import org.apache.hadoop.fs.Path;
 import org.apache.mahout.common.HadoopUtil;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.b5m.larser.feature.online.OnlineFeatureDriver;
 import com.b5m.lr.LrIterationDriver;
@@ -16,6 +18,8 @@ import com.google.common.base.Optional;
 
 public class LaserOnlineModelTrainer {
 	private static final float DEFAULT_REGULARIZATION_FACTOR = 0.000001f;
+	private static final Logger LOG = LoggerFactory
+			.getLogger(LaserOnlineModelTrainer.class);
 
 	private final LaserOnlineModelTrainerArguments laserOnlineArguments = new LaserOnlineModelTrainerArguments();
 
@@ -28,8 +32,13 @@ public class LaserOnlineModelTrainer {
 			Boolean addIntercept, Configuration conf)
 			throws ClassNotFoundException, IOException, InterruptedException {
 		Path userGroup = new Path(output, "userGroup");
-		OnlineFeatureDriver.run(input, userGroup, conf);
-
+		try {
+			OnlineFeatureDriver.run(input, userGroup, conf);
+		} catch (IllegalStateException e) {
+			LOG.error("the online feature generate phase failed, "
+					+ e.getMessage());
+			throw e;
+		}
 		conf.set("mapred.job.queue.name", "sf1");
 		conf.setInt("mapred.task.timeout", 6000000);
 		conf.setInt("mapred.job.map.memory.mb", 4096);

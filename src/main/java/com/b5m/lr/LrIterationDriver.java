@@ -31,6 +31,7 @@ public class LrIterationDriver {
 
 		Job job = Job.getInstance(conf);
 		job.setJarByClass(LrIterationDriver.class);
+		job.setJobName("logistic regression");
 
 		FileInputFormat.setInputPaths(job, input);
 
@@ -44,7 +45,7 @@ public class LrIterationDriver {
 
 		boolean succeeded = job.waitForCompletion(true);
 		if (!succeeded) {
-			throw new IllegalStateException("Job failed!");
+			throw new IllegalStateException("Job:logistic regression,  Failed!");
 		}
 		return 0;
 	}
