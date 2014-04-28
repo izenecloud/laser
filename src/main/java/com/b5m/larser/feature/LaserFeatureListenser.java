@@ -62,6 +62,7 @@ public class LaserFeatureListenser implements MessageListener {
 	public LaserFeatureListenser(String url, String bucket, String passwd,
 			Path output, FileSystem fs, Configuration conf, int itemDimension,
 			int userDimension) throws IOException, URISyntaxException {
+
 		this.output = output;
 		this.fs = fs;
 		this.conf = conf;
@@ -74,7 +75,7 @@ public class LaserFeatureListenser implements MessageListener {
 			DataInputStream in = fs.open(serializePath);
 			try {
 				this.helper = UserProfileHelper.read(in);
-				// System.out.println(this.helper.toString());
+				LOG.debug("user feature dimension: = {}", this.helper.size());
 			} catch (ClassNotFoundException e) {
 				e.printStackTrace();
 				this.helper = UserProfileHelper.getInstance();

@@ -57,6 +57,10 @@ final public class UserProfileHelper {
 		return null;
 	}
 
+	public synchronized Integer size() {
+		return userFeatureMap.size();
+	}
+
 	public void write(DataOutputStream out) throws IOException {
 		ObjectOutputStream oos = new ObjectOutputStream(out);
 		synchronized (this) {

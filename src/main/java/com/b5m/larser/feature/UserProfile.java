@@ -64,16 +64,16 @@ public class UserProfile {
 			}
 		}
 
-		entrySet = product_price.entrySet();
-		iterator = entrySet.iterator();
-		while (iterator.hasNext()) {
-			Map.Entry<String, Double> entry = iterator.next();
-			String key = "product_price" + entry.getKey();
-			Integer id = helper.map(key, add);
-			if (null != id) {
-				userFeature.set(id, entry.getValue());
-			}
-		}
+//		entrySet = product_price.entrySet();
+//		iterator = entrySet.iterator();
+//		while (iterator.hasNext()) {
+//			Map.Entry<String, Double> entry = iterator.next();
+//			String key = "product_price" + entry.getKey();
+//			Integer id = helper.map(key, add);
+//			if (null != id) {
+//				userFeature.set(id, entry.getValue());
+//			}
+//		}
 
 		entrySet = product_source.entrySet();
 		iterator = entrySet.iterator();

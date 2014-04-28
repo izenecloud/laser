@@ -38,7 +38,7 @@ public class LaserOfflineTrainerThread {
 		Long freq = conf.getLaserOfflineRetrainingFreqency() * 1000;
 
 		// process remain data
-		timer.scheduleAtFixedRate(new LaserOfflineTrainTask(), 0, freq);
+		timer.scheduleAtFixedRate(new LaserOfflineTrainTask(), freq, freq);
 	}
 
 	public void exit() {
@@ -78,7 +78,7 @@ public class LaserOfflineTrainerThread {
 						.getMetaqOutput(), Long.toString(majorVersion) + "-*");
 				LOG.info("Retraining Laser's Offline Model, result = {}",
 						outputPath);
-
+//
 				Path signalData = new Path(outputPath, "ADMM_SIGNAL");
 				OfflineFeatureDriver.run(input, signalData, conf);
 

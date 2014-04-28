@@ -87,7 +87,9 @@ public class AdmmIterationMapper
 	@SuppressWarnings("unchecked")
 	protected void cleanup(Context context) throws IOException,
 			InterruptedException {
-		//TODO
+		if (inputSplitData.size() <= 0) {
+			return;
+		}
 		LOG.info("Input Split Size : row = {}, col = {}",
 				inputSplitData.size(), inputSplitData.get(0).size());
 		Vector[] vecArray = new Vector[inputSplitData.size()];
@@ -146,19 +148,19 @@ public class AdmmIterationMapper
 		LogisticL2DiffFunction myFunction = new LogisticL2DiffFunction(
 				context.getA(), context.getB(), context.getRho(),
 				context.getUInitial(), context.getZInitial());
-		Ctx optimizationContext = new Ctx(context.getXInitial());
+		// Ctx optimizationContext = new Ctx(context.getXInitial());
 
 		LOG.info("Minimize Logistic Function using LBFGS....");
 		double[] optimum = lbfgs.minimize((DiffFunction) myFunction, 1e-10,
 				context.getXInitial());
-		for (int d = 0; d < optimum.length; ++d) {
-			optimizationContext.m_optimumX[d] = optimum[d];
-		}
+		// for (int d = 0; d < optimum.length; ++d) {
+		// optimizationContext.m_optimumX[d] = optimum[d];
+		// }
 		double primalObjectiveValue = myFunction
-				.evaluatePrimalObjective(optimizationContext.m_optimumX);
+				.evaluatePrimalObjective(optimum);
 		return new AdmmReducerContext(context.getSplitId(),
-				context.getUInitial(), optimizationContext.m_optimumX, null,
-				primalObjectiveValue, context.getRho(), regularizationFactor, 1);
+				context.getUInitial(), optimum, null, primalObjectiveValue,
+				context.getRho(), regularizationFactor, 1);
 	}
 
 	private AdmmMapperContext assembleMapperContextFromCache(

@@ -26,7 +26,7 @@ public class OfflineFeatureDriver {
 			throws IOException, ClassNotFoundException, InterruptedException {
 		LOG.info("Calculating Laser's Offline Features...");
 		Configuration conf = new Configuration(baseConf);
-		Job job = new Job(conf);
+		Job job = Job.getInstance(conf);
 
 		job.setJarByClass(OfflineFeatureDriver.class);
 		job.setJobName("Calculate Laser's Offline Features");
@@ -41,9 +41,10 @@ public class OfflineFeatureDriver {
 		job.setOutputValueClass(VectorWritable.class);
 
 		job.setMapperClass(OfflineFeatureMapper.class);
-		job.setNumReduceTasks(0);
+		job.setReducerClass(Reducer.class);
+
+		job.setNumReduceTasks(10);
 //		job.setCombinerClass(Reducer.class);
-//		job.setReducerClass(Reducer.class);
 		HadoopUtil.delete(conf, output);
 		boolean succeeded = job.waitForCompletion(true);
 		if (!succeeded) {

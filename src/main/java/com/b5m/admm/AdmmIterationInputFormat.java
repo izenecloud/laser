@@ -18,7 +18,7 @@ public class AdmmIterationInputFormat<K, V> extends
 		SequenceFileInputFormat<K, V> {
 	static final String NUM_INPUT_FILES = "mapreduce.input.num.files";
 	private static final double SPLIT_SLOP = 1.1; // 10% slop
-	private static final long JAVA_OPTS = (long) 1 * 1024 * 1024 * 1024;
+	private static final long JAVA_OPTS = (long) 0.8 * 1024 * 1024 * 1024;
 
 	protected long computeSplitSize(long javaOpts, long numMapTasks,
 			long goalSize) {

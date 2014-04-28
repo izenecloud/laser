@@ -1,6 +1,7 @@
 package com.b5m.admm;
 
 //import org.apache.mahout.math.SequentialAccessSparseVector;
+
 import org.apache.mahout.math.Vector;
 import org.apache.mahout.math.Vector.Element;
 import org.slf4j.Logger;
@@ -26,10 +27,6 @@ public class LogisticL2DiffFunction implements DiffFunction {
 	private int n; // number of features (assumed that feature 0 is the
 					// intercept)
 
-	/*
-	 * nonZeros more than 10 minutes, less than 1 second after remove
-	 */
-
 	public LogisticL2DiffFunction(Vector[] a, double[] b, double rho,
 			double[] u, double[] z) {
 		LOG.info("Initialize LogisticL2DiffFunction");
@@ -42,6 +39,17 @@ public class LogisticL2DiffFunction implements DiffFunction {
 		} else {
 			this.n = 0;
 		}
+
+		Long bytes = (long) 0;
+		for (int row = 0; row < this.m; row++) {
+			Vector v = this.a[row];
+			double ax = 0.0;
+			for (Element e : v.nonZeroes()) {
+				bytes += Integer.SIZE + Double.SIZE;
+			}
+		}
+		LOG.info("Bytes {} reside on this map.", bytes);
+
 		this.u = u;
 		this.z = z;
 		LOG.info("Initialize LogisticL2DiffFunction Finish");
