@@ -1,6 +1,7 @@
 package com.b5m.larser.feature.offline;
 
 import java.io.IOException;
+import java.util.Random;
 
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Mapper;
@@ -13,11 +14,16 @@ import com.b5m.larser.feature.RequestWritable;
 
 public class OfflineFeatureMapper extends
 		Mapper<Text, RequestWritable, Text, VectorWritable> {
+	private static final Random RANDOM = new Random();
 
 	protected void map(Text key, RequestWritable value, Context context)
 			throws IOException, InterruptedException {
-		// TODO
-		// negative sample
+		if (-1 == value.getAction()) {
+			if (Math.abs(RANDOM.nextInt() % 100) >= 1) {
+				return;
+			}
+		}
+		
 		Vector userFeature = value.getUserFeature();
 		Vector itemFeature = value.getItemFeature();
 		int userDimension = userFeature.size();
