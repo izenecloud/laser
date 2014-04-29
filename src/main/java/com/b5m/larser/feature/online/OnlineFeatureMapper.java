@@ -22,7 +22,7 @@ import com.b5m.larser.feature.RequestWritable;
 import static com.b5m.HDFSHelper.*;
 
 public class OnlineFeatureMapper extends
-		Mapper<IntWritable, RequestWritable, Text, VectorWritable> {
+		Mapper<Text, RequestWritable, Text, VectorWritable> {
 	private static final Logger LOG = LoggerFactory
 			.getLogger(OnlineFeatureMapper.class);
 	private Vector alpha = null;
@@ -73,7 +73,6 @@ public class OnlineFeatureMapper extends
 		}
 		onlineFeature.set(0, firstOrder + secondOrder);
 		onlineFeature.set(1, 1.0);
-		LOG.info("OnlineFeatureMapper");
 		context.write(key, new VectorWritable(onlineFeature));
 	}
 
