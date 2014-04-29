@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 
-import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.mahout.math.VectorWritable;
@@ -12,9 +12,9 @@ import org.apache.mahout.math.VectorWritable;
 import com.b5m.lr.ListWritable;
 
 public class OnlineFeatureReducer extends
-		Reducer<IntWritable, VectorWritable, IntWritable, ListWritable> {
+		Reducer<Text, VectorWritable, Text, ListWritable> {
 
-	protected void reduce(IntWritable key, Iterable<VectorWritable> values,
+	protected void reduce(Text key, Iterable<VectorWritable> values,
 			Context context) throws IOException, InterruptedException {
 		List<Writable> list = new LinkedList<Writable>();
 		for (VectorWritable value : values) {
