@@ -51,9 +51,7 @@ public class OfflineFeatureDriver {
 			throw new IllegalStateException("Job failed!");
 		}
 
-		LOG.info("Deleting files: {}", input);
-		HDFSHelper.deleteFiles(input.getParent(), input.getName(),
-				input.getFileSystem(conf));
+
 		return 0;
 	}
 }

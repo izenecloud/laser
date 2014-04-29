@@ -1,6 +1,5 @@
 package com.b5m.admm;
 
-
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -9,7 +8,7 @@ import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.mahout.common.HadoopUtil;
-
+import org.mortbay.log.Log;
 
 import java.io.IOException;
 
@@ -17,10 +16,8 @@ public class AdmmOptimizerDriver {
 	private static final int DEFAULT_ADMM_ITERATIONS_MAX = 2;
 	private static final float DEFAULT_REGULARIZATION_FACTOR = 0.000001f;
 	private static final String ITERATION_FOLDER_NAME = "iteration_";
-	private static final String ITERATION_FOLDER_NAME_FINAL = ITERATION_FOLDER_NAME
-			+ "final";
+	public static final String FINAL_MODEL = "FINAL_MODEL";
 
-	@SuppressWarnings("deprecation")
 	public static int run(Path signalData, Path output,
 			Float regularizationFactor, Boolean addIntercept,
 			Boolean regularizeIntercept, Integer iterationsMaximum,
@@ -59,13 +56,14 @@ public class AdmmOptimizerDriver {
 					currentHdfsResultsPath, signalData, iterationNumber,
 					thisAddIntercept, thisRegularizeIntercept,
 					thisRegularizationFactor);
+			Log.info("curStatus = {}", curStatus);
 			isFinalIteration = convergedOrMaxed(curStatus, preStatus,
 					iterationNumber, thisIterationsMaximum);
 
 			if (isFinalIteration) {
-				Path finalOutput = new Path(output, ITERATION_FOLDER_NAME_FINAL);
-				fs.delete(finalOutput);
-				fs.rename(currentHdfsResultsPath, finalOutput);
+				Path finalOutput = new Path(output, FINAL_MODEL);
+				fs.delete(finalOutput, true);
+				fs.rename(new Path(currentHdfsResultsPath, "Z"), finalOutput);
 			}
 			iterationNumber++;
 		}

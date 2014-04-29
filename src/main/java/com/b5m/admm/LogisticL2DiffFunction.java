@@ -1,7 +1,5 @@
 package com.b5m.admm;
 
-//import org.apache.mahout.math.SequentialAccessSparseVector;
-
 import org.apache.mahout.math.Vector;
 import org.apache.mahout.math.Vector.Element;
 import org.slf4j.Logger;
@@ -9,10 +7,6 @@ import org.slf4j.LoggerFactory;
 
 import edu.stanford.nlp.optimization.DiffFunction;
 
-/*
- * f(x) = (1 / m) * log[1 + exp(-b'A'x)] + rho / 2 * (x - z + u)^2
- * df/dx = (1 / m) * (-Ab) / [1 + exp(b'A'x)] + rho * (x -z + u)
- */
 
 public class LogisticL2DiffFunction implements DiffFunction {
 	private static final Logger LOG = LoggerFactory
@@ -40,15 +34,14 @@ public class LogisticL2DiffFunction implements DiffFunction {
 			this.n = 0;
 		}
 
-		Long bytes = (long) 0;
-		for (int row = 0; row < this.m; row++) {
-			Vector v = this.a[row];
-			double ax = 0.0;
-			for (Element e : v.nonZeroes()) {
-				bytes += Integer.SIZE + Double.SIZE;
-			}
-		}
-		LOG.info("Bytes {} reside on this map.", bytes);
+//		Long bytes = (long) 0;
+//		for (int row = 0; row < this.m; row++) {
+//			Vector v = this.a[row];
+//			for (Element e : v.nonZeroes()) {
+//				bytes += Integer.SIZE + Double.SIZE;
+//			}
+//		}
+//		LOG.info("Bytes {} reside on this map.", bytes);
 
 		this.u = u;
 		this.z = z;

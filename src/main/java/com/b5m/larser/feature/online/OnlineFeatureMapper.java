@@ -25,7 +25,7 @@ public class OnlineFeatureMapper extends
 		Mapper<IntWritable, RequestWritable, Text, VectorWritable> {
 	private static final Logger LOG = LoggerFactory
 			.getLogger(OnlineFeatureMapper.class);
-	private Vector delta = null;
+	private Vector alpha = null;
 	private Vector beta = null;
 	private Vector ACj = null;
 	private Matrix A = null;
@@ -36,19 +36,19 @@ public class OnlineFeatureMapper extends
 		String offlineModel = conf
 				.get("com.b5m.laser.online.feature.offline.model");
 		Path offlinePath = new Path(offlineModel);
-		Path delta = new Path(offlinePath, "delta");
+		Path alpha = new Path(offlinePath, "alpha");
 		Path beta = new Path(offlinePath, "beta");
 		Path A = new Path(offlinePath, "A");
 		try {
-			FileSystem fs = delta.getFileSystem(conf);
-			this.delta = readVector(delta, fs, conf);
+			FileSystem fs = alpha.getFileSystem(conf);
+			this.alpha = readVector(alpha, fs, conf);
 			this.beta = readVector(beta, fs, conf);
 			this.A = readMatrix(A, fs, conf);
 		} catch (IOException e) {
 			LOG.error("Laser's offline model doesn't exist");
 			throw e;
 		}
-		ACj = new DenseVector(this.delta.size());
+		ACj = new DenseVector(this.alpha.size());
 	}
 
 	protected void map(Text key, RequestWritable value, Context context)
@@ -56,7 +56,7 @@ public class OnlineFeatureMapper extends
 		// first order offset
 		Vector userFeature = value.getUserFeature();
 		Vector itemFeature = value.getItemFeature();
-		double firstOrder = userFeature.dot(delta) + itemFeature.dot(beta);
+		double firstOrder = userFeature.dot(alpha) + itemFeature.dot(beta);
 		// second order offset
 		for (int row = 0; row < A.numRows(); row++) {
 			ACj.set(row, A.viewRow(row).dot(itemFeature));
@@ -73,6 +73,7 @@ public class OnlineFeatureMapper extends
 		}
 		onlineFeature.set(0, firstOrder + secondOrder);
 		onlineFeature.set(1, 1.0);
+		LOG.info("OnlineFeatureMapper");
 		context.write(key, new VectorWritable(onlineFeature));
 	}
 

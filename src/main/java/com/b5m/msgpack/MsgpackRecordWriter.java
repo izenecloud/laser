@@ -6,6 +6,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.msgpack.rpc.Client;
@@ -42,7 +43,7 @@ public class MsgpackRecordWriter<K, V> extends RecordWriter<K, V> {
 
 	@Override
 	public void write(K key, V value) throws IOException, InterruptedException {
-		if (null == key) {
+		if (null == key || key instanceof NullWritable) {
 			Object[] params = new Object[1];
 			params[0] = value;
 			for (Client client : clients) {

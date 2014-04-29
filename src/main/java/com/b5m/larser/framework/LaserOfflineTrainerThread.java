@@ -9,6 +9,7 @@ import org.apache.mahout.common.HadoopUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.b5m.HDFSHelper;
 import com.b5m.admm.AdmmOptimizerDriver;
 import com.b5m.conf.Configuration;
 import com.b5m.larser.feature.offline.OfflineFeatureDriver;
@@ -38,7 +39,7 @@ public class LaserOfflineTrainerThread {
 		Long freq = conf.getLaserOfflineRetrainingFreqency() * 1000;
 
 		// process remain data
-		timer.scheduleAtFixedRate(new LaserOfflineTrainTask(), freq, freq);
+		timer.scheduleAtFixedRate(new LaserOfflineTrainTask(), 0, freq);
 	}
 
 	public void exit() {
@@ -65,32 +66,38 @@ public class LaserOfflineTrainerThread {
 		@Override
 		public void run() {
 			try {
-				final LaserMetaqThread metaqThread = LaserMetaqThread
-						.getInstance();
-				long majorVersion = metaqThread.getMajorVersion();
+				 final LaserMetaqThread metaqThread = LaserMetaqThread
+				 .getInstance();
+				 long majorVersion = metaqThread.getMajorVersion();
+				
+				 metaqThread.incrMajorVersion();
+				 LOG.info(
+				 "Update MetaQ's output path, major version from {} to {}",
+				 majorVersion, metaqThread.getMajorVersion());
+				
+				 Path input = new Path(Configuration.getInstance()
+				 .getMetaqOutput(), Long.toString(majorVersion) + "-*");
+				 LOG.info("Retraining Laser's Offline Model, result = {}",
+				 outputPath);
 
-				metaqThread.incrMajorVersion();
-				LOG.info(
-						"Update MetaQ's output path, major version from {} to {}",
-						majorVersion, metaqThread.getMajorVersion());
-
-				Path input = new Path(Configuration.getInstance()
-						.getMetaqOutput(), Long.toString(majorVersion) + "-*");
-				LOG.info("Retraining Laser's Offline Model, result = {}",
-						outputPath);
-//
 				Path signalData = new Path(outputPath, "ADMM_SIGNAL");
-				OfflineFeatureDriver.run(input, signalData, conf);
+				 OfflineFeatureDriver.run(input, signalData, conf);
+
+				// LOG.info("Deleting files: {}", input);
+				// TODO DEBUG
+				 HDFSHelper.deleteFiles(input.getParent(), input.getName(),
+				 input.getFileSystem(conf));
 
 				Path admmOutput = new Path(outputPath, "ADMM");
 				AdmmOptimizerDriver.run(signalData, admmOutput,
 						regularizationFactor, addIntercept, null,
 						iterationsMaximum, conf);
-				HadoopUtil.delete(conf, signalData);
+				 HadoopUtil.delete(conf, signalData);
 
 				LaserOfflineResultWriter writer = new LaserOfflineResultWriter();
 				writer.write(conf, outputPath.getFileSystem(conf), new Path(
-						admmOutput, "ADMM"), outputPath);
+						admmOutput, AdmmOptimizerDriver.FINAL_MODEL),
+						outputPath);
 
 				LOG.info("calculating offline topn clusters for each user, write results to msgpack");
 				LaserOfflineTopNDriver.run(3, conf);

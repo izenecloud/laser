@@ -4,6 +4,8 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.NullWritable;
+import org.apache.hadoop.io.Writable;
+import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.slf4j.Logger;
@@ -23,10 +25,11 @@ public class AdmmIterationReducer
 	private static final double RHO_INCREMENT_MULTIPLIER = 1.5;
 	private static final double RHO_DECREMENT_MULTIPLIER = 1.5;
 	private static final double RHO_UPDATE_THRESHOLD = 5;
-	private static final double THRESHOLD = 0.0001;
+	private static final double THRESHOLD = 0.001;
 
 	private boolean regularizeIntercept;
-	private double[] zUpdated;
+	private double[] xUpdated;
+	private double[] uInital;
 	private long count;
 	private double rho;
 	private double lambda;
@@ -38,7 +41,8 @@ public class AdmmIterationReducer
 		Configuration conf = context.getConfiguration();
 		regularizeIntercept = conf.getBoolean("regularize.intercept", false);
 
-		zUpdated = null;
+		xUpdated = null;
+		uInital = null;
 		count = 0;
 	}
 
@@ -48,15 +52,22 @@ public class AdmmIterationReducer
 
 		for (AdmmReducerContextWritable reducerContextWritable : values) {
 			AdmmReducerContext reducerContext = reducerContextWritable.get();
-			if (null == this.zUpdated) {
-				this.zUpdated = reducerContext.getZUpdated();
+			if (null == this.xUpdated) {
+				this.xUpdated = reducerContext.getXUpdated();
+				this.uInital = reducerContext.getUInitial();
 				this.rho = reducerContext.getRho();
 				this.lambda = reducerContext.getLambdaValue();
 				this.count = reducerContext.getCount();
 			} else {
-				double[] zUpdated = reducerContext.getZUpdated();
-				for (int i = 0; i < zUpdated.length; i++) {
-					this.zUpdated[i] += zUpdated[i];
+				double[] xUpdated = reducerContext.getXUpdated();
+				LOG.info(xUpdated.toString());
+				for (int i = 0; i < xUpdated.length; i++) {
+					this.xUpdated[i] += xUpdated[i];
+				}
+				double[] uInital = reducerContext.getUInitial();
+				LOG.info(uInital.toString());
+				for (int i = 0; i < uInital.length; i++) {
+					this.uInital[i] += uInital[i];
 				}
 				this.count += reducerContext.getCount();
 			}
@@ -65,29 +76,40 @@ public class AdmmIterationReducer
 
 	protected void cleanup(Context context) throws IOException,
 			InterruptedException {
+
+		for (int i = 0; i < xUpdated.length; i++) {
+			xUpdated[i] /= count;
+		}
+
+		for (int i = 0; i < uInital.length; i++) {
+			uInital[i] /= count;
+		}
+
 		this.zMultiplier = this.rho * this.count
 				/ (this.rho * this.count + 2 * this.lambda);
+		double[] zUpdated = new double[xUpdated.length];
 		for (int i = 0; i < zUpdated.length; i++) {
-			this.zUpdated[i] /= this.count;
+			zUpdated[i] /= this.count;
 			if (i == 0 && !regularizeIntercept) {
-
+				zUpdated[i] = xUpdated[i] + uInital[i];
 			} else {
-				this.zUpdated[i] *= this.zMultiplier;
+				zUpdated[i] = (xUpdated[i] + uInital[i]) * this.zMultiplier;
 			}
 		}
 
 		Configuration conf = context.getConfiguration();
 		Path outputPath = FileOutputFormat.getOutputPath(context);
-		Path previousOutput = new Path(
-				conf.get("previous.intermediate.output.location"));
+		FileSystem fs = outputPath.getFileSystem(conf);
 
-		FileSystem fs = previousOutput.getFileSystem(conf);
+		LOG.info("calculating sNorm and rNorm");
+		double sNorm = calculateSNorm(uInital, xUpdated);
+		double rNorm = calculateRNorm(outputPath, xUpdated, fs, conf);
 
-		double sNorm = calculateSNorm(previousOutput, zUpdated, fs, conf);
-		double rNorm = calculateRNorm(outputPath, zUpdated, fs, conf);
-
+		LOG.info("rNorm = {}, sNorm = {}", rNorm, sNorm);
 		if (rNorm > THRESHOLD || sNorm > THRESHOLD) {
 			context.getCounter(IterationCounter.ITERATION).increment(1);
+			LOG.info("increment IterationCounter = {}",
+					context.getCounter(IterationCounter.ITERATION).getValue());
 		}
 
 		double rhoMultiplier = 0;
@@ -112,27 +134,25 @@ public class AdmmIterationReducer
 
 	private double calculateRNorm(Path outputPath, double[] xUpdated,
 			FileSystem fs, Configuration conf) {
-		LOG.info("calculateRNorm...");
 		double result = 0.0;
 		try {
 			result = calculateR(outputPath, fs, conf, xUpdated);
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		result = Math.pow(result, SQUARE_ROOT_POWER);
-		LOG.info("rNorm = {}", result);
 		return result;
 	}
 
-	private double calculateSNorm(Path previousOutput, double[] xUpdated,
-			FileSystem fs, Configuration conf) throws IOException {
-		LOG.info("calculateSNorm...");
-		double result = calculateS(previousOutput, fs, conf, xUpdated);
+	private double calculateSNorm(double[] xInitial, double[] xUpdated) {
+		double result = 0.0;
+		for (int i = 0; i < xUpdated.length; i++) {
+			result += Math.pow(xUpdated[i] - xInitial[i], 2);
+		}
 		result *= Math.pow(rho, 2);
 		result *= this.count;
 		result = Math.pow(result, SQUARE_ROOT_POWER);
-		LOG.info("sNorm = {}", result);
+
 		return result;
 	}
 

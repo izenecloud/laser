@@ -6,16 +6,14 @@ import java.util.Map;
 import org.apache.mahout.math.SequentialAccessSparseVector;
 import org.apache.mahout.math.Vector;
 
-import com.b5m.conf.Configuration;
-
 class ClusterInfo {
 	private Integer clusterHash;
 	private Vector featureVector;
 
-	public ClusterInfo(Integer num, Map<Integer, Float> pows) {
+	public ClusterInfo(Integer num, Map<Integer, Float> pows,
+			int itemFeatureDimension) {
 		clusterHash = num;
-		featureVector = new SequentialAccessSparseVector(Configuration
-				.getInstance().getItemFeatureDimension());
+		featureVector = new SequentialAccessSparseVector(itemFeatureDimension);
 		Iterator<Map.Entry<Integer, Float>> infoIterator = pows.entrySet()
 				.iterator();
 		while (infoIterator.hasNext()) {

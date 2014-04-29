@@ -39,14 +39,17 @@ public class AdmmReducerContext {
 		this.splitId = splitId;
 		this.uInitial = uInitial;
 		this.xUpdated = xUpdated;
-		if (null == zUpdated) {
-			this.zUpdated = new double[this.xUpdated.length];
-			for (int i = 0; i < this.zUpdated.length; i++) {
-				this.zUpdated[i] = this.xUpdated[i] + this.uInitial[i];
-			}
-		} else {
-			this.zUpdated = zUpdated;
-		}
+		this.zUpdated = zUpdated;
+
+		// if (null == zUpdated) {
+		// this.zUpdated = new double[this.xUpdated.length];
+		// for (int i = 0; i < this.zUpdated.length; i++) {
+		// this.zUpdated[i] = this.xUpdated[i] + this.uInitial[i];
+		// }
+		// } else {
+		// this.zUpdated = zUpdated;
+		// }
+
 		this.primalObjectiveValue = primalObjectiveValue;
 		this.rho = rho;
 		this.lambdaValue = lambdaValue;

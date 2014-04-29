@@ -51,6 +51,7 @@ public class LaserOfflineTopNMapper
 				.get("com.b5m.laser.offline.topn.offline.model");
 		Path offlinePath = new Path(offlineModel);
 		FileSystem fs = offlinePath.getFileSystem(conf);
+		// TODO getLocalCacheFiles
 		this.alpha = readVector(new Path(offlinePath, "alpha"), fs, conf);
 		Vector beta = readVector(new Path(offlinePath, "beta"), fs, conf);
 		Matrix A = readMatrix(new Path(offlinePath, "A"), fs, conf);
@@ -81,7 +82,7 @@ public class LaserOfflineTopNMapper
 		while (iterator.hasNext()) {
 			ClusterInfo info = iterator.next();
 			com.b5m.larser.offline.topn.ClusterInfo cluster = new com.b5m.larser.offline.topn.ClusterInfo(
-					info.clusterHash, info.pows);
+					info.clusterHash, info.pows, beta.size());
 			// A * Cj
 			Vector acj = new DenseVector(A.numRows());
 			for (int row = 0; row < A.numRows(); row++) {
@@ -99,7 +100,9 @@ public class LaserOfflineTopNMapper
 		TOP_N = conf.getInt("laser.offline.topn.n", 5);
 		queue = new PriorityQueue(TOP_N);
 
-		Path serializePath = context.getLocalCacheFiles()[0];
+		Path serializePath = new Path(
+				conf.get("com.b5m.laser.offline.topn.user.feature.map"));
+		// Path serializePath = context.getLocalCacheFiles()[0];
 		DataInputStream in = fs.open(serializePath);
 		try {
 			helper = UserProfileHelper.read(in);

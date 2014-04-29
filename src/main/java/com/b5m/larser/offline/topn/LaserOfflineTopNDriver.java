@@ -42,9 +42,19 @@ public class LaserOfflineTopNDriver {
 		UserProfileHelper.getInstance().write(out);
 		out.close();
 
+		conf.set("com.b5m.laser.offline.topn.user.feature.map",
+				serializePath.toString());
+
 		Job job = Job.getInstance(conf);
 		job.setJarByClass(LaserOfflineTopNDriver.class);
-		job.addCacheFile(serializePath.toUri());
+		// TODO addCachFile
+		// job.addCacheFile(serializePath.toUri());
+		// job.addCacheFile(new Path(com.b5m.conf.Configuration.getInstance()
+		// .getLaserOfflineOutput(), "A").toUri());
+		// job.addCacheFile(new Path(com.b5m.conf.Configuration.getInstance()
+		// .getLaserOfflineOutput(), "alpha").toUri());
+		// job.addCacheFile(new Path(com.b5m.conf.Configuration.getInstance()
+		// .getLaserOfflineOutput(), "beta").toUri());
 
 		job.setInputFormatClass(CouchbaseInputFormat.class);
 		job.setOutputFormatClass(MsgpackOutputFormat.class);
