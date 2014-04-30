@@ -1,6 +1,5 @@
 package com.b5m.larser.framework;
 
-import java.io.IOException;
 import java.util.Timer;
 import java.util.TimerTask;
 

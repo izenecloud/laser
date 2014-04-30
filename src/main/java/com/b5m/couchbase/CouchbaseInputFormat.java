@@ -16,32 +16,34 @@ import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.JobContext;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
+import org.mortbay.log.Log;
 
 import com.couchbase.client.CouchbaseConnectionFactory;
 import com.couchbase.client.vbucket.config.VBucket;
 
-public class CouchbaseInputFormat extends InputFormat<BytesWritable, BytesWritable> {
+public class CouchbaseInputFormat extends
+		InputFormat<BytesWritable, BytesWritable> {
 	static class CouchbaseSplit extends InputSplit implements Writable {
 		final List<Integer> vbuckets;
 
 		CouchbaseSplit() {
 			vbuckets = new ArrayList<Integer>();
 		}
-		
+
 		CouchbaseSplit(List<Integer> vblist) {
 			vbuckets = vblist;
 		}
 
 		public void readFields(DataInput in) throws IOException {
 			short numvbuckets = in.readShort();
-			for(int i = 0; i < numvbuckets; i++) {
+			for (int i = 0; i < numvbuckets; i++) {
 				vbuckets.add(new Integer(in.readShort()));
 			}
 		}
 
 		public void write(DataOutput out) throws IOException {
 			out.writeShort(vbuckets.size());
-			for(Integer v : vbuckets) {
+			for (Integer v : vbuckets) {
 				out.writeShort(v.shortValue());
 			}
 		}
@@ -68,6 +70,7 @@ public class CouchbaseInputFormat extends InputFormat<BytesWritable, BytesWritab
 	public List<InputSplit> getSplits(JobContext context) throws IOException,
 			InterruptedException {
 		Configuration conf = context.getConfiguration();
+		int numMapTasks = conf.getInt("com.b5m.couchbase.num.map.tasks", 120);
 		final URI ClusterURI;
 		try {
 			ClusterURI = new URI(conf.get(CouchbaseConfig.CB_INPUT_CLUSTER));
@@ -86,20 +89,39 @@ public class CouchbaseInputFormat extends InputFormat<BytesWritable, BytesWritab
 				.getVBucketConfig();
 
 		final List<VBucket> allVBuckets = vbconfig.getVbuckets();
+		int numSplits = Math.min(numMapTasks, allVBuckets.size());
+		int numVBucketsPerSplit = (int) Math.ceil(allVBuckets.size()
+				/ (double) numSplits);
+		Log.info("VBuckets size = {}", allVBuckets.size());
 		@SuppressWarnings("unchecked")
-		final ArrayList<Integer>[] vblists = 
-				new ArrayList[vbconfig.getServersCount()];
-		int vbid = 0;
-		for(VBucket v : allVBuckets) {
-			if(vblists[v.getMaster()] == null) {
-				vblists[v.getMaster()] = new ArrayList<Integer>();
+		final ArrayList<Integer>[] vblists = new ArrayList[numSplits];
+		int splitIndex = 0;
+		int vbuckets = 0;
+		for (int vbid = 0; vbid < allVBuckets.size(); vbid++) {
+			if (vbuckets >= numVBucketsPerSplit) {
+				vbuckets = 0;
+				splitIndex++;
 			}
-			vblists[v.getMaster()].add(vbid);
-			vbid++;
+			if (null == vblists[splitIndex]) {
+				vblists[splitIndex] = new ArrayList<Integer>(
+						numVBucketsPerSplit);
+			}
+			vblists[splitIndex].add(vbid);
+			vbuckets++;
 		}
+		// int vbid = 0;
+		// for(VBucket v : allVBuckets) {
+		// if(vblists[v.getMaster()] == null) {
+		// vblists[v.getMaster()] = new ArrayList<Integer>();
+		// }
+		// vblists[v.getMaster()].add(vbid);
+		// vbid++;
+		// }
 		final ArrayList<InputSplit> splits = new ArrayList<InputSplit>();
-		for(ArrayList<Integer> vblist : vblists) {
-			splits.add(new CouchbaseSplit(vblist));
+		for (ArrayList<Integer> vblist : vblists) {
+			if (null != vblist) {
+				splits.add(new CouchbaseSplit(vblist));
+			}
 		}
 		return splits;
 	}

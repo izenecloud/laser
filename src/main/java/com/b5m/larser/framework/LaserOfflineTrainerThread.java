@@ -39,7 +39,7 @@ public class LaserOfflineTrainerThread {
 		Long freq = conf.getLaserOfflineRetrainingFreqency() * 1000;
 
 		// process remain data
-		timer.scheduleAtFixedRate(new LaserOfflineTrainTask(), 0, freq);
+		timer.scheduleAtFixedRate(new LaserOfflineTrainTask(), freq, freq);
 	}
 
 	public void exit() {
@@ -66,33 +66,32 @@ public class LaserOfflineTrainerThread {
 		@Override
 		public void run() {
 			try {
-				 final LaserMetaqThread metaqThread = LaserMetaqThread
-				 .getInstance();
-				 long majorVersion = metaqThread.getMajorVersion();
-				
-				 metaqThread.incrMajorVersion();
-				 LOG.info(
-				 "Update MetaQ's output path, major version from {} to {}",
-				 majorVersion, metaqThread.getMajorVersion());
-				
-				 Path input = new Path(Configuration.getInstance()
-				 .getMetaqOutput(), Long.toString(majorVersion) + "-*");
-				 LOG.info("Retraining Laser's Offline Model, result = {}",
-				 outputPath);
+				final LaserMetaqThread metaqThread = LaserMetaqThread
+						.getInstance();
+				long majorVersion = metaqThread.getMajorVersion();
+
+				metaqThread.incrMajorVersion();
+				LOG.info(
+						"Update MetaQ's output path, major version from {} to {}",
+						majorVersion, metaqThread.getMajorVersion());
+
+				Path input = new Path(Configuration.getInstance()
+						.getMetaqOutput(), Long.toString(majorVersion) + "-*");
+				LOG.info("Retraining Laser's Offline Model, result = {}",
+						outputPath);
 
 				Path signalData = new Path(outputPath, "ADMM_SIGNAL");
-				 OfflineFeatureDriver.run(input, signalData, conf);
+				OfflineFeatureDriver.run(input, signalData, conf);
 
-				// LOG.info("Deleting files: {}", input);
-				// TODO DEBUG
-				 HDFSHelper.deleteFiles(input.getParent(), input.getName(),
-				 input.getFileSystem(conf));
+				LOG.info("Deleting files: {}", input);
+				HDFSHelper.deleteFiles(input.getParent(), input.getName(),
+						input.getFileSystem(conf));
 
 				Path admmOutput = new Path(outputPath, "ADMM");
 				AdmmOptimizerDriver.run(signalData, admmOutput,
 						regularizationFactor, addIntercept, null,
 						iterationsMaximum, conf);
-				 HadoopUtil.delete(conf, signalData);
+				HadoopUtil.delete(conf, signalData);
 
 				LaserOfflineResultWriter writer = new LaserOfflineResultWriter();
 				writer.write(conf, outputPath.getFileSystem(conf), new Path(
