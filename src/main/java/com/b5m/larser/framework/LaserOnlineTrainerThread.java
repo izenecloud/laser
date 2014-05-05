@@ -60,25 +60,25 @@ public class LaserOnlineTrainerThread {
 		@Override
 		public void run() {
 			try {
-				Path offlineModelPath = Configuration.getInstance()
-						.getLaserOfflineOutput();
-				FileSystem fs = offlineModelPath.getFileSystem(conf);
-
-				if (!fs.exists(offlineModelPath)) {
-					LOG.info("Laser offline model does not exit");
-					return;
-				}
-
-				Path offlineOutput = com.b5m.conf.Configuration.getInstance()
-						.getLaserOfflineOutput();
-				Path delta = new Path(offlineOutput, "delta");
-				Path beta = new Path(offlineOutput, "beta");
-				Path A = new Path(offlineOutput, "A");
-				if (!fs.exists(A) || !fs.exists(beta) || fs.exists(delta)) {
-
-					LOG.info("Laser offline model does not exit");
-					return;
-				}
+//				Path offlineModelPath = Configuration.getInstance()
+//						.getLaserOfflineOutput();
+//				FileSystem fs = offlineModelPath.getFileSystem(conf);
+//
+//				if (!fs.exists(offlineModelPath)) {
+//					LOG.info("Laser offline model does not exit");
+//					return;
+//				}
+//
+//				Path offlineOutput = com.b5m.conf.Configuration.getInstance()
+//						.getLaserOfflineOutput();
+//				Path delta = new Path(offlineOutput, "delta");
+//				Path beta = new Path(offlineOutput, "beta");
+//				Path A = new Path(offlineOutput, "A");
+//				if (!fs.exists(A) || !fs.exists(beta) || fs.exists(delta)) {
+//
+//					LOG.info("Laser offline model does not exit");
+//					return;
+//				}
 
 				final LaserMetaqThread metaqThread = LaserMetaqThread
 						.getInstance();

@@ -38,12 +38,12 @@ public class MsgpackOutputFormat<K, V> extends OutputFormat<K, V> {
 			public void setupTask(TaskAttemptContext taskContext) {
 			}
 
-			@Override
+			
 			public boolean isRecoverySupported() {
 				return true;
 			}
 
-			@Override
+			
 			public void recoverTask(TaskAttemptContext taskContext)
 					throws IOException {
 				// Nothing to do for recovering the task.

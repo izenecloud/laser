@@ -19,13 +19,10 @@ public class OnlineFeatureDriver {
 	public static int run(Path input, Path output, Configuration baseConf)
 			throws IOException, ClassNotFoundException, InterruptedException {
 		Configuration conf = new Configuration(baseConf);
-		conf.set("com.b5m.laser.online.feature.offline.model",
-				com.b5m.conf.Configuration.getInstance()
-						.getLaserOfflineOutput().toString());
 		Job job = Job.getInstance(conf);
 
 		job.setJarByClass(OnlineFeatureDriver.class);
-		job.setJobName("Group each user's feature");
+		job.setJobName("GROUP each user's feature BY uuid");
 
 		FileInputFormat.setInputPaths(job, input);
 		FileOutputFormat.setOutputPath(job, output);

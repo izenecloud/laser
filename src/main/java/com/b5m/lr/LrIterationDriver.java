@@ -39,7 +39,8 @@ public class LrIterationDriver {
 		job.setOutputKeyClass(String.class);
 		job.setOutputValueClass(List.class);
 
-		job.setInputFormatClass(SequenceFileInputFormat.class);
+		LrIterationInputFormat.setNumMapTasks(job, 120);
+		job.setInputFormatClass(LrIterationInputFormat.class);
 		job.setMapperClass(LrIterationMapper.class);
 		job.setNumReduceTasks(0);
 

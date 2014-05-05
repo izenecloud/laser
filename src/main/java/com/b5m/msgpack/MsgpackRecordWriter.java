@@ -47,7 +47,7 @@ public class MsgpackRecordWriter<K, V> extends RecordWriter<K, V> {
 			Object[] params = new Object[1];
 			params[0] = value;
 			for (Client client : clients) {
-				client.callApply(method, params);
+				client.callAsyncApply(method, params);
 			}
 
 		} else {
@@ -55,7 +55,7 @@ public class MsgpackRecordWriter<K, V> extends RecordWriter<K, V> {
 			params[0] = key;
 			params[1] = value;
 			for (Client client : clients) {
-				client.callApply(method, params);
+				client.callAsyncApply(method, params);
 			}
 		}
 	}
