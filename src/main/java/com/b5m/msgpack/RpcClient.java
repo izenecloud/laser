@@ -30,10 +30,9 @@ public class RpcClient {
 	public RpcClient() throws UnknownHostException {
 		Configuration conf = Configuration.getInstance();
 		EventLoop loop = EventLoop.defaultEventLoop();
-		client = new Client(conf.getMsgpackAddress().split(",")[0], conf.getMsgpackPort(),
-				loop);
-		client.setRequestTimeout(100000);
-
+		client = new Client(conf.getMsgpackAddress().split(",")[0],
+				conf.getMsgpackPort(), loop);
+		client.setRequestTimeout(1);
 		iface = client.proxy(RPCInterface.class);
 	}
 

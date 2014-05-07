@@ -47,6 +47,7 @@ public class LaserOfflineTopNDriver {
 
 		Job job = Job.getInstance(conf);
 		job.setJarByClass(LaserOfflineTopNDriver.class);
+		job.setJobName("calculate top n clusters for each user");
 		// TODO addCachFile
 		// job.addCacheFile(serializePath.toUri());
 		// job.addCacheFile(new Path(com.b5m.conf.Configuration.getInstance()

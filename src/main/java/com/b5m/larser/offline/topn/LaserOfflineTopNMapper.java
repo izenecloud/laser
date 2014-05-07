@@ -64,7 +64,7 @@ public class LaserOfflineTopNMapper
 		try {
 			client = new Client(conf.get("com.b5m.msgpack.ip"), conf.getInt(
 					"com.b5m.msgpack.port", 0), loop);
-			client.setRequestTimeout(10000);
+			client.setRequestTimeout(100);
 		} catch (UnknownHostException e) {
 			e.printStackTrace();
 		}
