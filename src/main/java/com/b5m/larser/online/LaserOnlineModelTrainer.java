@@ -33,7 +33,9 @@ public class LaserOnlineModelTrainer {
 			throws ClassNotFoundException, IOException, InterruptedException {
 		Path userGroup = new Path(output, "userGroup");
 		try {
-			OnlineFeatureDriver.run(input, userGroup, conf);
+			if (0 == OnlineFeatureDriver.run(input, userGroup, conf)) {
+				return 0;
+			}
 		} catch (IllegalStateException e) {
 			LOG.error("the online feature generate phase failed, "
 					+ e.getMessage());

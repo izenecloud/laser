@@ -5,6 +5,7 @@ import java.io.IOException;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.Counter;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
@@ -12,11 +13,16 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
 import org.apache.mahout.common.HadoopUtil;
 import org.apache.mahout.math.VectorWritable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.b5m.lr.ListWritable;
 
 public class OnlineFeatureDriver {
-	public static int run(Path input, Path output, Configuration baseConf)
+	private static final Logger LOG = LoggerFactory
+			.getLogger(OnlineFeatureDriver.class);
+
+	public static long run(Path input, Path output, Configuration baseConf)
 			throws IOException, ClassNotFoundException, InterruptedException {
 		Configuration conf = new Configuration(baseConf);
 		Job job = Job.getInstance(conf);
@@ -41,9 +47,18 @@ public class OnlineFeatureDriver {
 		HadoopUtil.delete(conf, output);
 		boolean succeeded = job.waitForCompletion(true);
 		if (!succeeded) {
-			throw new IllegalStateException("Job:Group each user's feature,  Failed!");
+			throw new IllegalStateException(
+					"Job:Group each user's feature,  Failed!");
 		}
+		Counter counter = job.getCounters().findCounter(
+				"org.apache.hadoop.mapred.Task$Counter",
+				"REDUCE_OUTPUT_RECORDS");
+		long reduceOutputRecords = counter.getValue();
 
-		return 0;
+		LOG.info(
+				"Job: GROUP each user's feature BY uuid, output recordes = {}",
+				reduceOutputRecords);
+		
+		return reduceOutputRecords;
 	}
 }
