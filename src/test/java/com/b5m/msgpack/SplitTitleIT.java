@@ -13,7 +13,6 @@ import com.b5m.conf.Configuration;
 
 import static org.testng.Assert.*;
 
-
 public class SplitTitleIT {
 	private static final String PROPERTIES = "src/test/properties/laser.properties.examble";
 
@@ -29,9 +28,14 @@ public class SplitTitleIT {
 	@Test
 	public void test() throws ClassNotFoundException, IOException,
 			InterruptedException {
-		SplitTitleRequest req = new SplitTitleRequest("十二结婚吧 i [http://446964573.qzone.qq.com]"); 
-		SplitTitleResponse res = RpcClient.getInstance().spliteTitle(req);
-		assertFalse(res.getResponse().isEmpty());
+		try {
+			SplitTitleRequest req = new SplitTitleRequest(
+					"十二结婚吧 i [http://446964573.qzone.qq.com]");
+			SplitTitleResponse res = RpcClient.getInstance().spliteTitle(req);
+			assertFalse(res.getResponse().isEmpty());
+		} catch (Exception e) {
+			assertTrue(false);
+		}
 	}
 
 	@AfterTest

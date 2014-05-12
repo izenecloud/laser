@@ -3,14 +3,14 @@ package com.b5m.msgpack;
 import org.msgpack.annotation.Message;
 
 @Message
-public class ClusterInfoRequest {
+public class ClusteringInfoRequest {
 	Integer clusterHash;
 
-	public ClusterInfoRequest() {
+	public ClusteringInfoRequest() {
 		clusterHash = 0;
 	}
 
-	public ClusterInfoRequest(Integer clusterHash) {
+	public ClusteringInfoRequest(Integer clusterHash) {
 		this.clusterHash = clusterHash;
 	}
 }

@@ -24,7 +24,7 @@ public class RpcClient {
 	static interface RPCInterface {
 		SplitTitleResponse spliteTitle(SplitTitleRequest request);
 
-		ClusterInfoResponse getClusteringInfos(ClusterInfoRequest req);
+		ClusteringInfoResponse getClusteringInfos(ClusteringInfoRequest req);
 	}
 
 	public RpcClient() throws UnknownHostException {
@@ -44,7 +44,7 @@ public class RpcClient {
 		return iface.spliteTitle(request);
 	}
 
-	public ClusterInfoResponse getClusterInfos(ClusterInfoRequest req) {
+	public ClusteringInfoResponse getClusterInfos(ClusteringInfoRequest req) {
 		return iface.getClusteringInfos(req);
 	}
 }

@@ -24,9 +24,9 @@ import org.msgpack.type.Value;
 
 import com.b5m.larser.feature.UserProfile;
 import com.b5m.larser.feature.UserProfileHelper;
-import com.b5m.msgpack.ClusterInfo;
-import com.b5m.msgpack.ClusterInfoRequest;
-import com.b5m.msgpack.ClusterInfoResponse;
+import com.b5m.msgpack.ClusteringInfo;
+import com.b5m.msgpack.ClusteringInfoRequest;
+import com.b5m.msgpack.ClusteringInfoResponse;
 
 import static com.b5m.HDFSHelper.readMatrix;
 import static com.b5m.HDFSHelper.readVector;
@@ -70,20 +70,20 @@ public class LaserOfflineTopNMapper
 		}
 
 		Object[] args = new Object[1];
-		args[0] = new ClusterInfoRequest();
+		args[0] = new ClusteringInfoRequest();
 
 		MessagePack msgpack = new MessagePack();
-		msgpack.register(ClusterInfoResponse.class);
+		msgpack.register(ClusteringInfoResponse.class);
 
 		Value res = client.callApply("getClusteringInfos", args);
-		ClusterInfoResponse response = new org.msgpack.unpacker.Converter(
-				msgpack, res).read(ClusterInfoResponse.class);
+		ClusteringInfoResponse response = new org.msgpack.unpacker.Converter(
+				msgpack, res).read(ClusteringInfoResponse.class);
 
-		Iterator<ClusterInfo> iterator = response.iterator();
+		Iterator<ClusteringInfo> iterator = response.iterator();
 		while (iterator.hasNext()) {
-			ClusterInfo info = iterator.next();
+			ClusteringInfo info = iterator.next();
 			com.b5m.larser.offline.topn.ClusterInfo cluster = new com.b5m.larser.offline.topn.ClusterInfo(
-					info.clusterHash, info.pows, beta.size());
+					info.clusteringIndex, info.pows, beta.size());
 			// A * Cj
 			Vector acj = new DenseVector(A.numRows());
 			for (int row = 0; row < A.numRows(); row++) {

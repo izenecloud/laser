@@ -13,7 +13,7 @@ import static org.testng.Assert.*;
 
 import com.b5m.conf.Configuration;
 
-public class ClusterInfosIT {
+public class ClusteringInfosIT {
 	private static final String PROPERTIES = "src/test/properties/laser.properties.examble";
 
 	@BeforeTest
@@ -28,8 +28,9 @@ public class ClusterInfosIT {
 	@Test
 	public void test() throws ClassNotFoundException, IOException,
 			InterruptedException {
-		ClusterInfoRequest req = new ClusterInfoRequest();
-		assertTrue(null != RpcClient.getInstance().getClusterInfos(req));
+		ClusteringInfoRequest req = new ClusteringInfoRequest();
+		ClusteringInfoResponse res = RpcClient.getInstance().getClusterInfos(req);
+		assertTrue(null != res);
 	}
 
 	@AfterTest

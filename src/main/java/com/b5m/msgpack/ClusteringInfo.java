@@ -4,9 +4,7 @@ import java.util.Map;
 
 import org.msgpack.annotation.Message;
 @Message
-public class ClusterInfo {
-	public String clustername;
-	public int clusterDocNum;
-	public int clusterHash;
+public class ClusteringInfo {
+	public Integer clusteringIndex;
 	public Map<Integer, Float> pows;
 }
