@@ -36,6 +36,7 @@ public class MsgpackRecordWriter<K, V> extends RecordWriter<K, V> {
 	@Override
 	public void close(TaskAttemptContext context) throws IOException,
 			InterruptedException {
+		//TODO
 		for (Client client : clients) {
 			client.close();
 		}

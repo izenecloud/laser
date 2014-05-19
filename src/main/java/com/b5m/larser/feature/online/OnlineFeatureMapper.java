@@ -11,13 +11,13 @@ import org.apache.mahout.math.VectorWritable;
 
 import com.b5m.larser.feature.RequestWritable;
 
-
 public class OnlineFeatureMapper extends
 		Mapper<Text, RequestWritable, Text, VectorWritable> {
 
 	protected void map(Text key, RequestWritable value, Context context)
 			throws IOException, InterruptedException {
 		Vector itemFeature = value.getItemFeature();
+
 		// 0th - delta
 		// 1th - eta
 		Vector onlineFeature = new SequentialAccessSparseVector(
@@ -26,6 +26,8 @@ public class OnlineFeatureMapper extends
 			onlineFeature.set(e.index() + 1, e.get());
 		}
 		onlineFeature.set(0, 1);
+		onlineFeature.set(itemFeature.size(), value.getAction());
+		
 		context.write(key, new VectorWritable(onlineFeature));
 	}
 }

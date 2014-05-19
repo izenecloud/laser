@@ -228,6 +228,11 @@ public class LaserFeatureListenser implements MessageListener {
 		setUserFeature(user, userFeature);
 		Vector itemFeature = new SequentialAccessSparseVector(itemDimension);
 		setItemFeature(item, itemFeature);
+
+		// bad items
+		if (itemFeature.norm(2) < 1e-6) {
+			return;
+		}
 		writer.append(new Text(user), new RequestWritable(userFeature,
 				itemFeature, action));
 	}
