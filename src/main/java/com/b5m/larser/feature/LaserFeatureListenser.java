@@ -7,6 +7,7 @@ import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.Executor;
 
 import org.apache.avro.io.BinaryDecoder;
@@ -32,14 +33,16 @@ import com.couchbase.client.CouchbaseClient;
 import com.taobao.metamorphosis.Message;
 import com.taobao.metamorphosis.client.consumer.MessageListener;
 
-import edu.stanford.nlp.io.EncodingPrintWriter.out;
-
 public class LaserFeatureListenser implements MessageListener {
 	private static final Logger LOG = LoggerFactory
 			.getLogger(LaserFeatureListenser.class);
-	private final Utf8 LOG_TYPE_LABEL = new Utf8("lt");
+
+	private static final Random RANDOM = new Random();
+
+	// private final Utf8 LOG_TYPE_LABEL = new Utf8("lt");
 	private final Utf8 ACTION_ID_LABEL = new Utf8("ad");
-	private final Utf8 ITEM_LABEL = new Utf8("tt");
+	private final Utf8 TT_LABEL = new Utf8("tt");
+	private final Utf8 TI_LABEL = new Utf8("ti");
 	private final Utf8 UUID_LABEL = new Utf8("uid");
 
 	private final DatumReader<B5MEvent> reader = new SpecificDatumReader<B5MEvent>(
@@ -174,8 +177,6 @@ public class LaserFeatureListenser implements MessageListener {
 			write(b5mEvent);
 		} catch (Exception e) {
 			e.printStackTrace();
-			// System.out.println(b5mEvent.toString());
-			// System.out.println(b5mEvent.getArgs().toString());
 		}
 	}
 
@@ -184,13 +185,13 @@ public class LaserFeatureListenser implements MessageListener {
 	}
 
 	private void write(B5MEvent b5mEvent) throws IOException {
-		LOG.debug(b5mEvent.toString());
+		// LOG.info(b5mEvent.toString());
 		Map<CharSequence, CharSequence> args = b5mEvent.getArgs();
-		// TODO filter by logtype and action
-		CharSequence logType = args.get(LOG_TYPE_LABEL);
-		if (null == logType) {
-			return;
-		}
+		// // TODO filter by logtype and action
+		// CharSequence logType = args.get(LOG_TYPE_LABEL);
+		// if (null == logType) {
+		// return;
+		// }
 		CharSequence actionId = args.get(ACTION_ID_LABEL);
 		if (null == actionId) {
 			return;
@@ -203,27 +204,26 @@ public class LaserFeatureListenser implements MessageListener {
 		String user = uuid.toString();
 
 		String item = null;
-		CharSequence title = args.get(ITEM_LABEL);
+		CharSequence title = args.get(TT_LABEL);
 		if (null == title) {
-			// item = "";
-			return;
+			title = args.get(TI_LABEL);
+			if (null == title) {
+				return;
+			}
+		}
+		item = title.toString();
+
+		Integer action = 1;
+		if (actionId.toString().startsWith("103")) {
+			action = 1;
+			//LOG.info("user = {}, item = {}", user, item);
 		} else {
-			item = title.toString();
+			if (Math.abs(RANDOM.nextInt() % 100) >= 1) {
+				return;
+			}
+			action = -1;
 		}
 
-		// if (2000 != Integer.valueOf(logType.toString())) {
-		// // System.out.println(logType.toString());
-		// return;
-		// }
-		Integer action = 1;
-		if (108 == Integer.valueOf(actionId.toString())) {
-			action = -1;
-			// return;
-		} else if (103 == Integer.valueOf(actionId.toString())) {
-			action = 1;
-		} else {
-			return;
-		}
 		Vector userFeature = new SequentialAccessSparseVector(userDimension);
 		setUserFeature(user, userFeature);
 		Vector itemFeature = new SequentialAccessSparseVector(itemDimension);
@@ -233,6 +233,7 @@ public class LaserFeatureListenser implements MessageListener {
 		if (itemFeature.norm(2) < 1e-6) {
 			return;
 		}
+
 		writer.append(new Text(user), new RequestWritable(userFeature,
 				itemFeature, action));
 	}
@@ -249,8 +250,6 @@ public class LaserFeatureListenser implements MessageListener {
 			UserProfile userProfile = UserProfile.createUserProfile(jsonValue);
 			userProfile.setUserFeature(feature, helper, true);
 		} catch (RuntimeException e) {
-			// TODO timeout
-			// System.out.println(user);
 		}
 	}
 
