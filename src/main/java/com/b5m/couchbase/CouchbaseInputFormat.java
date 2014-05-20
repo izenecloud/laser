@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.apache.hadoop.conf.Configuration;
@@ -71,14 +72,18 @@ public class CouchbaseInputFormat extends
 			InterruptedException {
 		Configuration conf = context.getConfiguration();
 		int numMapTasks = conf.getInt("com.b5m.couchbase.num.map.tasks", 120);
-		final URI ClusterURI;
+		final List<URI> ClientURIList = new ArrayList<URI>();
+
 		try {
-			ClusterURI = new URI(conf.get(CouchbaseConfig.CB_INPUT_CLUSTER));
+			List<String> uris = Arrays.asList(conf.get(
+					CouchbaseConfig.CB_INPUT_CLUSTER).split(","));
+			for (String uri : uris) {
+				final URI ClusterURI = new URI(uri);
+				ClientURIList.add(ClusterURI.resolve("/pools"));
+			}
 		} catch (URISyntaxException e) {
 			throw new IOException(e);
 		}
-		final List<URI> ClientURIList = new ArrayList<URI>();
-		ClientURIList.add(ClusterURI.resolve("/pools"));
 		final String bucket = conf.get(CouchbaseConfig.CB_INPUT_BUCKET, "");
 		final String password = conf.get(CouchbaseConfig.CB_INPUT_PASSWORD, "");
 
