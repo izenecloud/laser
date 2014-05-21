@@ -110,6 +110,10 @@ public class Configuration {
 	public Integer getItemFeatureDimension() {
 		return Integer.valueOf(laser.get("item_feature_dimension"));
 	}
+	
+	public Integer getTopNClustering() {
+		return Integer.valueOf(laser.get("top_n_clustering"));
+	}
 
 	public Float getRegularizationFactor() {
 		String regularization_factor = laser.get("regularization_factor");

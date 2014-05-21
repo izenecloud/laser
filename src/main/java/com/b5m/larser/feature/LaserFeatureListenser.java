@@ -4,6 +4,7 @@ import java.io.DataInputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -28,6 +29,7 @@ import org.codehaus.jackson.map.JsonMappingException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.b5m.couchbase.CouchbaseConfig;
 import com.b5m.flume.B5MEvent;
 import com.couchbase.client.CouchbaseClient;
 import com.taobao.metamorphosis.Message;
@@ -62,7 +64,7 @@ public class LaserFeatureListenser implements MessageListener {
 	private final CouchbaseClient couchbaseClient;
 	private UserProfileHelper helper;
 
-	public LaserFeatureListenser(String url, String bucket, String passwd,
+	public LaserFeatureListenser(String urls, String bucket, String passwd,
 			Path output, FileSystem fs, Configuration conf, int itemDimension,
 			int userDimension) throws IOException, URISyntaxException {
 
@@ -89,7 +91,18 @@ public class LaserFeatureListenser implements MessageListener {
 		}
 
 		initSequenceWriter();
-		List<URI> hosts = Arrays.asList(new URI(url));
+		List<URI> hosts = new ArrayList<URI>();
+
+		try {
+			List<String> uris = Arrays.asList(urls.split(","));
+			for (String uri : uris) {
+				final URI ClusterURI = new URI(uri);
+				hosts.add(ClusterURI.resolve("/pools"));
+			}
+		} catch (URISyntaxException e) {
+			throw new IOException(e);
+		}
+		
 		couchbaseClient = new CouchbaseClient(hosts, bucket, passwd);
 	}
 

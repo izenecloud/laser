@@ -99,7 +99,8 @@ public class LaserOfflineTrainerThread {
 						outputPath);
 
 				LOG.info("calculating offline topn clusters for each user, write results to msgpack");
-				LaserOfflineTopNDriver.run(3, conf);
+				LaserOfflineTopNDriver.run(Configuration.getInstance()
+						.getTopNClustering(), conf);
 
 			} catch (ClassNotFoundException e) {
 				// TODO Auto-generated catch block

@@ -76,7 +76,7 @@ public class LaserMetaqThread {
 			thread = new LaserMetaqTask();
 
 		} catch (Exception e) {
-			LOG.debug( e.getMessage());
+			LOG.info(e.getMessage());
 			throw new IOException(e.getCause());
 		}
 	}

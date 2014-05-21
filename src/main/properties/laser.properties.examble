@@ -1,7 +1,7 @@
 {
   "couchbase" : {
-    "cluster":"http://localhost:8091/pools",
-    "bucket":"default",
+    "cluster":"http://10.10.103.123:8091/pools, http://10.10.103.122:8091/pools",
+    "bucket":"user_profile",
     "passwd":""
   },
   "metaq":{
@@ -9,15 +9,16 @@
     "topic":"test"
   },
   "msgpack":{
-    "ip" : "127.0.0.1",
+    "ip" : "10.10.99.121",
     "port" : "6688"
   },
   "laser":{
-    "output":"laser",
-    "user_feature_dimension":"200",
+    "output":"LASER_DFS_STORAGE",
+    "user_feature_dimension":"400",
     "item_feature_dimension":"10000",
     "online_retraining_frequency":"6",
     "offline_retraining_frequency":"120",
-    "offline_max_iteration":"20"
+    "offline_max_iteration":"20",
+    "top_n_clustering":"10"
   }
 }
