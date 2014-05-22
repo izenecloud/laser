@@ -2,7 +2,6 @@ package com.b5m.larser.offline.topn;
 
 import java.io.DataInputStream;
 import java.io.IOException;
-import java.net.UnknownHostException;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -17,15 +16,10 @@ import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Matrix;
 import org.apache.mahout.math.SequentialAccessSparseVector;
 import org.apache.mahout.math.Vector;
-import org.msgpack.MessagePack;
-import org.msgpack.rpc.Client;
-import org.msgpack.rpc.loop.EventLoop;
-import org.msgpack.type.Value;
 
 import com.b5m.larser.feature.UserProfile;
 import com.b5m.larser.feature.UserProfileHelper;
 import com.b5m.msgpack.ClusteringInfo;
-import com.b5m.msgpack.ClusteringInfoRequest;
 import com.b5m.msgpack.ClusteringInfoResponse;
 
 import static com.b5m.HDFSHelper.readMatrix;
@@ -110,6 +104,8 @@ public class LaserOfflineTopNMapper
 
 	protected void map(BytesWritable key, BytesWritable value, Context context)
 			throws IOException, InterruptedException {
+		queue.clear();
+		
 		UserProfile user = UserProfile
 				.createUserProfile(new String(value.get()));
 		user.setUserFeature(userFeature, helper, false);
