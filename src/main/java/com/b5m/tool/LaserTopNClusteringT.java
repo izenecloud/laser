@@ -1,4 +1,4 @@
-package com.b5m.larser.offline.topn;
+package com.b5m.tool;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -13,10 +13,11 @@ import org.slf4j.LoggerFactory;
 
 import com.b5m.conf.Configuration;
 import com.b5m.larser.framework.LaserArgument;
+import com.b5m.larser.offline.topn.LaserOfflineTopNDriver;
 
-public class LaserOfflineTopNT {
+public class LaserTopNClusteringT {
 	private static final Logger LOG = LoggerFactory
-			.getLogger(LaserOfflineTopNT.class);
+			.getLogger(LaserTopNClusteringT.class);
 	private static final LaserArgument laserArgument = new LaserArgument();
 
 	public static void main(String[] args) throws CmdLineException,
