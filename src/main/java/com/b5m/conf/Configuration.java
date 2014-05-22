@@ -59,6 +59,10 @@ public class Configuration {
 		isLoad = true;
 	}
 
+	public String getLaserHDFSRoot() {
+		return laser.get("output");
+	}
+
 	public String getCouchbaseCluster() {
 		return couchbase.get("cluster");
 	}
@@ -110,7 +114,7 @@ public class Configuration {
 	public Integer getItemFeatureDimension() {
 		return Integer.valueOf(laser.get("item_feature_dimension"));
 	}
-	
+
 	public Integer getTopNClustering() {
 		return Integer.valueOf(laser.get("top_n_clustering"));
 	}

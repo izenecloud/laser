@@ -59,25 +59,17 @@ public class LaserOfflineTopNMapper
 		AC = new LinkedList<IntVector>();
 		CBeta = new LinkedList<Double>();
 
-		EventLoop loop = EventLoop.defaultEventLoop();
-		Client client = null;
-		try {
-			client = new Client(conf.get("com.b5m.msgpack.ip"), conf.getInt(
-					"com.b5m.msgpack.port", 0), loop);
-			client.setRequestTimeout(100);
-		} catch (UnknownHostException e) {
-			e.printStackTrace();
+		ClusteringInfoResponse response = null;
+		{
+			Path clusteringPath = new Path(
+					conf.get("com.b5m.laser.offline.topn.clustering.info"));
+			DataInputStream in = fs.open(clusteringPath);
+			try {
+				response = ClusteringInfoResponse.read(in);
+			} catch (ClassNotFoundException e) {
+				e.printStackTrace();
+			}
 		}
-
-		Object[] args = new Object[1];
-		args[0] = new ClusteringInfoRequest();
-
-		MessagePack msgpack = new MessagePack();
-		msgpack.register(ClusteringInfoResponse.class);
-
-		Value res = client.callApply("getClusteringInfos", args);
-		ClusteringInfoResponse response = new org.msgpack.unpacker.Converter(
-				msgpack, res).read(ClusteringInfoResponse.class);
 
 		Iterator<ClusteringInfo> iterator = response.iterator();
 		while (iterator.hasNext()) {
@@ -101,16 +93,19 @@ public class LaserOfflineTopNMapper
 		TOP_N = conf.getInt("laser.offline.topn.n", 5);
 		queue = new PriorityQueue(TOP_N);
 
-		Path serializePath = new Path(
-				conf.get("com.b5m.laser.offline.topn.user.feature.map"));
-		// Path serializePath = context.getLocalCacheFiles()[0];
-		DataInputStream in = fs.open(serializePath);
-		try {
-			helper = UserProfileHelper.read(in);
-		} catch (ClassNotFoundException e) {
-			e.printStackTrace();
+		helper = null;
+		{
+			Path serializePath = new Path(
+					conf.get("com.b5m.laser.offline.topn.user.feature.map"));
+			// Path serializePath = context.getLocalCacheFiles()[0];
+			DataInputStream in = fs.open(serializePath);
+			try {
+				helper = UserProfileHelper.read(in);
+			} catch (ClassNotFoundException e) {
+				e.printStackTrace();
+			}
+			in.close();
 		}
-		in.close();
 	}
 
 	protected void map(BytesWritable key, BytesWritable value, Context context)
