@@ -18,11 +18,13 @@ public class AdmmIterationInputFormat<K, V> extends
 		SequenceFileInputFormat<K, V> {
 	static final String NUM_INPUT_FILES = "mapreduce.input.num.files";
 	private static final double SPLIT_SLOP = 1.1; // 10% slop
-	private static final long JAVA_OPTS = (long) 0.8 * 1024 * 1024 * 1024;
+	private static final long JAVA_OPTS = (long) Math
+			.floor(0.7 * 1024 * 1024 * 1024);
 
 	protected long computeSplitSize(long javaOpts, long numMapTasks,
 			long goalSize) {
-		return Math.min(goalSize / numMapTasks, javaOpts);
+		// return Math.min(goalSize / numMapTasks, javaOpts);
+		return Math.min(goalSize, javaOpts);
 	}
 
 	public static void setNumMapTasks(JobContext job, int numMapTasks) {
@@ -40,10 +42,6 @@ public class AdmmIterationInputFormat<K, V> extends
 		// generate splits
 		List<InputSplit> splits = new ArrayList<InputSplit>();
 		List<FileStatus> files = listStatus(job);
-		long goalSize = 0;
-		for (FileStatus file : files) {
-			goalSize += file.getLen();
-		}
 
 		for (FileStatus file : files) {
 			Path path = file.getPath();
@@ -54,15 +52,19 @@ public class AdmmIterationInputFormat<K, V> extends
 			if ((length != 0) && isSplitable(job, path)) {
 				long blockSize = file.getBlockSize();
 				long splitSize = Math.max(
-						computeSplitSize(JAVA_OPTS, numMapTasks, goalSize),
+						computeSplitSize(JAVA_OPTS, numMapTasks, length),
 						blockSize);
+				long splitLength = (long) (length / Math.ceil((double) length
+						/ splitSize));
 				long bytesRemaining = length;
-				while (((double) bytesRemaining) / splitSize > SPLIT_SLOP) {
+
+				while (((double) bytesRemaining) / splitLength > SPLIT_SLOP) {
 					int blkIndex = getBlockIndex(blkLocations, length
 							- bytesRemaining);
 					splits.add(new FileSplit(path, length - bytesRemaining,
-							splitSize, blkLocations[blkIndex].getHosts()));
-					bytesRemaining -= splitSize;
+							splitLength, blkLocations[blkIndex].getHosts()));
+
+					bytesRemaining -= splitLength;
 				}
 
 				if (bytesRemaining != 0) {

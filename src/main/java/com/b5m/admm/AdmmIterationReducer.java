@@ -60,12 +60,10 @@ public class AdmmIterationReducer
 				this.count = reducerContext.getCount();
 			} else {
 				double[] xUpdated = reducerContext.getXUpdated();
-				LOG.info(xUpdated.toString());
 				for (int i = 0; i < xUpdated.length; i++) {
 					this.xUpdated[i] += xUpdated[i];
 				}
 				double[] uInital = reducerContext.getUInitial();
-				LOG.info(uInital.toString());
 				for (int i = 0; i < uInital.length; i++) {
 					this.uInital[i] += uInital[i];
 				}

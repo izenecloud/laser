@@ -43,7 +43,7 @@ public class OfflineFeatureDriver {
 		job.setMapperClass(OfflineFeatureMapper.class);
 		job.setReducerClass(Reducer.class);
 
-		job.setNumReduceTasks(10);
+//		job.setNumReduceTasks(10);
 //		job.setCombinerClass(Reducer.class);
 		HadoopUtil.delete(conf, output);
 		boolean succeeded = job.waitForCompletion(true);

@@ -20,22 +20,14 @@ import com.b5m.conf.Configuration;
 public class Laser {
 
 	public static void main(String[] args) throws CmdLineException, IOException {
+		LaserArgument.parseArgs(args);
 		Laser framework = new Laser();
-		framework.run(args);
+		framework.run();
 	}
 
 	private static final Logger LOG = LoggerFactory.getLogger(Laser.class);
-	private final LaserArgument laserArgument = new LaserArgument();
 
-	public void run(String[] args) throws CmdLineException, IOException {
-		parseArgs(args);
-		Configuration conf = Configuration.getInstance();
-		LOG.info("Load configure, {}", laserArgument.getConfigure());
-		Path path = new Path(laserArgument.getConfigure());
-		FileSystem fs = FileSystem.get(new org.apache.hadoop.conf.Configuration());
-				//path
-				//.getFileSystem(new org.apache.hadoop.conf.Configuration());
-		conf.load(path, fs);
+	public void run() throws CmdLineException, IOException {
 
 		LOG.info("Start LaserMetaqThread.");
 		LaserMetaqThread.getInstance().start();
@@ -64,19 +56,5 @@ public class Laser {
 				System.exit(0);
 			}
 		});
-	}
-
-	private void parseArgs(String[] args) throws CmdLineException {
-		ArrayList<String> argsList = new ArrayList<String>(Arrays.asList(args));
-
-		for (int i = 0; i < args.length; i++) {
-			if (i % 2 == 0 && !LaserArgument.VALID_ARGUMENTS.contains(args[i])) {
-				argsList.remove(args[i]);
-				argsList.remove(args[i + 1]);
-			}
-		}
-
-		new CmdLineParser(laserArgument).parseArgument(argsList
-				.toArray(new String[argsList.size()]));
 	}
 }
