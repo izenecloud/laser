@@ -39,8 +39,6 @@ public class LaserFeatureListenser implements MessageListener {
 	private static final Logger LOG = LoggerFactory
 			.getLogger(LaserFeatureListenser.class);
 
-	private static final Random RANDOM = new Random();
-
 	// private final Utf8 LOG_TYPE_LABEL = new Utf8("lt");
 	private final Utf8 ACTION_ID_LABEL = new Utf8("ad");
 	private final Utf8 TT_LABEL = new Utf8("tt");
@@ -231,9 +229,6 @@ public class LaserFeatureListenser implements MessageListener {
 			action = 1;
 			//LOG.info("user = {}, item = {}", user, item);
 		} else {
-			if (Math.abs(RANDOM.nextInt() % 100) >= 1) {
-				return;
-			}
 			action = -1;
 		}
 
