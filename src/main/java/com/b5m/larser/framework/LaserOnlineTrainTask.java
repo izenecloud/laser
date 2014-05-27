@@ -19,7 +19,7 @@ public class LaserOnlineTrainTask implements Job {
 			throws JobExecutionException {
 		try {
 			String collection = context.getJobDetail().getGroup();
-			LOG.info("Online Train Task for {]", collection);
+			LOG.info("Online Train Task for {}", collection);
 
 			final Path input = Configuration.getInstance().getMetaqOutput(
 					collection);
