@@ -40,7 +40,7 @@ public class UserProfile {
 	}
 
 	public void setUserFeature(Vector userFeature,
-			final UserProfileHelper helper, Boolean add) {
+			final UserProfileMap helper, Boolean add) {
 		Set<Map.Entry<String, Double>> entrySet = page_categories.entrySet();
 		Iterator<Map.Entry<String, Double>> iterator = entrySet.iterator();
 		while (iterator.hasNext()) {

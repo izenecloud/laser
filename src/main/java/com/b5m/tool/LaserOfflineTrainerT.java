@@ -21,9 +21,11 @@ public class LaserOfflineTrainerT {
 	public static void main(String[] args) throws CmdLineException,
 			IOException, ClassNotFoundException, InterruptedException {
 		LaserArgument.parseArgs(args);
+		String collection = Configuration.getInstance().getCollections().get(0);
 
-		Path input = Configuration.getInstance().getMetaqOutput();
-		Path output = Configuration.getInstance().getLaserOfflineOutput();
+		Path input = Configuration.getInstance().getMetaqOutput(collection);
+		Path output = Configuration.getInstance().getLaserOfflineOutput(
+				collection);
 
 		org.apache.hadoop.conf.Configuration conf = new org.apache.hadoop.conf.Configuration();
 		conf.set("mapred.job.queue.name", "sf1");
@@ -34,14 +36,16 @@ public class LaserOfflineTrainerT {
 
 		Path admmOutput = new Path(output, "ADMM");
 		AdmmOptimizerDriver.run(signalData, admmOutput, Configuration
-				.getInstance().getRegularizationFactor(), Configuration
-				.getInstance().addIntercept(), null, Configuration
-				.getInstance().getMaxIteration(), conf);
+				.getInstance().getRegularizationFactor(collection),
+				Configuration.getInstance().addIntercept(collection), null,
+				Configuration.getInstance().getMaxIteration(collection), conf);
 		HadoopUtil.delete(conf, signalData);
 
 		LaserOfflineResultWriter writer = new LaserOfflineResultWriter();
 		writer.write(conf, output.getFileSystem(conf), new Path(admmOutput,
-				AdmmOptimizerDriver.FINAL_MODEL), output);
+				AdmmOptimizerDriver.FINAL_MODEL), output, Configuration
+				.getInstance().getUserFeatureDimension(collection),
+				Configuration.getInstance().getItemFeatureDimension(collection));
 
 	}
 

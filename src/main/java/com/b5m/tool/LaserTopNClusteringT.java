@@ -18,10 +18,11 @@ public class LaserTopNClusteringT {
 			IOException, ClassNotFoundException, InterruptedException {
 
 		LaserArgument.parseArgs(args);
+		String collection = Configuration.getInstance().getCollections().get(0);
 
 		LOG.info("calculating offline topn clusters for each user, write results to msgpack");
-		LaserOfflineTopNDriver.run(Configuration.getInstance()
-				.getTopNClustering(),
+		LaserOfflineTopNDriver.run(collection, Configuration.getInstance()
+				.getTopNClustering(collection),
 				new org.apache.hadoop.conf.Configuration());
 
 	}

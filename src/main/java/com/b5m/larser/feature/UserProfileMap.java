@@ -12,20 +12,20 @@ import org.codehaus.jackson.JsonGenerationException;
 import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
 
-final public class UserProfileHelper {
-	private static UserProfileHelper helper = null;
+final public class UserProfileMap {
+	private static UserProfileMap mapper = null;
 	private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-	public static synchronized UserProfileHelper getInstance() {
-		if (null == helper) {
-			helper = new UserProfileHelper();
+	public static synchronized UserProfileMap getInstance() {
+		if (null == mapper) {
+			mapper = new UserProfileMap();
 		}
-		return helper;
+		return mapper;
 	}
 
 	private Map<String, Integer> userFeatureMap;
 
-	private UserProfileHelper() {
+	public UserProfileMap() {
 		userFeatureMap = new HashMap<String, Integer>();
 	}
 
@@ -69,11 +69,11 @@ final public class UserProfileHelper {
 		oos.close();
 	}
 
-	public static UserProfileHelper read(DataInputStream in)
-			throws IOException, ClassNotFoundException {
+	public static UserProfileMap read(DataInputStream in) throws IOException,
+			ClassNotFoundException {
 		ObjectInputStream ois = new ObjectInputStream(in);
-		helper = new UserProfileHelper();
-		helper.userFeatureMap = (Map<String, Integer>) ois.readObject();
-		return helper;
+		mapper = new UserProfileMap();
+		mapper.userFeatureMap = (Map<String, Integer>) ois.readObject();
+		return mapper;
 	}
 }

@@ -12,7 +12,7 @@ import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
 import com.b5m.msgpack.MsgpackOutputFormat;
 
 public class LrIterationDriver {
-	public static int run(Path input, Path output, Float regularizationFactor,
+	public static int run(String collection, Path input, Path output, Float regularizationFactor,
 			Boolean addIntercept, Configuration baseConf) throws IOException,
 			ClassNotFoundException, InterruptedException {
 		Configuration conf = new Configuration(baseConf);
@@ -24,9 +24,9 @@ public class LrIterationDriver {
 					regularizationFactor);
 		}
 		conf.set("com.b5m.msgpack.ip", com.b5m.conf.Configuration.getInstance()
-				.getMsgpackAddress());
+				.getMsgpackAddress(collection));
 		conf.setInt("com.b5m.msgpack.port", com.b5m.conf.Configuration
-				.getInstance().getMsgpackPort());
+				.getInstance().getMsgpackPort(collection));
 		conf.set("com.b5m.msgpack.method", "updateLaserOnlineModel");
 
 		Job job = Job.getInstance(conf);

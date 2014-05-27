@@ -24,7 +24,7 @@ public class LaserOfflineResultWriter {
 //			.getLogger(LaserOfflineResultWriter.class);
 
 	public void write(Configuration conf, FileSystem hdfs, Path hdfsFilePath,
-			Path finalOutputPath) throws IOException {
+			Path finalOutputPath, int userDimension, int itemDimension) throws IOException {
 		if (!hdfs.exists(hdfsFilePath)) {
 			return;
 		}
@@ -37,10 +37,6 @@ public class LaserOfflineResultWriter {
 
 		AdmmReducerContext reduceContext = reduceContextWritable.get();
 		double[] z = reduceContext.getZUpdated();
-		int userDimension = com.b5m.conf.Configuration.getInstance()
-				.getUserFeatureDimension();
-		int itemDimension = com.b5m.conf.Configuration.getInstance()
-				.getItemFeatureDimension();
 		{
 			Vector alpha = new DenseVector(userDimension);
 			for (int i = 0; i < userDimension; i++) {

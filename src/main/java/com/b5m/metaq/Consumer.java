@@ -1,5 +1,10 @@
 package com.b5m.metaq;
 
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Map.Entry;
+
 import com.b5m.conf.Configuration;
 import com.taobao.metamorphosis.client.MessageSessionFactory;
 import com.taobao.metamorphosis.client.MetaClientConfig;
@@ -22,32 +27,75 @@ public class Consumer {
 		return metaqConsumer;
 	}
 
-	private final MessageConsumer consumer;
+	private final Map<String, MessageConsumer> consumer;
 
-	private Consumer() throws MetaClientException {
-		final MetaClientConfig metaClientConfig = new MetaClientConfig();
-		final ZKConfig zkConfig = new ZKConfig();
-		zkConfig.zkConnect = Configuration.getInstance().getMetaqZookeeper();
-		zkConfig.zkRoot = "/meta";
-
-		metaClientConfig.setZkConfig(zkConfig);
-		MessageSessionFactory sessionFactory = new MetaMessageSessionFactory(
-				metaClientConfig);
-		final String group = "metaq-example";
-		ConsumerConfig consumerConfig  = new ConsumerConfig(group);
-		consumerConfig.setMaxDelayFetchTimeInMills(1000);
-		consumer = sessionFactory.createConsumer(consumerConfig);
+	public Consumer() {
+		consumer = new HashMap<String, MessageConsumer>();
 	}
 
-	public void subscribe(MessageListener listener) throws MetaClientException {
-		consumer.subscribe(Configuration.getInstance().getMetaqTopic(),
-				1024 * 1024, listener);
-		consumer.completeSubscribe();
+	public void subscribe(String collection, MessageListener listener)
+			throws MetaClientException {
+		final String urls = Configuration.getInstance().getMetaqZookeeper(
+				collection);
+		final String topic = Configuration.getInstance().getMetaqTopic(
+				collection);
+
+		if (this.consumer.containsKey(urls + topic)) {
+			try {
+				this.consumer.get(urls + topic).subscribe(topic, 1024 * 1024, listener);
+			} catch (Exception e) {
+				// ignore for
+			}
+		} else {
+
+			final MetaClientConfig metaClientConfig = new MetaClientConfig();
+			final ZKConfig zkConfig = new ZKConfig();
+			zkConfig.zkConnect = urls;
+			zkConfig.zkRoot = "/meta";
+
+			metaClientConfig.setZkConfig(zkConfig);
+			MessageSessionFactory sessionFactory = new MetaMessageSessionFactory(
+					metaClientConfig);
+			final String group = "metaq-tare";
+			ConsumerConfig consumerConfig = new ConsumerConfig(group);
+			consumerConfig.setMaxDelayFetchTimeInMills(1000);
+			MessageConsumer consumer = sessionFactory
+					.createConsumer(consumerConfig);
+
+			consumer.subscribe(topic, 1024 * 1024, listener);
+			this.consumer.put(urls + topic, consumer);
+		}
+	}
+
+	public void completeSubscribe() throws MetaClientException {
+		Iterator<Entry<String, MessageConsumer>> iterator = this.consumer
+				.entrySet().iterator();
+		while (iterator.hasNext()) {
+			MessageConsumer consumer = iterator.next().getValue();
+			consumer.completeSubscribe();
+		}
+	}
+	
+	public void unsubscribe(String collection) throws MetaClientException {
+		final String urls = Configuration.getInstance().getMetaqZookeeper(
+				collection);
+		final String topic = Configuration.getInstance().getMetaqTopic(
+				collection);
+		if (this.consumer.containsKey(urls + topic)) {
+			MessageConsumer consumer = this.consumer.get(urls + topic);
+			consumer.shutdown();
+			this.consumer.remove(urls + topic);
+		}
 	}
 
 	public void shutdown() {
 		try {
-			consumer.shutdown();
+			Iterator<Entry<String, MessageConsumer>> iterator = this.consumer
+					.entrySet().iterator();
+			while (iterator.hasNext()) {
+				MessageConsumer consumer = iterator.next().getValue();
+				consumer.shutdown();
+			}
 		} catch (MetaClientException e) {
 			e.printStackTrace();
 		}

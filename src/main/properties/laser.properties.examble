@@ -1,6 +1,6 @@
 {
   "couchbase" : {
-    "cluster":"http://10.10.103.123:8091/pools, http://10.10.103.122:8091/pools",
+    "cluster":"http://10.10.103.123:8091/pools,http://10.10.103.122:8091/pools",
     "bucket":"user_profile",
     "passwd":""
   },
@@ -16,8 +16,8 @@
     "output":"LASER_DFS_STORAGE",
     "user_feature_dimension":"400",
     "item_feature_dimension":"10000",
-    "online_retraining_frequency":"6",
-    "offline_retraining_frequency":"120",
+    "online_retraining_frequency":" 0 0/10 * * * ? ",
+    "offline_retraining_frequency":"0 0 0 ? * MON",
     "offline_max_iteration":"20",
     "top_n_clustering":"10"
   }

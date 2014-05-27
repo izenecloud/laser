@@ -19,37 +19,39 @@ import org.msgpack.type.Value;
 
 import com.b5m.couchbase.CouchbaseConfig;
 import com.b5m.couchbase.CouchbaseInputFormat;
-import com.b5m.larser.feature.UserProfileHelper;
+import com.b5m.larser.feature.UserProfileMap;
 import com.b5m.msgpack.ClusteringInfo;
 import com.b5m.msgpack.ClusteringInfoRequest;
 import com.b5m.msgpack.ClusteringInfoResponse;
 import com.b5m.msgpack.MsgpackOutputFormat;
 
 public class LaserOfflineTopNDriver {
-	public static int run(Integer topN, Configuration baseConf)
-			throws IOException, ClassNotFoundException, InterruptedException {
+	public static int run(String collection, Integer topN,
+			Configuration baseConf) throws IOException, ClassNotFoundException,
+			InterruptedException {
 		Configuration conf = new Configuration(baseConf);
 
 		conf.set(CouchbaseConfig.CB_INPUT_CLUSTER, com.b5m.conf.Configuration
-				.getInstance().getCouchbaseCluster());
+				.getInstance().getCouchbaseCluster(collection));
 		conf.set(CouchbaseConfig.CB_INPUT_BUCKET, com.b5m.conf.Configuration
-				.getInstance().getCouchbaseBucket());
+				.getInstance().getCouchbaseBucket(collection));
 		conf.set(CouchbaseConfig.CB_INPUT_PASSWORD, com.b5m.conf.Configuration
-				.getInstance().getCouchbasePassword());
+				.getInstance().getCouchbasePassword(collection));
 		conf.setInt("laser.offline.topn.n", topN);
 		conf.set("com.b5m.msgpack.ip", com.b5m.conf.Configuration.getInstance()
-				.getMsgpackAddress());
+				.getMsgpackAddress(collection));
 
 		conf.setInt("com.b5m.msgpack.port", com.b5m.conf.Configuration
-				.getInstance().getMsgpackPort());
+				.getInstance().getMsgpackPort(collection));
 		conf.set("com.b5m.msgpack.method", "updateTopNCluster");
-		conf.set("com.b5m.laser.offline.topn.offline.model",
+		conf.set(
+				"com.b5m.laser.offline.topn.offline.model",
 				com.b5m.conf.Configuration.getInstance()
-						.getLaserOfflineOutput().toString());
+						.getLaserOfflineOutput(collection).toString());
 
 		Path serializePath = com.b5m.conf.Configuration.getInstance()
-				.getUserFeatureSerializePath();
-		UserProfileHelper helper = UserProfileHelper.getInstance();
+				.getUserFeatureSerializePath(collection);
+		UserProfileMap helper = UserProfileMap.getInstance();
 		if (helper.size() == 0) {
 			helper = null;
 		} else {
@@ -60,11 +62,14 @@ public class LaserOfflineTopNDriver {
 		}
 
 		Path clusteringInfoPath = new Path(com.b5m.conf.Configuration
-				.getInstance().getLaserHDFSRoot(), "clustering-info");
+				.getInstance().getLaserHDFSRoot(collection), "clustering-info");
 
-		serializeClusteringInfo(clusteringInfoPath, com.b5m.conf.Configuration
-				.getInstance().getMsgpackAddress().split(",")[0],
-				com.b5m.conf.Configuration.getInstance().getMsgpackPort(), conf);
+		serializeClusteringInfo(
+				clusteringInfoPath,
+				com.b5m.conf.Configuration.getInstance()
+						.getMsgpackAddress(collection).split(",")[0],
+				com.b5m.conf.Configuration.getInstance().getMsgpackPort(
+						collection), conf);
 
 		conf.set("com.b5m.laser.offline.topn.clustering.info",
 				clusteringInfoPath.toString());

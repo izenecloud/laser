@@ -18,7 +18,7 @@ import org.apache.mahout.math.SequentialAccessSparseVector;
 import org.apache.mahout.math.Vector;
 
 import com.b5m.larser.feature.UserProfile;
-import com.b5m.larser.feature.UserProfileHelper;
+import com.b5m.larser.feature.UserProfileMap;
 import com.b5m.msgpack.ClusteringInfo;
 import com.b5m.msgpack.ClusteringInfoResponse;
 
@@ -36,7 +36,7 @@ public class LaserOfflineTopNMapper
 	private int TOP_N;
 	PriorityQueue queue;
 
-	private UserProfileHelper helper;
+	private UserProfileMap helper;
 
 	protected void setup(Context context) throws IOException,
 			InterruptedException {
@@ -94,7 +94,7 @@ public class LaserOfflineTopNMapper
 			// Path serializePath = context.getLocalCacheFiles()[0];
 			DataInputStream in = fs.open(serializePath);
 			try {
-				helper = UserProfileHelper.read(in);
+				helper = UserProfileMap.read(in);
 			} catch (ClassNotFoundException e) {
 				e.printStackTrace();
 			}
