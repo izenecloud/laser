@@ -31,7 +31,7 @@ public class SplitTitleIT {
 //		try {
 //			SplitTitleRequest req = new SplitTitleRequest(
 //					"十二结婚吧 i [http://446964573.qzone.qq.com]");
-//			SplitTitleResponse res = RpcClient.getInstance().spliteTitle(req);
+//			SparseVector res = RpcClient.getInstance().spliteTitle(req);
 //			assertFalse(res.getResponse().isEmpty());
 //		} catch (Exception e) {
 //			assertTrue(false);
