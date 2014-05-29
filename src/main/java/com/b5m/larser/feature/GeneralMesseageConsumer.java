@@ -40,7 +40,6 @@ public class GeneralMesseageConsumer extends LaserMessageConsumer {
 	private final Utf8 TI_LABEL = new Utf8("ti");
 	private final Utf8 UUID_LABEL = new Utf8("uid");
 
-	private final String collection;
 	private final int itemDimension;
 	private final int userDimension;
 	private final Path userFeatureMapper;
@@ -52,15 +51,14 @@ public class GeneralMesseageConsumer extends LaserMessageConsumer {
 
 	public GeneralMesseageConsumer(String collection, Path output,
 			FileSystem fs, Configuration conf) throws IOException {
-		super(output, fs, conf);
-		this.collection = collection;
+		super(collection, output, fs, conf);
 		this.fs = fs;
 		this.userFeatureMapper = com.b5m.conf.Configuration.getInstance()
-				.getUserFeatureSerializePath(this.collection);
+				.getUserFeatureSerializePath(getCollection());
 		this.itemDimension = com.b5m.conf.Configuration.getInstance()
-				.getItemFeatureDimension(this.collection);
+				.getItemFeatureDimension(getCollection());
 		this.userDimension = com.b5m.conf.Configuration.getInstance()
-				.getUserFeatureDimension(this.collection);
+				.getUserFeatureDimension(getCollection());
 
 		if (fs.exists(this.userFeatureMapper)) {
 			DataInputStream in = fs.open(this.userFeatureMapper);
@@ -80,7 +78,7 @@ public class GeneralMesseageConsumer extends LaserMessageConsumer {
 
 		try {
 			List<String> uris = Arrays.asList(com.b5m.conf.Configuration
-					.getInstance().getCouchbaseCluster(this.collection)
+					.getInstance().getCouchbaseCluster(getCollection())
 					.split(","));
 			for (String uri : uris) {
 				final URI ClusterURI = new URI(uri);
@@ -91,9 +89,9 @@ public class GeneralMesseageConsumer extends LaserMessageConsumer {
 		}
 
 		couchbaseClient = new CouchbaseClient(hosts, com.b5m.conf.Configuration
-				.getInstance().getCouchbaseBucket(this.collection),
+				.getInstance().getCouchbaseBucket(getCollection()),
 				com.b5m.conf.Configuration.getInstance().getCouchbasePassword(
-						this.collection));
+						getCollection()));
 
 		msgpackClient = new MsgpackClient(com.b5m.conf.Configuration
 				.getInstance().getMsgpackAddress(collection),

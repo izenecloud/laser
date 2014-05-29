@@ -54,6 +54,7 @@ public class Laser {
 
 		consumeTask.start();
 		scheduler.start();
+		LOG.info("Laser Training Frameworh has started");
 
 		Signal.handle(new Signal("INT"), new SignalHandler() {
 			public void handle(Signal sig) {
@@ -63,7 +64,6 @@ public class Laser {
 						.getCollections()) {
 					try {
 						stopCollection(scheduler, consumeTask, collection);
-						consumeTask.stop();
 					} catch (SchedulerException e) {
 						e.printStackTrace();
 					} catch (MetaClientException e) {

@@ -1,6 +1,7 @@
 package com.b5m.larser.feature;
 
 import java.io.IOException;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
@@ -22,9 +23,12 @@ public abstract class LaserMessageConsumer {
 	private SequenceFile.Writer writer;
 	private long majorVersion = 0;
 	private long minorVersion = 0;
+	private final String collection;
 
-	public LaserMessageConsumer(Path output, FileSystem fs, Configuration conf)
+
+	public LaserMessageConsumer(String collection, Path output, FileSystem fs, Configuration conf)
 			throws IOException {
+		this.collection = collection;
 		this.output = output;
 		this.fs = fs;
 		this.conf = conf;
@@ -40,7 +44,7 @@ public abstract class LaserMessageConsumer {
 
 	public abstract void flush() throws IOException;
 
-	public void append(Text key, RequestWritable val) throws IOException {
+	public synchronized void append(Text key, RequestWritable val) throws IOException {
 		writer.append(key, val);
 	}
 
@@ -78,6 +82,10 @@ public abstract class LaserMessageConsumer {
 
 	public synchronized long getMajorVersion() {
 		return majorVersion;
+	}
+	
+	public String getCollection() {
+		return collection;
 	}
 
 	@SuppressWarnings("deprecation")

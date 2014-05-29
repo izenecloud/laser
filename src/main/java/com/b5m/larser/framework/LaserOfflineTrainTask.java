@@ -25,6 +25,7 @@ public class LaserOfflineTrainTask implements Job {
 	public void execute(JobExecutionContext context)
 			throws JobExecutionException {
 		String collection = context.getJobDetail().getGroup();
+		LOG.info("Oline Train Task for {}", collection);
 
 		final Path outputPath = Configuration.getInstance()
 				.getLaserOfflineOutput(collection);

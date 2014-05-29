@@ -17,8 +17,6 @@ public class LaserOnlineModelTrainer {
 	private static final Logger LOG = LoggerFactory
 			.getLogger(LaserOnlineModelTrainer.class);
 
-
-
 	public static int run(String collection, Path input, Path output,
 			Float regularizationFactor, Boolean addIntercept, Configuration conf)
 			throws ClassNotFoundException, IOException, InterruptedException {
