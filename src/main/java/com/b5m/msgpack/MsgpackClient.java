@@ -10,8 +10,11 @@ import org.msgpack.type.Value;
 
 public class MsgpackClient {
 	private final List<Client> clients;
+	private final String collection;
 
-	public MsgpackClient(String urlList, Integer port) {
+	public MsgpackClient(String urlList, Integer port, String collection) {
+		this.collection = collection;
+		
 		EventLoop loop = EventLoop.defaultEventLoop();
 		clients = new LinkedList<Client>();
 		try {
@@ -32,9 +35,17 @@ public class MsgpackClient {
 		}
 	}
 
-	public Value read(Object req, String method) {
-		Object[] args = new Object[1];
-		args[0] = req;
+	public void setTimeout(int requestTimeout) {
+		for (Client client : clients) {
+			client.setRequestTimeout(requestTimeout);
+		}
+	}
+	public Value read(Object[] req, String method) {
+		Object[] args = new Object[req.length + 1];
+		args[0] = collection;
+		for (int i = 1; i < args.length; i++) {
+			args[i] = req[i-1];
+		}
 		for (Client client : clients) {
 			try {
 				return client.callApply(method, args);
@@ -45,9 +56,13 @@ public class MsgpackClient {
 		return null;
 	}
 
-	public Value write(Object req, String method) {
+	public Value write(Object[] req, String method) {
+		Object[] args = new Object[req.length + 1];
+		args[0] = collection;
+		for (int i = 1; i < args.length; i++) {
+			args[i] = req[i-1];
+		}
 		Value ret = null;
-		Object[] args = new Object[1];
 		args[0] = req;
 		for (Client client : clients) {
 			try {

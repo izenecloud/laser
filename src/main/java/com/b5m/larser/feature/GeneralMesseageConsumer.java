@@ -21,13 +21,14 @@ import org.apache.mahout.math.SequentialAccessSparseVector;
 import org.apache.mahout.math.Vector;
 import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.map.JsonMappingException;
+import org.msgpack.MessagePack;
 import org.msgpack.type.Value;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.b5m.flume.B5MEvent;
 import com.b5m.msgpack.MsgpackClient;
-import com.b5m.msgpack.SplitTitleRequest;
+import com.b5m.msgpack.SparseVector;
 import com.couchbase.client.CouchbaseClient;
 
 public class GeneralMesseageConsumer extends LaserMessageConsumer {
@@ -97,7 +98,7 @@ public class GeneralMesseageConsumer extends LaserMessageConsumer {
 		msgpackClient = new MsgpackClient(com.b5m.conf.Configuration
 				.getInstance().getMsgpackAddress(collection),
 				com.b5m.conf.Configuration.getInstance().getMsgpackPort(
-						collection));
+						collection), collection);
 	}
 
 	public synchronized void shutdown() throws IOException {
@@ -145,7 +146,6 @@ public class GeneralMesseageConsumer extends LaserMessageConsumer {
 			return false;
 		}
 
-	
 		append(new Text(user), new RequestWritable(userFeature, itemFeature,
 				action));
 		return true;
@@ -170,14 +170,17 @@ public class GeneralMesseageConsumer extends LaserMessageConsumer {
 
 	private boolean setItemProfile(String title, Vector profile) {
 		try {
-			Value res = msgpackClient.read(new SplitTitleRequest(title),
-					"spliteTitle");
-			Iterator<Entry<Value, Value>> iterator = res.asMapValue()
-					.entrySet().iterator();
+			Object[] req = new Object[1];
+			req[0] = title;
+			Value res = msgpackClient.read(req, "spliteTitle");
+			SparseVector vec = new org.msgpack.unpacker.Converter(
+					new MessagePack(), res).read(SparseVector.class);
+
+			Iterator<Entry<Integer, Float>> iterator = vec.vec.entrySet()
+					.iterator();
 			while (iterator.hasNext()) {
-				Map.Entry<Value, Value> entry = iterator.next();
-				profile.set(entry.getKey().asIntegerValue().getInt(), entry
-						.getValue().asFloatValue().getDouble());
+				Entry<Integer, Float> entry = iterator.next();
+				profile.set(entry.getKey(), entry.getValue());
 			}
 		} catch (Exception e) {
 			return false;

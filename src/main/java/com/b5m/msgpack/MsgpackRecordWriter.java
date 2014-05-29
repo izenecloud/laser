@@ -14,6 +14,7 @@ import org.msgpack.rpc.loop.EventLoop;
 
 public class MsgpackRecordWriter<K, V> extends RecordWriter<K, V> {
 	private List<Client> clients = null;
+	private String collection = null;
 	private String method = null;
 
 	public MsgpackRecordWriter(TaskAttemptContext context) {
@@ -30,6 +31,7 @@ public class MsgpackRecordWriter<K, V> extends RecordWriter<K, V> {
 		} catch (UnknownHostException e) {
 			e.printStackTrace();
 		}
+		collection = conf.get("com.b5m.msgpack.collection");
 		method = conf.get("com.b5m.msgpack.method");
 	}
 
@@ -48,16 +50,18 @@ public class MsgpackRecordWriter<K, V> extends RecordWriter<K, V> {
 	@Override
 	public void write(K key, V value) throws IOException, InterruptedException {
 		if (null == key || key instanceof NullWritable) {
-			Object[] params = new Object[1];
-			params[0] = value;
+			Object[] params = new Object[2];
+			params[0] = collection;
+			params[1] = value;
 			for (Client client : clients) {
 				client.callAsyncApply(method, params);
 			}
 
 		} else {
-			Object[] params = new Object[2];
-			params[0] = key;
-			params[1] = value;
+			Object[] params = new Object[3];
+			params[0] = collection;
+			params[1] = key;
+			params[2] = value;
 			for (Client client : clients) {
 				client.callAsyncApply(method, params);
 			}

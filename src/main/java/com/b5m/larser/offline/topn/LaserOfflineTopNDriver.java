@@ -2,27 +2,20 @@ package com.b5m.larser.offline.topn;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.net.UnknownHostException;
-import java.util.Iterator;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.mapreduce.Job;
-import org.apache.mahout.math.DenseVector;
-import org.apache.mahout.math.Vector;
 import org.msgpack.MessagePack;
-import org.msgpack.rpc.Client;
-import org.msgpack.rpc.loop.EventLoop;
 import org.msgpack.type.Value;
 
 import com.b5m.couchbase.CouchbaseConfig;
 import com.b5m.couchbase.CouchbaseInputFormat;
 import com.b5m.larser.feature.UserProfileMap;
-import com.b5m.msgpack.ClusteringInfo;
-import com.b5m.msgpack.ClusteringInfoRequest;
 import com.b5m.msgpack.ClusteringInfoResponse;
+import com.b5m.msgpack.MsgpackClient;
 import com.b5m.msgpack.MsgpackOutputFormat;
 
 public class LaserOfflineTopNDriver {
@@ -67,7 +60,7 @@ public class LaserOfflineTopNDriver {
 		serializeClusteringInfo(
 				clusteringInfoPath,
 				com.b5m.conf.Configuration.getInstance()
-						.getMsgpackAddress(collection).split(",")[0],
+						.getMsgpackAddress(collection),
 				com.b5m.conf.Configuration.getInstance().getMsgpackPort(
 						collection), conf);
 
@@ -106,31 +99,18 @@ public class LaserOfflineTopNDriver {
 		return 0;
 	}
 
-	public static int serializeClusteringInfo(Path path, String address,
+	public static int serializeClusteringInfo(Path path, String urlList,
 			Integer port, Configuration conf) throws IOException {
 		FileSystem fs = path.getFileSystem(conf);
 		if (fs.exists(path)) {
 			return 0;
 		}
-
-		EventLoop loop = EventLoop.defaultEventLoop();
-		Client client = null;
-		try {
-			client = new Client(address, port, loop);
-			client.setRequestTimeout(10000);
-		} catch (UnknownHostException e) {
-			e.printStackTrace();
-		}
-
-		Object[] args = new Object[1];
-		args[0] = new ClusteringInfoRequest();
-
-		MessagePack msgpack = new MessagePack();
-		msgpack.register(ClusteringInfoResponse.class);
-
-		Value res = client.callApply("getClusteringInfos", args);
+		
+		MsgpackClient client = new MsgpackClient(urlList, port, conf.get("com.b5m.msgpack.collection"));
+		client.setTimeout(1000);
+		Value res = client.read(new Object[0], "getClusteringInfos");
 		ClusteringInfoResponse response = new org.msgpack.unpacker.Converter(
-				msgpack, res).read(ClusteringInfoResponse.class);
+				new MessagePack(), res).read(ClusteringInfoResponse.class);
 
 		DataOutputStream out = fs.create(path);
 		response.write(out);

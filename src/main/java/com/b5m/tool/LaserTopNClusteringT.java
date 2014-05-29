@@ -19,12 +19,13 @@ public class LaserTopNClusteringT {
 
 		LaserArgument.parseArgs(args);
 		String collection = Configuration.getInstance().getCollections().get(0);
+		org.apache.hadoop.conf.Configuration conf = new org.apache.hadoop.conf.Configuration();
+		conf.set("com.b5m.msgpack.collection", collection);
 
 		LOG.info("calculating offline topn clusters for each user, write results to msgpack");
 		LaserOfflineTopNDriver.run(collection, Configuration.getInstance()
 				.getTopNClustering(collection),
-				new org.apache.hadoop.conf.Configuration());
-
+				conf);
 	}
 
 }

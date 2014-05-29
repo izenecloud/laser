@@ -19,6 +19,7 @@ public class LaserOnlineTrainTask implements Job {
 			throws JobExecutionException {
 		try {
 			String collection = context.getJobDetail().getGroup();
+
 			LOG.info("Online Train Task for {}", collection);
 
 			final Path input = Configuration.getInstance().getMetaqOutput(
@@ -30,6 +31,8 @@ public class LaserOnlineTrainTask implements Job {
 			final Boolean addIntercept = Configuration.getInstance()
 					.addIntercept(collection);
 			final org.apache.hadoop.conf.Configuration conf = new org.apache.hadoop.conf.Configuration();
+			conf.set("mapred.job.queue.name", "sf1");
+			conf.set("com.b5m.msgpack.collection", collection);
 
 			final LaserMessageConsumer consumeTask = LaserMessageConsumeTask
 					.getInstance().getLaserMessageConsumer(collection);

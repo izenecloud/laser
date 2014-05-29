@@ -33,45 +33,44 @@ public class Laser {
 
 	private static final Logger LOG = LoggerFactory.getLogger(Laser.class);
 
+	@SuppressWarnings("restriction")
 	public void run() throws CmdLineException, IOException, SchedulerException,
 			MetaClientException {
 		DirectSchedulerFactory factory = DirectSchedulerFactory.getInstance();
 		factory.createVolatileScheduler(10);
 		final Scheduler scheduler = factory.getScheduler();
-
+		final LaserMessageConsumeTask consumeTask = new LaserMessageConsumeTask();
 		for (String collection : Configuration.getInstance().getCollections()) {
-			System.out.println(collection);
 			try {
-				startCollection(scheduler, collection);
+				startCollection(scheduler, consumeTask, collection);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
 		}
 
+		consumeTask.start();
 		scheduler.start();
-
+		
 		Signal.handle(new Signal("INT"), new SignalHandler() {
 			public void handle(Signal sig) {
+				consumeTask.stop();
 
 				for (String collection : Configuration.getInstance()
 						.getCollections()) {
 					try {
-						stopCollection(scheduler, collection);
+						stopCollection(scheduler, consumeTask, collection);
+						consumeTask.stop();
 					} catch (SchedulerException e) {
-						// TODO Auto-generated catch block
 						e.printStackTrace();
 					} catch (MetaClientException e) {
-						// TODO Auto-generated catch block
 						e.printStackTrace();
 					} catch (IOException e) {
-						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
 				}
 				try {
 					scheduler.shutdown();
 				} catch (SchedulerException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 				System.exit(0);
@@ -79,16 +78,14 @@ public class Laser {
 		});
 	}
 
-	private void startCollection(final Scheduler scheduler, String collection)
+	private void startCollection(final Scheduler scheduler, final LaserMessageConsumeTask consumeTask, String collection)
 			throws SchedulerException, IOException, MetaClientException {
 		LOG.info("start collection {}", collection);
-		LaserMessageConsumeTask cosumeTask = LaserMessageConsumeTask
-				.getInstance();
 		Path messageOutput = Configuration.getInstance().getMetaqOutput(
 				collection);
 		org.apache.hadoop.conf.Configuration conf = new org.apache.hadoop.conf.Configuration();
 		FileSystem fs = messageOutput.getFileSystem(conf);
-		cosumeTask.addTask(collection, new GeneralMesseageConsumer(collection,
+		consumeTask.addTask(collection, new GeneralMesseageConsumer(collection,
 				messageOutput, fs, conf));
 
 		LOG.info("Laser Message Consume Task, output = {}", messageOutput);
@@ -126,12 +123,11 @@ public class Laser {
 				laserOfflineTrainTaskTrigger);
 	}
 
-	public void stopCollection(final Scheduler scheduler, String collection)
+	public void stopCollection(final Scheduler scheduler, final LaserMessageConsumeTask consumeTask, String collection)
 			throws SchedulerException, MetaClientException, IOException {
 		LOG.info("stop collection {}", collection);
-		LaserMessageConsumeTask cosumeTask = LaserMessageConsumeTask
-				.getInstance();
-		cosumeTask.removeTask(collection);
+
+		consumeTask.removeTask(collection);
 		LOG.info("remove {}'s Message Consume Task ", collection);
 
 		scheduler.deleteJob("online train task", collection);
