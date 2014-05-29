@@ -6,5 +6,6 @@ import org.msgpack.annotation.Message;
 
 @Message
 public class SparseVector {
+	public Integer clustering;
 	public Map<Integer, Float> vec;
 }

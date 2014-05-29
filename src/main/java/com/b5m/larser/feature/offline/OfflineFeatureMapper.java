@@ -18,6 +18,9 @@ public class OfflineFeatureMapper extends
 
 	protected void map(Text key, RequestWritable value, Context context)
 			throws IOException, InterruptedException {
+		if (key.toString().contains("_per_clustering")) {
+			return;
+		}
 		if (value.getAction() == -1) {
 			if (Math.abs(RANDOM.nextInt() % 100) >= 1) {
 				return;
