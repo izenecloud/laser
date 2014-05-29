@@ -22,13 +22,14 @@ public class OnlineFeatureDriver {
 	private static final Logger LOG = LoggerFactory
 			.getLogger(OnlineFeatureDriver.class);
 
-	public static long run(Path input, Path output, Configuration baseConf)
-			throws IOException, ClassNotFoundException, InterruptedException {
+	public static long run(String collection, Path input, Path output,
+			Configuration baseConf) throws IOException, ClassNotFoundException,
+			InterruptedException {
 		Configuration conf = new Configuration(baseConf);
 		Job job = Job.getInstance(conf);
 
 		job.setJarByClass(OnlineFeatureDriver.class);
-		job.setJobName("GROUP each user's feature BY uuid");
+		job.setJobName("GROUP each record's feature BY identifier");
 
 		FileInputFormat.setInputPaths(job, input);
 		FileOutputFormat.setOutputPath(job, output);
@@ -47,8 +48,7 @@ public class OnlineFeatureDriver {
 		HadoopUtil.delete(conf, output);
 		boolean succeeded = job.waitForCompletion(true);
 		if (!succeeded) {
-			throw new IllegalStateException(
-					"Job:Group each user's feature,  Failed!");
+			throw new IllegalStateException("Job:Group feature,  Failed!");
 		}
 		Counter counter = job.getCounters().findCounter(
 				"org.apache.hadoop.mapred.Task$Counter",
@@ -56,9 +56,9 @@ public class OnlineFeatureDriver {
 		long reduceOutputRecords = counter.getValue();
 
 		LOG.info(
-				"Job: GROUP each user's feature BY uuid, output recordes = {}",
+				"Job: GROUP each record's feature BY identifier, output recordes = {}",
 				reduceOutputRecords);
-		
+
 		return reduceOutputRecords;
 	}
 }

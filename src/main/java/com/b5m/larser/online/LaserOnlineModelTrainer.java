@@ -20,9 +20,9 @@ public class LaserOnlineModelTrainer {
 	public static int run(String collection, Path input, Path output,
 			Float regularizationFactor, Boolean addIntercept, Configuration conf)
 			throws ClassNotFoundException, IOException, InterruptedException {
-		Path userGroup = new Path(output, "userGroup");
+		Path groupByIdendifier = new Path(output, "groupByIdendifier");
 		try {
-			if (0 == OnlineFeatureDriver.run(input, userGroup, conf)) {
+			if (0 == OnlineFeatureDriver.run(collection, input, groupByIdendifier, conf)) {
 				return 0;
 			}
 		} catch (IllegalStateException e) {
@@ -35,10 +35,9 @@ public class LaserOnlineModelTrainer {
 		conf.setInt("mapred.job.reduce.memory.mb", 4096);
 
 		Path lrOutput = new Path(output, "LR");
-		LrIterationDriver.run(collection, userGroup, lrOutput,
+		LrIterationDriver.run(collection, groupByIdendifier, lrOutput,
 				regularizationFactor, addIntercept, conf);
-
-		HadoopUtil.delete(conf, userGroup);
+		HadoopUtil.delete(conf, groupByIdendifier);
 		return 0;
 	}
 }
