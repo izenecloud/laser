@@ -34,8 +34,9 @@ public class LaserOnlineTrainTask implements Job {
 			conf.set("mapred.job.queue.name", "sf1");
 			conf.set("com.b5m.msgpack.collection", collection);
 
-			final LaserMessageConsumer consumeTask = LaserMessageConsumeTask
-					.getInstance().getLaserMessageConsumer(collection);
+			final LaserMessageConsumer consumeTask = (LaserMessageConsumer) context
+					.getJobDetail().getJobDataMap()
+					.get("com.b5m.laser.message.consumer");
 			long minorVersion = consumeTask.getMinorVersion();
 			long majorVersion = consumeTask.getMajorVersion();
 

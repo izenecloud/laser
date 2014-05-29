@@ -6,7 +6,8 @@
   },
   "metaq":{
     "zookeeper" : "localhost:2181",
-    "topic":"test"
+    "topic":"test",
+    "consumer":"com.b5m.larser.feature.GeneralMesseageConsumer"
   },
   "msgpack":{
     "ip" : "10.10.99.121",

@@ -5,6 +5,8 @@ import java.util.Map;
 import org.apache.hadoop.fs.Path;
 import org.codehaus.jackson.annotate.JsonProperty;
 
+import com.b5m.larser.feature.LaserMessageConsumer;
+
 class Collection {
 	private static final String METAQ_FOLDER_NAME = "metaq_folder";
 	private static final String ONLINE_MODEL_FOLDER = "online_model_folder";
@@ -21,13 +23,13 @@ class Collection {
 
 	@JsonProperty
 	private Map<String, String> laser;
-	
+
 	private String collection;
 
 	public void setCollecion(String collection) {
 		this.collection = collection;
 	}
-	
+
 	public Path getLaserHDFSRoot() {
 		return new Path(laser.get("output"), collection);
 	}
@@ -110,6 +112,12 @@ class Collection {
 			return null;
 		}
 		return Integer.valueOf(offline_max_iteration);
+	}
+
+	public Class<? extends LaserMessageConsumer> getMessageConsumer()
+			throws ClassNotFoundException {
+		return (Class<? extends LaserMessageConsumer>) Class.forName(metaq
+				.get("consumer"));
 	}
 
 	public String getMsgpackAddress() {

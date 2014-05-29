@@ -37,10 +37,11 @@ public class LaserOfflineTrainTask implements Job {
 		final org.apache.hadoop.conf.Configuration conf = new org.apache.hadoop.conf.Configuration();
 		conf.set("mapred.job.queue.name", "sf1");
 		conf.set("com.b5m.msgpack.collection", collection);
-		
+
 		try {
-			final LaserMessageConsumer consumeTask = LaserMessageConsumeTask
-					.getInstance().getLaserMessageConsumer(collection);
+			final LaserMessageConsumer consumeTask = (LaserMessageConsumer) context
+					.getJobDetail().getJobDataMap()
+					.get("com.b5m.laser.message.consumer");
 			long majorVersion = consumeTask.getMajorVersion();
 
 			consumeTask.incrMajorVersion();

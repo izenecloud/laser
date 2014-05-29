@@ -15,6 +15,8 @@ import org.apache.hadoop.fs.Path;
 import org.codehaus.jackson.annotate.JsonProperty;
 import org.codehaus.jackson.map.ObjectMapper;
 
+import com.b5m.larser.feature.LaserMessageConsumer;
+
 public class Configuration {
 
 	private static Configuration conf = null;
@@ -36,7 +38,8 @@ public class Configuration {
 				FSDataInputStream in = fs.open(p);
 				Collection configuration = OBJECT_MAPPER.readValue(in,
 						Collection.class);
-				String collection = p.getName().substring(0, p.getName().lastIndexOf(".properties"));
+				String collection = p.getName().substring(0,
+						p.getName().lastIndexOf(".properties"));
 				configuration.setCollecion(collection);
 				mapper.put(collection, configuration);
 			}
@@ -54,6 +57,15 @@ public class Configuration {
 			collectionList.add(collection);
 		}
 		return collectionList;
+	}
+
+	public void removeCollection(String collection) {
+		mapper.remove(collection);
+	}
+
+	public Class<? extends LaserMessageConsumer> getMessageConsumer(
+			String collection) throws ClassNotFoundException {
+		return getCollection(collection).getMessageConsumer();
 	}
 
 	public Path getLaserHDFSRoot(String collection) {

@@ -11,15 +11,6 @@ import com.taobao.metamorphosis.exception.MetaClientException;
 
 public class LaserMessageConsumeTask {
 
-	private static LaserMessageConsumeTask task = null;
-
-	public static LaserMessageConsumeTask getInstance() {
-		if (null == task) {
-			task = new LaserMessageConsumeTask();
-		}
-		return task;
-	}
-
 	private LaserFeatureListenser listener = new LaserFeatureListenser();
 	private Consumer consumer = new Consumer();
 	private Map<String, LaserMessageConsumer> consumeTask = new HashMap<String, LaserMessageConsumer>();
