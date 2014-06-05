@@ -14,7 +14,7 @@ import org.msgpack.type.Value;
 import com.b5m.couchbase.CouchbaseConfig;
 import com.b5m.couchbase.CouchbaseInputFormat;
 import com.b5m.larser.feature.UserProfileMap;
-import com.b5m.msgpack.ClusteringInfoResponse;
+import com.b5m.msgpack.AdClusteringsInfo;
 import com.b5m.msgpack.MsgpackClient;
 import com.b5m.msgpack.MsgpackOutputFormat;
 
@@ -109,8 +109,8 @@ public class LaserOfflineTopNDriver {
 		MsgpackClient client = new MsgpackClient(urlList, port, conf.get("com.b5m.msgpack.collection"));
 		client.setTimeout(1000);
 		Value res = client.read(new Object[0], "getClusteringInfos");
-		ClusteringInfoResponse response = new org.msgpack.unpacker.Converter(
-				new MessagePack(), res).read(ClusteringInfoResponse.class);
+		AdClusteringsInfo response = new org.msgpack.unpacker.Converter(
+				new MessagePack(), res).read(AdClusteringsInfo.class);
 
 		DataOutputStream out = fs.create(path);
 		response.write(out);

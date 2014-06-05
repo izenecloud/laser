@@ -19,8 +19,8 @@ import org.apache.mahout.math.Vector;
 
 import com.b5m.larser.feature.UserProfile;
 import com.b5m.larser.feature.UserProfileMap;
-import com.b5m.msgpack.ClusteringInfo;
-import com.b5m.msgpack.ClusteringInfoResponse;
+import com.b5m.msgpack.AdClusteringsInfo;
+import com.b5m.msgpack.SparseVector;
 
 import static com.b5m.HDFSHelper.readMatrix;
 import static com.b5m.HDFSHelper.readVector;
@@ -53,33 +53,34 @@ public class LaserOfflineTopNMapper
 		AC = new LinkedList<IntVector>();
 		CBeta = new LinkedList<Double>();
 
-		ClusteringInfoResponse response = null;
+		AdClusteringsInfo adClusteringsInfo = null;
 		{
 			Path clusteringPath = new Path(
 					conf.get("com.b5m.laser.offline.topn.clustering.info"));
 			DataInputStream in = fs.open(clusteringPath);
 			try {
-				response = ClusteringInfoResponse.read(in);
+				adClusteringsInfo = AdClusteringsInfo.read(in);
 			} catch (ClassNotFoundException e) {
 				e.printStackTrace();
 			}
 		}
 
-		Iterator<ClusteringInfo> iterator = response.iterator();
+		Iterator<SparseVector> iterator = adClusteringsInfo.iterator();
+		int clusteringId = 0;
 		while (iterator.hasNext()) {
-			ClusteringInfo info = iterator.next();
-			com.b5m.larser.offline.topn.ClusterInfo cluster = new com.b5m.larser.offline.topn.ClusterInfo(
-					info.clusteringIndex, info.pows, beta.size());
+			SparseVector sv = iterator.next();
+			com.b5m.larser.offline.topn.AdClusteringInfo cluster = new com.b5m.larser.offline.topn.AdClusteringInfo(
+					clusteringId, sv, beta.size());
 			// A * Cj
 			Vector acj = new DenseVector(A.numRows());
 			for (int row = 0; row < A.numRows(); row++) {
 				Vector ai = A.viewRow(row);
-				acj.set(row, cluster.getClusterFeatureVector().dot(ai));
+				acj.set(row, cluster.getClusteringInfo().dot(ai));
 			}
-			AC.add(new IntVector(cluster.getClusterHash(), acj));
+			AC.add(new IntVector(cluster.getClusteringId(), acj));
 
 			// Cj * beta
-			CBeta.add(cluster.getClusterFeatureVector().dot(beta));
+			CBeta.add(cluster.getClusteringInfo().dot(beta));
 		}
 
 		userFeature = new SequentialAccessSparseVector(A.numRows());

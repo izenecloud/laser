@@ -42,10 +42,10 @@ public class LaserOfflineTrainerT {
 		HadoopUtil.delete(conf, signalData);
 
 		LaserOfflineResultWriter writer = new LaserOfflineResultWriter();
-		writer.write(conf, output.getFileSystem(conf), new Path(admmOutput,
-				AdmmOptimizerDriver.FINAL_MODEL), output, Configuration
-				.getInstance().getUserFeatureDimension(collection),
-				Configuration.getInstance().getItemFeatureDimension(collection));
+//		writer.write(conf, output.getFileSystem(conf), new Path(admmOutput,
+//				AdmmOptimizerDriver.FINAL_MODEL), output, Configuration
+//				.getInstance().getUserFeatureDimension(collection),
+//				Configuration.getInstance().getItemFeatureDimension(collection));
 
 	}
 

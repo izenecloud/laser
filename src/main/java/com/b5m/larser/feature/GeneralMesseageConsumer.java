@@ -23,6 +23,7 @@ import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.map.JsonMappingException;
 import org.msgpack.MessagePack;
 import org.msgpack.type.Value;
+import org.msgpack.unpacker.Converter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -171,14 +172,12 @@ public class GeneralMesseageConsumer extends LaserMessageConsumer {
 			Object[] req = new Object[1];
 			req[0] = title;
 			Value res = msgpackClient.read(req, "spliteTitle");
-			SparseVector vec = new org.msgpack.unpacker.Converter(
-					new MessagePack(), res).read(SparseVector.class);
-
-			Iterator<Entry<Integer, Float>> iterator = vec.vec.entrySet()
-					.iterator();
-			while (iterator.hasNext()) {
-				Entry<Integer, Float> entry = iterator.next();
-				profile.set(entry.getKey(), entry.getValue());
+			Converter converter = new org.msgpack.unpacker.Converter(res);
+			SparseVector vec = converter.read(SparseVector.class);
+			converter.close();
+			
+			while (vec.hasNext()) {
+				profile.set(vec.getIndex(), vec.get());
 			}
 		} catch (Exception e) {
 			return false;

@@ -1,4 +1,4 @@
-package com.b5m.larser.feature;
+package com.b5m.larser.feature.webscale;
 
 import java.io.IOException;
 import java.util.Iterator;
@@ -10,10 +10,12 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
 import org.apache.mahout.math.SequentialAccessSparseVector;
 import org.apache.mahout.math.Vector;
-import org.msgpack.MessagePack;
 import org.msgpack.type.Value;
+import org.msgpack.unpacker.Converter;
 
 import com.b5m.flume.B5MEvent;
+import com.b5m.larser.feature.LaserMessageConsumer;
+import com.b5m.larser.feature.RequestWritable;
 import com.b5m.msgpack.MsgpackClient;
 import com.b5m.msgpack.SparseVector;
 
@@ -32,28 +34,26 @@ public class WebScaleMessageConsumer extends LaserMessageConsumer {
 	public boolean write(B5MEvent b5mEvent) throws IOException {
 		// TODO
 		// user feature
-		// item feature
-		// item id
+		// ad feature
+		// ad id
 		// action
 		Vector ad = new SequentialAccessSparseVector();
 		Object[] req = new Object[1];
-		req[0] = new String("item");
-		Value res = client.asyncRead(req, "itemFeature");
-		SparseVector vec = new org.msgpack.unpacker.Converter(
-				new MessagePack(), res).read(SparseVector.class);
+		req[0] = new String("docid");
+		AdInfo adInfo = (AdInfo) client.asyncRead(req, "getAdInfoById", AdInfo.class);
 
-		Iterator<Entry<Integer, Float>> iterator = vec.vec.entrySet()
-				.iterator();
-		while (iterator.hasNext()) {
-			Entry<Integer, Float> entry = iterator.next();
-			ad.set(entry.getKey(), entry.getValue());
+		while (adInfo.context.hasNext()) {
+			ad.set(adInfo.context.getIndex(), adInfo.context.get());
 		}
-		append(new Text(""), new RequestWritable(
-				new SequentialAccessSparseVector(), ad, -1));
-		if (-1 != vec.clustering) {
-			append(new Text(Integer.toString(vec.clustering) + "_per_clustering"),
-					new RequestWritable(new SequentialAccessSparseVector(), ad,
-							-1));
+		
+		append(new Text(adInfo.adId), new RequestWritable(
+				new SequentialAccessSparseVector(), ad, -1));		
+
+		// clustering only for per-clustering model
+		// does not need item feature.
+		if (!adInfo.clusteringId.isEmpty()) {
+			append(new Text(adInfo.clusteringId), new RequestWritable(
+					new SequentialAccessSparseVector(), ad, -1));
 		}
 		return false;
 	}
