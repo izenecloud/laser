@@ -11,8 +11,11 @@ import org.msgpack.rpc.Future;
 import org.msgpack.rpc.loop.EventLoop;
 import org.msgpack.type.Value;
 import org.msgpack.unpacker.Converter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class MsgpackClient {
+	private static final Logger LOG = LoggerFactory.getLogger(MsgpackClient.class);
 	private final List<Client> clients;
 	private final String collection;
 
@@ -26,7 +29,7 @@ public class MsgpackClient {
 				clients.add(new Client(url, port, loop));
 			}
 		} catch (UnknownHostException e) {
-			e.printStackTrace();
+			LOG.info(e.getMessage());
 		}
 	}
 
@@ -35,6 +38,7 @@ public class MsgpackClient {
 			try {
 				client.close();
 			} catch (Exception e) {
+				LOG.debug(e.getMessage());
 			}
 		}
 	}
@@ -48,6 +52,9 @@ public class MsgpackClient {
 	public Object asyncRead(Object[] req, String method, Class<?> valueClass)
 			throws IOException {
 		Value vaule = asyncRead(req, method);
+		if (null == vaule) {
+			return null;
+		}
 		Converter converter = new org.msgpack.unpacker.Converter(vaule);
 		Object ret = converter.read(valueClass);
 		converter.close();
@@ -59,7 +66,7 @@ public class MsgpackClient {
 			try {
 				return client.callApply(method + "|" + collection, req);
 			} catch (Exception e) {
-				e.printStackTrace();
+				LOG.debug(e.getMessage());
 			}
 		}
 		return null;
@@ -75,18 +82,22 @@ public class MsgpackClient {
 						+ collection, req);
 				retList.add(f);
 			} catch (Exception e) {
-				e.printStackTrace();
+				LOG.debug(e.getMessage());
 			}
 		}
 		Value ret = null;
 		while (null == ret) {
+			if (retList.isEmpty()) {
+				break;
+			}
 			for (Future<Value> f : retList) {
 				if (f.isDone()) {
 					try {
 						ret = f.get();
 						return ret;
-					} catch (InterruptedException e) {
-						e.printStackTrace();
+					} catch (Exception e) {
+						LOG.debug(e.getMessage());
+						retList.remove(f);
 					}
 				} else if (null != ret) {
 					f.cancel(true);
@@ -96,7 +107,18 @@ public class MsgpackClient {
 		return null;
 	}
 
-	public Value write(Object[] req, String method) {
+	public Object write(Object[] req, String method, Class<?> valueClass) throws Exception {
+		Value vaule = write(req, method);
+		if (null == vaule) {
+			return null;
+		}
+		Converter converter = new org.msgpack.unpacker.Converter(vaule);
+		Object ret = converter.read(valueClass);
+		converter.close();
+		return ret;
+	}
+
+	public Value write(Object[] req, String method) throws Exception {
 		Value ret = null;
 		List<Future<Value>> retList = new ArrayList<Future<Value>>(
 				clients.size());
@@ -107,15 +129,16 @@ public class MsgpackClient {
 						+ collection, req);
 				retList.add(f);
 			} catch (Exception e) {
-				e.printStackTrace();
+				LOG.debug(e.getMessage());
 			}
 		}
 		for (Future<Value> f : retList) {
 			try {
 				f.join();
 				ret = f.get();
-			} catch (InterruptedException e) {
-				e.printStackTrace();
+			} catch (Exception e) {
+				LOG.debug(e.getMessage());
+				throw e;
 			}
 		}
 		return ret;

@@ -1,6 +1,5 @@
 package com.b5m.larser.offline.topn;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -13,8 +12,7 @@ import org.apache.mahout.math.DenseMatrix;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Matrix;
 import org.apache.mahout.math.Vector;
-//import org.slf4j.Logger;
-//import org.slf4j.LoggerFactory;
+
 
 import com.b5m.admm.AdmmReducerContext;
 import com.b5m.admm.AdmmReducerContextWritable;
@@ -25,7 +23,7 @@ import static com.b5m.HDFSHelper.*;
 public class LaserOfflineResultWriter {
 
 	public void write(String collection, Boolean direct, FileSystem fs,
-			Path hdfsFilePath) throws IOException {
+			Path hdfsFilePath) throws Exception {
 		if (!fs.exists(hdfsFilePath)) {
 			return;
 		}
@@ -60,8 +58,6 @@ public class LaserOfflineResultWriter {
 			for (int row = 0; row < A.numRows(); row++) {
 				Vector v = A.viewRow(row);
 				for (int col = 0; col < A.numCols(); col++) {
-					// System.out.println(row * itemDimension + col
-					// + userDimension + itemDimension);
 					v.set(col, z[row * adfDimension + col + ufDimension
 							+ adfDimension]);
 				}
