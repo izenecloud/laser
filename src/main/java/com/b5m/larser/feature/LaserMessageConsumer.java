@@ -1,5 +1,7 @@
 package com.b5m.larser.feature;
 
+import static com.b5m.HDFSHelper.*;
+
 import java.io.IOException;
 
 import org.apache.hadoop.conf.Configuration;
@@ -8,6 +10,11 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Text;
+import org.apache.mahout.math.Matrix;
+import org.apache.mahout.math.SequentialAccessSparseVector;
+import org.apache.mahout.math.Vector;
+import org.apache.mahout.math.VectorWritable;
+import org.apache.mahout.math.Vector.Element;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,110 +23,150 @@ import com.b5m.flume.B5MEvent;
 public abstract class LaserMessageConsumer {
 	private static final Logger LOG = LoggerFactory
 			.getLogger(LaserMessageConsumer.class);
+	private static final String OFFLINE_FOLDER = "OFFLINE_FOLDER";
+	private static final String ONLINE_FOLDER = "ONLINE_FOLDER";
 
 	private final Path output;
 	private final FileSystem fs;
 	private final Configuration conf;
-	private SequenceFile.Writer writer;
-	private long majorVersion = 0;
-	private long minorVersion = 0;
+	private SequenceFile.Writer offlineWriter;
+	private SequenceFile.Writer onlineWriter;
+	private Vector alpha = null;
+	private Vector beta = null;
+	private Matrix quadratic = null;
+	private long offlineVersion = 0;
+	private long onlineVersion = 0;
 	private final String collection;
 
-
-	public LaserMessageConsumer(String collection, Path output, FileSystem fs, Configuration conf)
-			throws IOException {
+	public LaserMessageConsumer(String collection, Path output, FileSystem fs,
+			Configuration conf) throws IOException {
 		this.collection = collection;
 		this.output = output;
 		this.fs = fs;
 		this.conf = conf;
 
-		initSequenceWriter();
+		Path onlinePath = new Path(output, ONLINE_FOLDER + "/"
+				+ Long.toString(onlineVersion));
+		onlineWriter = SequenceFile.createWriter(fs, conf, onlinePath,
+				Text.class, OnlineVectorWritable.class);
+		Path offlinePath = new Path(output, ONLINE_FOLDER + "/"
+				+ Long.toString(offlineVersion));
+		offlineWriter = SequenceFile.createWriter(fs, conf, offlinePath,
+				Text.class, VectorWritable.class);
 	}
 
 	public synchronized void shutdown() throws IOException {
-		writer.close();
+		offlineWriter.close();
+		onlineWriter.close();
+	}
+
+	public void loadOfflineMode() {
+		synchronized (alpha) {
+
+			try {
+				Path offlineModel = com.b5m.conf.Configuration.getInstance()
+						.getLaserOfflineOutput(collection);
+				alpha = readVector(new Path(offlineModel, "alpha"), fs, conf);
+				beta = readVector(new Path(offlineModel, "beta"), fs, conf);
+				quadratic = readMatrix(new Path(offlineModel, "A"), fs, conf);
+			} catch (Exception e) {
+				LOG.info("offline model does not exist, {}");
+			}
+		}
 	}
 
 	public abstract boolean write(B5MEvent b5mEvent) throws IOException;
 
 	public abstract void flush() throws IOException;
 
-	public synchronized void append(Text key, RequestWritable val) throws IOException {
-		writer.append(key, val);
+	public void appendOnline(Text key, OnlineVectorWritable val)
+			throws IOException {
+		synchronized (onlineWriter) {
+			onlineWriter.append(key, val);
+		}
 	}
 
-	@SuppressWarnings("deprecation")
-	public synchronized void incrMinorVersion() throws IOException {
-		writer.close();
+	public void appendOffline(Text key, Request value) throws IOException {
+		Vector userFeature = value.getUserFeature();
+		Vector itemFeature = value.getItemFeature();
+		int userDimension = userFeature.size();
+		int itemDimension = itemFeature.size();
+		Vector offlineFeature = new SequentialAccessSparseVector(userDimension
+				+ itemDimension + userDimension * itemDimension + 1);
 
-		minorVersion++;
-		writer = SequenceFile.createWriter(
-				fs,
-				conf,
-				new Path(output, Long.toString(majorVersion) + "-"
-						+ Long.toString(minorVersion)), Text.class,
-				RequestWritable.class);
+		// first order
+		for (Element e : userFeature.nonZeroes()) {
+			offlineFeature.set(e.index(), e.get());
+		}
+		for (Element e : itemFeature.nonZeroes()) {
+			offlineFeature.set(userDimension + e.index(), e.get());
+		}
+		// second order
+		for (Element elementOfUser : userFeature.nonZeroes()) {
+			for (Element elemetOfItem : itemFeature.nonZeroes()) {
+				offlineFeature.set(elementOfUser.index() * elemetOfItem.index()
+						+ userDimension + itemDimension, elementOfUser.get()
+						* elemetOfItem.get());
+			}
+
+		}
+		// action
+		offlineFeature.set(offlineFeature.size() - 1, value.getAction());
+		synchronized (offlineWriter) {
+			offlineWriter.append(key, new VectorWritable(offlineFeature));
+		}
 	}
 
-	public synchronized long getMinorVersion() {
-		return minorVersion;
+	public double knownOffset(Request value) throws IOException {
+		synchronized (alpha) {
+			if (alpha == null || beta == null || quadratic == null) {
+				return 0;
+			}
+			Vector userFeature = value.getUserFeature();
+			double offset = alpha.dot(userFeature);
+			Vector itemFeature = value.getItemFeature();
+			offset += beta.dot(itemFeature);
+
+			for (int row = 0; row < quadratic.numRows(); row++) {
+				offset += userFeature.get(row)
+						* quadratic.viewRow(row).dot(itemFeature);
+			}
+			return offset;
+		}
 	}
 
-	@SuppressWarnings("deprecation")
-	public synchronized void incrMajorVersion() throws IOException {
-		writer.close();
-
-		majorVersion++;
-		minorVersion = 0;
-		writer = SequenceFile.createWriter(
-				fs,
-				conf,
-				new Path(output, Long.toString(majorVersion) + "-"
-						+ Long.toString(minorVersion)), Text.class,
-				RequestWritable.class);
-
+	public Path nextOnlinePath() throws IOException {
+		synchronized (onlineWriter) {
+			onlineWriter.close();
+			Path ret = new Path(output, ONLINE_FOLDER + "/"
+					+ Long.toString(onlineVersion));
+			onlineVersion++;
+			Path onlinePath = new Path(output, ONLINE_FOLDER + "/"
+					+ Long.toString(onlineVersion));
+			LOG.info("Update online feature output path, to {}", onlinePath);
+			onlineWriter = SequenceFile.createWriter(fs, conf, onlinePath,
+					Text.class, OnlineVectorWritable.class);
+			return ret;
+		}
 	}
 
-	public synchronized long getMajorVersion() {
-		return majorVersion;
+	public Path nextOfflinePath() throws IOException {
+		synchronized (offlineWriter) {
+			offlineWriter.close();
+			Path ret = new Path(output, OFFLINE_FOLDER + "/"
+					+ Long.toString(offlineVersion));
+			offlineVersion++;
+			Path offlinePath = new Path(output, ONLINE_FOLDER + "/"
+					+ Long.toString(offlineVersion));
+			LOG.info("Update offline feature output path, to {}", offlinePath);
+
+			offlineWriter = SequenceFile.createWriter(fs, conf, offlinePath,
+					Text.class, VectorWritable.class);
+			return ret;
+		}
 	}
-	
+
 	public String getCollection() {
 		return collection;
 	}
-
-	@SuppressWarnings("deprecation")
-	private synchronized void initSequenceWriter() throws IOException {
-
-		try {
-			FileStatus[] files = fs.listStatus(output);
-
-			for (FileStatus file : files) {
-				String name = file.getPath().getName();
-				String[] versions = name.split("-");
-				if (versions.length != 2) {
-					continue;
-				}
-				Long majorVersion = Long.valueOf(versions[0]);
-				if (this.majorVersion < majorVersion) {
-					this.majorVersion = majorVersion;
-				}
-				Long minorVersion = Long.valueOf(versions[1]);
-				if (this.minorVersion < minorVersion) {
-					this.minorVersion = minorVersion;
-				}
-			}
-		} catch (IOException e) {
-			LOG.debug("{} doesn't exist", output);
-		}
-
-		minorVersion++;
-		Path sequentialPath = new Path(output, Long.toString(majorVersion)
-				+ "-" + Long.toString(minorVersion));
-
-		LOG.debug("writing data to {}", sequentialPath);
-		writer = SequenceFile.createWriter(fs, conf, sequentialPath,
-				Text.class, RequestWritable.class);
-	}
-
 }

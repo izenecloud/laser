@@ -9,12 +9,12 @@ import org.apache.mahout.math.Vector;
 import org.apache.mahout.math.Vector.Element;
 import org.apache.mahout.math.VectorWritable;
 
-import com.b5m.larser.feature.RequestWritable;
+import com.b5m.larser.feature.Request;
 
 public class OnlineFeatureMapper extends
-		Mapper<Text, RequestWritable, Text, VectorWritable> {
+		Mapper<Text, Request, Text, VectorWritable> {
 
-	protected void map(Text key, RequestWritable value, Context context)
+	protected void map(Text key, Request value, Context context)
 			throws IOException, InterruptedException {
 		Vector itemFeature = value.getItemFeature();
 

@@ -37,14 +37,8 @@ public class LaserOnlineTrainTask implements Job {
 			final LaserMessageConsumer consumeTask = (LaserMessageConsumer) context
 					.getJobDetail().getJobDataMap()
 					.get("com.b5m.laser.message.consumer");
-			long minorVersion = consumeTask.getMinorVersion();
-			long majorVersion = consumeTask.getMajorVersion();
 
-			consumeTask.incrMinorVersion();
-			LOG.info("Update MetaQ's output path, minor version from {} to {}",
-					minorVersion, consumeTask.getMinorVersion());
-			Path signalPath = new Path(input, Long.toString(majorVersion) + "-"
-					+ Long.toString(minorVersion));
+			Path signalPath = consumeTask.nextOnlinePath();
 			LOG.info(
 					"Retraining Laser's Online Model, results is flushed to {}",
 					output);

@@ -7,10 +7,8 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 
 import org.apache.avro.util.Utf8;
 import org.apache.hadoop.conf.Configuration;
@@ -21,7 +19,6 @@ import org.apache.mahout.math.SequentialAccessSparseVector;
 import org.apache.mahout.math.Vector;
 import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.map.JsonMappingException;
-import org.msgpack.MessagePack;
 import org.msgpack.type.Value;
 import org.msgpack.unpacker.Converter;
 import org.slf4j.Logger;
@@ -141,12 +138,15 @@ public class GeneralMesseageConsumer extends LaserMessageConsumer {
 		setUserProfile(user, userFeature);
 		Vector itemFeature = new SequentialAccessSparseVector(itemDimension);
 		if (!setItemProfile(item, itemFeature)) {
-			// bad items
 			return false;
 		}
 
-		append(new Text(user), new RequestWritable(userFeature, itemFeature,
-				action));
+		Request req = new Request(userFeature, itemFeature, action);
+		Text key = new Text(user);
+		appendOffline(key, req);
+
+		Double offset = knownOffset(req);
+		appendOnline(key, new OnlineVectorWritable(offset, action, itemFeature));
 		return true;
 	}
 
@@ -175,7 +175,7 @@ public class GeneralMesseageConsumer extends LaserMessageConsumer {
 			Converter converter = new org.msgpack.unpacker.Converter(res);
 			SparseVector vec = converter.read(SparseVector.class);
 			converter.close();
-			
+
 			while (vec.hasNext()) {
 				profile.set(vec.getIndex(), vec.get());
 			}

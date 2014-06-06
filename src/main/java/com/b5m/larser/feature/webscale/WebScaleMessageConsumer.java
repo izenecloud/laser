@@ -15,7 +15,8 @@ import org.msgpack.unpacker.Converter;
 
 import com.b5m.flume.B5MEvent;
 import com.b5m.larser.feature.LaserMessageConsumer;
-import com.b5m.larser.feature.RequestWritable;
+import com.b5m.larser.feature.OnlineVectorWritable;
+import com.b5m.larser.feature.Request;
 import com.b5m.msgpack.MsgpackClient;
 import com.b5m.msgpack.SparseVector;
 
@@ -45,15 +46,21 @@ public class WebScaleMessageConsumer extends LaserMessageConsumer {
 		while (adInfo.context.hasNext()) {
 			ad.set(adInfo.context.getIndex(), adInfo.context.get());
 		}
+		Vector user = new SequentialAccessSparseVector();
+		Integer action = 0;
 		
-		append(new Text(adInfo.adId), new RequestWritable(
-				new SequentialAccessSparseVector(), ad, -1));		
+		Request request = new Request(user, ad, action);
+		Text key = new Text("");
+		appendOffline(key, request);
 
+		Double offset = knownOffset(request);
+		OnlineVectorWritable online = new OnlineVectorWritable(offset, action, user);
+		appendOnline(key, online);
+		
 		// clustering only for per-clustering model
 		// does not need item feature.
 		if (!adInfo.clusteringId.isEmpty()) {
-			append(new Text(adInfo.clusteringId), new RequestWritable(
-					new SequentialAccessSparseVector(), ad, -1));
+			appendOnline(new Text(adInfo.clusteringId), online);
 		}
 		return false;
 	}

@@ -16,7 +16,6 @@ import com.b5m.HDFSHelper;
 import com.b5m.admm.AdmmOptimizerDriver;
 import com.b5m.conf.Configuration;
 import com.b5m.larser.feature.LaserMessageConsumer;
-import com.b5m.larser.feature.offline.OfflineFeatureDriver;
 import com.b5m.larser.offline.topn.LaserOfflineResultWriter;
 import com.b5m.larser.offline.topn.LaserOfflineTopNDriver;
 import com.b5m.msgpack.MsgpackClient;
@@ -57,29 +56,14 @@ public class LaserOfflineTrainTask implements Job {
 			final LaserMessageConsumer consumeTask = (LaserMessageConsumer) context
 					.getJobDetail().getJobDataMap()
 					.get("com.b5m.laser.message.consumer");
-			long majorVersion = consumeTask.getMajorVersion();
 
-			consumeTask.incrMajorVersion();
-			LOG.info("Update MetaQ's output path, major version from {} to {}",
-					majorVersion, consumeTask.getMajorVersion());
-
-			Path input = new Path(Configuration.getInstance().getMetaqOutput(
-					collection), Long.toString(majorVersion) + "-*");
-			LOG.info("Retraining Laser's Offline Model, result = {}",
-					outputPath);
-
-			Path signalData = new Path(outputPath, "ADMM_SIGNAL");
-			OfflineFeatureDriver.run(input, signalData, conf);
-
-			LOG.info("Deleting files: {}", input);
-			HDFSHelper.deleteFiles(input.getParent(), input.getName(),
-					input.getFileSystem(conf));
 
 			Path admmOutput = new Path(outputPath, "ADMM");
-			AdmmOptimizerDriver.run(signalData, admmOutput,
+			Path input = consumeTask.nextOfflinePath();
+			AdmmOptimizerDriver.run(input, admmOutput,
 					regularizationFactor, addIntercept, null,
 					iterationsMaximum, conf);
-			HadoopUtil.delete(conf, signalData);
+			HadoopUtil.delete(conf, input);
 
 			Value res = client.asyncRead(new Object[0], "isNeedTopN");
 			Boolean isNeedTopN = res.asBooleanValue().getBoolean();
