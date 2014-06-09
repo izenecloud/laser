@@ -15,7 +15,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class MsgpackClient {
-	private static final Logger LOG = LoggerFactory.getLogger(MsgpackClient.class);
+	private static final Logger LOG = LoggerFactory
+			.getLogger(MsgpackClient.class);
 	private final List<Client> clients;
 	private final String collection;
 
@@ -107,7 +108,8 @@ public class MsgpackClient {
 		return null;
 	}
 
-	public Object write(Object[] req, String method, Class<?> valueClass) throws Exception {
+	public Object write(Object[] req, String method, Class<?> valueClass)
+			throws Exception {
 		Value vaule = write(req, method);
 		if (null == vaule) {
 			return null;
@@ -116,6 +118,17 @@ public class MsgpackClient {
 		Object ret = converter.read(valueClass);
 		converter.close();
 		return ret;
+	}
+
+	public void writeIgnoreRetValue(Object[] req, String method)
+			throws Exception {
+		for (Client client : clients) {
+			try {
+				client.callAsyncApply(method + "|" + collection, req);
+			} catch (Exception e) {
+				LOG.debug(e.getMessage());
+			}
+		}
 	}
 
 	public Value write(Object[] req, String method) throws Exception {
