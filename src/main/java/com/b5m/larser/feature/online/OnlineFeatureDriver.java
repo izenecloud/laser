@@ -16,6 +16,7 @@ import org.apache.mahout.math.VectorWritable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.b5m.larser.feature.OnlineVectorWritable;
 import com.b5m.lr.ListWritable;
 
 public class OnlineFeatureDriver {
@@ -38,7 +39,7 @@ public class OnlineFeatureDriver {
 		job.setOutputFormatClass(SequenceFileOutputFormat.class);
 
 		job.setMapOutputKeyClass(Text.class);
-		job.setMapOutputValueClass(VectorWritable.class);
+		job.setMapOutputValueClass(OnlineVectorWritable.class);
 		job.setOutputKeyClass(Text.class);
 		job.setOutputValueClass(ListWritable.class);
 

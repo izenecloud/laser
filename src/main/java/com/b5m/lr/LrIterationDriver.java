@@ -11,9 +11,10 @@ import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import com.b5m.msgpack.MsgpackOutputFormat;
 
 public class LrIterationDriver {
-	public static int run(String collection, Path input, Path output, Float regularizationFactor,
-			Boolean addIntercept, Configuration baseConf) throws IOException,
-			ClassNotFoundException, InterruptedException {
+	public static int run(String collection, Path input, Path output,
+			Float regularizationFactor, Boolean addIntercept,
+			Configuration baseConf) throws IOException, ClassNotFoundException,
+			InterruptedException {
 		Configuration conf = new Configuration(baseConf);
 		if (null != addIntercept) {
 			conf.setBoolean("lr.iteration.add.intercept", addIntercept);
@@ -36,7 +37,7 @@ public class LrIterationDriver {
 
 		job.setOutputFormatClass(MsgpackOutputFormat.class);
 		job.setOutputKeyClass(String.class);
-		job.setOutputValueClass(List.class);
+		job.setOutputValueClass(LaserOnlineModel.class);
 
 		LrIterationInputFormat.setNumMapTasks(job, 120);
 		job.setInputFormatClass(LrIterationInputFormat.class);

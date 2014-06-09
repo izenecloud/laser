@@ -2,11 +2,16 @@ package com.b5m.lr;
 
 import org.apache.mahout.math.Vector;
 
+import com.b5m.larser.feature.OnlineVectorWritable;
+
 public class LrIterationMapContext {
 	private static final double LAMBDA_VALUE = 1e-6;
+
 	private Vector[] a;
 
 	private double[] b;
+
+	private double[] knownOffset;
 
 	private double[] x;
 
@@ -14,51 +19,55 @@ public class LrIterationMapContext {
 
 	private double lambdaValue;
 
-	public LrIterationMapContext(Vector[] ab) {
-		this.a = ab;
-		int numCols = this.a[0].size() - 1;
-		int numRows = this.a.length;
+	public LrIterationMapContext(OnlineVectorWritable[] ab) {
+		int numCols = ab[0].getSample().size() - 1;
+		int numRows = ab.length;
+		
+		this.a = new Vector[numRows];
 		this.b = new double[numRows];
+		this.knownOffset = new double[numRows];
 
 		for (int row = 0; row < numRows; row++) {
-			this.b[row] = this.a[row].get(numCols);
-			this.a[row].set(numCols, 0.0);
+			this.a[row] = ab[row].getSample();
+			this.b[row] = ab[row].getOction();
+			this.knownOffset[row] = ab[row].getOffset();
 		}
 		x = new double[numCols];
 		rho = 1.0;
 		lambdaValue = LAMBDA_VALUE;
 	}
 
-	public LrIterationMapContext(Vector[] ab, double rho) {
+	public LrIterationMapContext(OnlineVectorWritable[] ab, double rho) {
+		this(ab);
 		this.rho = rho;
 	}
 
-	public LrIterationMapContext(Vector[] ab, double[] x, double rho,
-			double lambdaValue) {
-		this.a = ab;
-		int numCols = this.a[0].size() - 1;
-		int numRows = this.a.length;
-		this.b = new double[numRows];
-
-		for (int row = 0; row < numRows; row++) {
-			this.b[row] = this.a[row].get(numCols);
-			this.a[row].set(numCols, 0.0);
-		}
-
-		this.x = x;
-
-		this.rho = rho;
-		this.lambdaValue = lambdaValue;
-	}
-
-	public LrIterationMapContext(Vector[] a, double[] b, double[] x,
-			double rho, double lambdaValue) {
-		this.a = a;
-		this.b = b;
-		this.x = x;
-		this.rho = rho;
-		this.lambdaValue = lambdaValue;
-	}
+//	public LrIterationMapContext(OnlineVectorWritable[] ab, double[] x, double rho,
+//			double lambdaValue) {
+//		this.a = ab;
+//		int numCols = this.a[0].size() - 1;
+//		int numRows = this.a.length;
+//		this.b = new double[numRows];
+//
+//		for (int row = 0; row < numRows; row++) {
+//			this.b[row] = this.a[row].get(numCols);
+//			this.a[row].set(numCols, 0.0);
+//		}
+//
+//		this.x = x;
+//
+//		this.rho = rho;
+//		this.lambdaValue = lambdaValue;
+//	}
+//
+//	public LrIterationMapContext(OnlineVectorWritable[] a, double[] b, double[] x,
+//			double rho, double lambdaValue) {
+//		this.a = a;
+//		this.b = b;
+//		this.x = x;
+//		this.rho = rho;
+//		this.lambdaValue = lambdaValue;
+//	}
 
 	public LrIterationMapContext() {
 	}
@@ -81,6 +90,10 @@ public class LrIterationMapContext {
 
 	public double[] getX() {
 		return x;
+	}
+	
+	public double[] getKnowOffset() {
+		return knownOffset;
 	}
 
 	public void setX(double[] x) {

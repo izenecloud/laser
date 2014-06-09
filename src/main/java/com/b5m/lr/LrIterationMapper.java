@@ -8,44 +8,37 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapreduce.Mapper;
-import org.apache.mahout.math.Vector;
-import org.apache.mahout.math.VectorWritable;
 
+import com.b5m.larser.feature.OnlineVectorWritable;
 import edu.stanford.nlp.optimization.QNMinimizer;
 
 public class LrIterationMapper extends
-		Mapper<Text, ListWritable, String, List<Float>> {
-	// private static final Logger LOG = LoggerFactory
-	// .getLogger(LrIterationMapper.class);
+		Mapper<Text, ListWritable, String, LaserOnlineModel> {
 	private static final double DEFAULT_REGULARIZATION_FACTOR = 0.000001f;
 
-	private boolean addIntercept;
 	private double regularizationFactor;
 	private QNMinimizer lbfgs;
 
 	protected void setup(Context context) throws IOException,
 			InterruptedException {
 		Configuration conf = context.getConfiguration();
-		addIntercept = conf.getBoolean("lr.iteration.add.intercept", true);
 		regularizationFactor = conf.getDouble(
 				"lr.iteration.regulariztion.factor",
 				DEFAULT_REGULARIZATION_FACTOR);
 		lbfgs = new QNMinimizer();
-		// lbfgs.useBacktracking();
 		lbfgs.setRobustOptions();
 	}
 
 	protected void map(Text key, ListWritable valueWritable, Context context)
 			throws IOException, InterruptedException {
-		Vector[] inputSplitData = new Vector[valueWritable.get().size()];
+		OnlineVectorWritable[] inputSplitData = new OnlineVectorWritable[valueWritable
+				.get().size()];
 
 		List<Writable> value = valueWritable.get();
 		Iterator<Writable> iterator = value.iterator();
 		int row = 0;
 		while (iterator.hasNext()) {
-			Vector v = ((VectorWritable) (iterator.next())).get();
-			if (addIntercept)
-				v.set(0, 1.0);
+			OnlineVectorWritable v = ((OnlineVectorWritable) (iterator.next()));
 			inputSplitData[row] = v;
 			row++;
 		}
@@ -54,18 +47,14 @@ public class LrIterationMapper extends
 		mapContext = localMapperOptimization(mapContext);
 
 		double[] x = mapContext.getX();
-		List<Float> args = new java.util.Vector<Float>(x.length);
-		for (int i = 0; i < x.length; i++) {
-			args.add(i, Float.valueOf(Double.toString(x[i])));
-		}
-		context.write(key.toString(), args);
+		context.write(key.toString(), new LaserOnlineModel(x));
 	}
 
 	private LrIterationMapContext localMapperOptimization(
 			LrIterationMapContext context) {
 		LogisticL2DiffFunction logistic = new LogisticL2DiffFunction(
-				context.getA(), context.getB(), context.getX(),
-				regularizationFactor);
+				context.getA(), context.getB(), context.getKnowOffset(),
+				context.getX(), regularizationFactor);
 		double[] optimum = lbfgs.minimize(logistic, 1e-6, context.getX());
 		context.setX(optimum);
 		return context;
