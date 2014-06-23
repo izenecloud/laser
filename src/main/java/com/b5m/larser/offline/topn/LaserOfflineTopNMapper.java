@@ -105,9 +105,11 @@ public class LaserOfflineTopNMapper
 	protected void map(BytesWritable key, BytesWritable value, Context context)
 			throws IOException, InterruptedException {
 		queue.clear();
-		
+		String json = new String(value.get());
+		if (json.length() <= 8)
+			return;
 		UserProfile user = UserProfile
-				.createUserProfile(new String(value.get()));
+				.createUserProfile(json);
 		user.setUserFeature(userFeature, helper, false);
 
 		Iterator<IntVector> acIterator = AC.iterator();

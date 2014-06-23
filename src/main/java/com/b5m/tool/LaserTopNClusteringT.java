@@ -19,10 +19,12 @@ public class LaserTopNClusteringT {
 
 		LaserArgument.parseArgs(args);
 
+		org.apache.hadoop.conf.Configuration conf = new org.apache.hadoop.conf.Configuration();
+		conf.set("mapred.job.queue.name", "sf1");
 		LOG.info("calculating offline topn clusters for each user, write results to msgpack");
 		LaserOfflineTopNDriver.run(Configuration.getInstance()
 				.getTopNClustering(),
-				new org.apache.hadoop.conf.Configuration());
+				conf);
 
 	}
 

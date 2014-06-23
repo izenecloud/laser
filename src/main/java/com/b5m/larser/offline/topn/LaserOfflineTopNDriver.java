@@ -49,15 +49,15 @@ public class LaserOfflineTopNDriver {
 
 		Path serializePath = com.b5m.conf.Configuration.getInstance()
 				.getUserFeatureSerializePath();
-		UserProfileHelper helper = UserProfileHelper.getInstance();
-		if (helper.size() == 0) {
-			helper = null;
-		} else {
-			FileSystem fs = serializePath.getFileSystem(conf);
-			DataOutputStream out = fs.create(serializePath);
-			helper.write(out);
-			out.close();
-		}
+//		UserProfileHelper helper = UserProfileHelper.getInstance();
+//		if (helper.size() == 0) {
+//			helper = null;
+//		} else {
+//			FileSystem fs = serializePath.getFileSystem(conf);
+//			DataOutputStream out = fs.create(serializePath);
+//			helper.write(out);
+//			out.close();
+//		}
 
 		Path clusteringInfoPath = new Path(com.b5m.conf.Configuration
 				.getInstance().getLaserHDFSRoot(), "clustering-info");
