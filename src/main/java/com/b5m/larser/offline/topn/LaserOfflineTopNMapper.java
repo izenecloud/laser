@@ -108,8 +108,12 @@ public class LaserOfflineTopNMapper
 		String json = new String(value.get());
 		if (json.length() <= 8)
 			return;
-		UserProfile user = UserProfile
-				.createUserProfile(json);
+		UserProfile user = null;
+		try {
+			user = UserProfile.createUserProfile(json);
+		} catch (Exception e) {
+			return;
+		}
 		user.setUserFeature(userFeature, helper, false);
 
 		Iterator<IntVector> acIterator = AC.iterator();
