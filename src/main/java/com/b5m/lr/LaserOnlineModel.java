@@ -2,7 +2,10 @@ package com.b5m.lr;
 
 import java.util.List;
 
-class LaserOnlineModel {
+import org.msgpack.annotation.Message;
+
+@Message
+public class LaserOnlineModel {
 
 	private float deta;
 	private List<Float> eta;
@@ -16,9 +19,9 @@ class LaserOnlineModel {
 			return;
 		}
 		deta = (float) (x[0]);
-		List<Float> args = new java.util.Vector<Float>(x.length - 1);
+		eta = new java.util.Vector<Float>(x.length - 1);
 		for (int i = 0; i < x.length; i++) {
-			args.add((float) (x[i]));
+			eta.add((float) (x[i]));
 		}
 	}
 }

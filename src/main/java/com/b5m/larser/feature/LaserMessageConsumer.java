@@ -76,6 +76,8 @@ public abstract class LaserMessageConsumer {
 	}
 
 	public abstract boolean write(B5MEvent b5mEvent) throws IOException;
+	
+	public abstract String modelType();
 
 	public abstract void flush() throws IOException;
 

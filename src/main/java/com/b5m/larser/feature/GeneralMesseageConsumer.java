@@ -191,4 +191,9 @@ public class GeneralMesseageConsumer extends LaserMessageConsumer {
 		mapper.write(out);
 		out.close();
 	}
+
+	@Override
+	public String modelType() {
+		return "per-user";
+	}
 }

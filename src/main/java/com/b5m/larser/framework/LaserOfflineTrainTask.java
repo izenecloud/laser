@@ -1,24 +1,32 @@
 package com.b5m.larser.framework;
 
+import static com.b5m.HDFSHelper.writeMatrix;
+import static com.b5m.HDFSHelper.writeVector;
+
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.mahout.common.HadoopUtil;
-import org.msgpack.type.Value;
+import org.apache.mahout.math.Matrix;
+import org.apache.mahout.math.Vector;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.b5m.HDFSHelper;
 import com.b5m.admm.AdmmOptimizerDriver;
 import com.b5m.conf.Configuration;
 import com.b5m.larser.feature.LaserMessageConsumer;
+import com.b5m.larser.offline.precompute.Compute;
 import com.b5m.larser.offline.topn.LaserOfflineResultWriter;
 import com.b5m.larser.offline.topn.LaserOfflineTopNDriver;
 import com.b5m.msgpack.MsgpackClient;
+
+import static com.b5m.HDFSHelper.*;
 
 public class LaserOfflineTrainTask implements Job {
 	private static final Logger LOG = LoggerFactory
@@ -28,11 +36,6 @@ public class LaserOfflineTrainTask implements Job {
 			throws JobExecutionException {
 		String collection = context.getJobDetail().getGroup();
 		LOG.info("Oline Train Task for {}", collection);
-
-		final MsgpackClient client = new MsgpackClient(
-				com.b5m.conf.Configuration.getInstance().getMsgpackAddress(
-						collection), com.b5m.conf.Configuration.getInstance()
-						.getMsgpackPort(collection), collection);
 
 		final Path outputPath = Configuration.getInstance()
 				.getLaserOfflineOutput(collection);
@@ -50,34 +53,83 @@ public class LaserOfflineTrainTask implements Job {
 			e1.printStackTrace();
 		}
 		conf.set("mapred.job.queue.name", "sf1");
-		conf.set("com.b5m.msgpack.collection", collection);
+		conf.set("com.b5m.laser.msgpack.collection", collection);
+		conf.set("com.b5m.laser.msgpack.host", Configuration.getInstance()
+				.getMsgpackAddress(collection));
+		conf.setInt("com.b5m.laser.msgpack.port", Configuration.getInstance()
+				.getMsgpackPort(collection));
+
+		final MsgpackClient client = new MsgpackClient(conf);
 
 		try {
 			final LaserMessageConsumer consumeTask = (LaserMessageConsumer) context
 					.getJobDetail().getJobDataMap()
 					.get("com.b5m.laser.message.consumer");
 
-
 			Path admmOutput = new Path(outputPath, "ADMM");
 			Path input = consumeTask.nextOfflinePath();
-			AdmmOptimizerDriver.run(input, admmOutput,
-					regularizationFactor, addIntercept, null,
-					iterationsMaximum, conf);
+			AdmmOptimizerDriver.run(input, admmOutput, regularizationFactor,
+					addIntercept, null, iterationsMaximum, conf);
 			HadoopUtil.delete(conf, input);
 
-			Value res = client.asyncRead(new Object[0], "isNeedTopN");
-			Boolean isNeedTopN = res.asBooleanValue().getBoolean();
 			LaserOfflineResultWriter writer = new LaserOfflineResultWriter();
-			writer.write(collection, !isNeedTopN, fs, new Path(admmOutput,
+			writer.write(collection, fs, new Path(admmOutput,
 					AdmmOptimizerDriver.FINAL_MODEL));
-			if (isNeedTopN) {
-				LOG.info("calculating offline topn clusters for each user, write results to msgpack");
+			if (consumeTask.modelType().equalsIgnoreCase("per-user")) {
+				LOG.info("calculating offline topn clusters for each user, write results to delivery");
 				LaserOfflineTopNDriver.run(collection, Configuration
 						.getInstance().getTopNClustering(collection), conf);
+			}
+			if (consumeTask.modelType().equalsIgnoreCase("per-ad")) {
+				LOG.info("calculating offline model's stable part, write results to delivery");
+				Compute.run(
+						Configuration.getInstance().getLaserOfflineOutput(
+								collection), conf);
+				LOG.info("write orignal model to delivery");
+				writeOrigOfflineModel(Configuration.getInstance()
+						.getLaserOfflineOutput(collection), fs, conf, client);
+
+				LOG.info("finish offline model");
+				client.writeIgnoreRetValue(new Object[0],
+						"finish_offline_model");
 			}
 
 		} catch (Exception e) {
 			LOG.info(e.getMessage());
-		} 
+		}
+	}
+
+	public void writeOrigOfflineModel(Path model, FileSystem fs,
+			org.apache.hadoop.conf.Configuration conf, MsgpackClient client)
+			throws Exception {
+		Vector alpha = readVector(new Path(model, "alpha"), fs, conf);
+		Vector beta = readVector(new Path(model, "beta"), fs, conf);
+		Matrix A = readMatrix(new Path(model, "A"), fs, conf);
+
+		Object[] req = new Object[3];
+		List<Float> alpha1 = new ArrayList<Float>(alpha.size());
+
+		for (int i = 0; i < alpha.size(); i++) {
+			alpha1.add((float) (alpha.get(i)));
+		}
+		req[0] = alpha1;
+
+		List<Float> beta1 = new ArrayList<Float>(beta.size());
+		for (int i = 0; i < beta.size(); i++) {
+			beta1.add((float) beta.get(i));
+		}
+		req[1] = beta1;
+
+		List<Float> conjunction = new ArrayList<Float>(A.numRows()
+				* A.numCols());
+		for (int row = 0; row < A.numRows(); row++) {
+			Vector vec = A.viewRow(row);
+			for (int col = 0; col < A.numCols(); col++) {
+				conjunction.add((float) vec.get(col));
+			}
+		}
+		req[2] = conjunction;
+		client.writeIgnoreRetValue(req, "updateLaserOfflineModel");
+
 	}
 }

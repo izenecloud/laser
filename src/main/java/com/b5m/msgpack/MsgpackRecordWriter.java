@@ -10,13 +10,15 @@ public class MsgpackRecordWriter<K, V> extends RecordWriter<K, V> {
 	private MsgpackClient client = null;
 	private String collection = null;
 	private String method = null;
+	final Object[] kvReq = new Object[2];
+	final Object[] vReq = new Object[1];
 
 	public MsgpackRecordWriter(TaskAttemptContext context) {
 		Configuration conf = context.getConfiguration();
-		collection = conf.get("com.b5m.msgpack.collection");
-		method = conf.get("com.b5m.msgpack.method");
-		client = new MsgpackClient(conf.get("com.b5m.msgpack.ip"), conf.getInt(
-				"com.b5m.msgpack.port", 0), collection);
+		collection = conf.get("com.b5m.laser.collection");
+		method = conf.get("com.b5m.laser.msgpack.output.method");
+		client = new MsgpackClient(conf.get("com.b5m.laser.msgpack.host"), conf.getInt(
+				"com.b5m.laser.msgpack.port", 0), collection);
 	}
 
 	@Override
@@ -29,16 +31,16 @@ public class MsgpackRecordWriter<K, V> extends RecordWriter<K, V> {
 	public void write(K key, V value) throws IOException {
 		try {
 			if (null == key || key instanceof NullWritable) {
-				Object[] params = new Object[1];
-				params[0] = value;
-
-				client.writeIgnoreRetValue(params, method);
+				vReq[0] = value;
+				client.writeIgnoreRetValue(vReq, method);
+				value = null;
 
 			} else {
-				Object[] params = new Object[2];
-				params[0] = key;
-				params[1] = value;
-				client.writeIgnoreRetValue(params, method);
+				kvReq[0] = key;
+				kvReq[1] = value;
+				client.writeIgnoreRetValue(kvReq, method);
+				key = null;
+				value = null;
 			}
 		} catch (Exception e) {
 			throw new IOException(e);

@@ -40,7 +40,7 @@ public class WebScaleMessageConsumer extends LaserMessageConsumer {
 		// action
 		Vector ad = new SequentialAccessSparseVector();
 		Object[] req = new Object[1];
-		req[0] = new String("docid");
+		req[0] = new String("DOCID");
 		AdInfo adInfo = (AdInfo) client.asyncRead(req, "getAdInfoById", AdInfo.class);
 
 		while (adInfo.context.hasNext()) {
@@ -68,5 +68,10 @@ public class WebScaleMessageConsumer extends LaserMessageConsumer {
 	@Override
 	public void flush() throws IOException {
 		// TODO Auto-generated method stub
+	}
+
+	@Override
+	public String modelType() {
+		return "per-ad";
 	}
 }

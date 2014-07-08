@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.apache.hadoop.conf.Configuration;
 import org.msgpack.rpc.Client;
 import org.msgpack.rpc.Future;
 import org.msgpack.rpc.loop.EventLoop;
@@ -32,6 +33,12 @@ public class MsgpackClient {
 		} catch (UnknownHostException e) {
 			LOG.info(e.getMessage());
 		}
+	}
+
+	public MsgpackClient(Configuration conf) {
+		this(conf.get("com.b5m.laser.msgpack.host"), conf.getInt(
+				"com.b5m.laser.msgpack.port", 0), conf
+				.get("com.b5m.laser.msgpack.collection"));
 	}
 
 	public void close() {
@@ -83,6 +90,7 @@ public class MsgpackClient {
 						+ collection, req);
 				retList.add(f);
 			} catch (Exception e) {
+				e.printStackTrace();
 				LOG.debug(e.getMessage());
 			}
 		}
@@ -124,7 +132,9 @@ public class MsgpackClient {
 			throws Exception {
 		for (Client client : clients) {
 			try {
-				client.callAsyncApply(method + "|" + collection, req);
+				client.callApply(method + "|" + collection, req);
+				// client.notifyApply(method + "|" + collection, req);
+				// client.callAsyncApply(method + "|" + collection, req);
 			} catch (Exception e) {
 				LOG.debug(e.getMessage());
 			}

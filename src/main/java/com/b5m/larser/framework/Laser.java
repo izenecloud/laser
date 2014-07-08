@@ -11,7 +11,6 @@ import org.quartz.CronTrigger;
 import org.quartz.JobDetail;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
-import org.quartz.SchedulerFactory;
 import org.quartz.impl.DirectSchedulerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,7 +19,6 @@ import sun.misc.Signal;
 import sun.misc.SignalHandler;
 
 import com.b5m.conf.Configuration;
-import com.b5m.larser.feature.GeneralMesseageConsumer;
 import com.b5m.larser.feature.LaserMessageConsumer;
 import com.taobao.metamorphosis.exception.MetaClientException;
 
