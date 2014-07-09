@@ -6,7 +6,7 @@ import com.b5m.msgpack.SparseVector;
 
 @Message
 class AdInfo {
-	public String adId;
+	public String DOCID;
 	public String clusteringId;
 	public SparseVector context;
 }

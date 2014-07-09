@@ -90,7 +90,6 @@ public class MsgpackClient {
 						+ collection, req);
 				retList.add(f);
 			} catch (Exception e) {
-				e.printStackTrace();
 				LOG.debug(e.getMessage());
 			}
 		}
@@ -132,8 +131,8 @@ public class MsgpackClient {
 			throws Exception {
 		for (Client client : clients) {
 			try {
-				client.callApply(method + "|" + collection, req);
-				// client.notifyApply(method + "|" + collection, req);
+				// client.callApply(method + "|" + collection, req);
+				client.notifyApply(method + "|" + collection, req);
 				// client.callAsyncApply(method + "|" + collection, req);
 			} catch (Exception e) {
 				LOG.debug(e.getMessage());

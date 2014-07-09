@@ -49,7 +49,7 @@ public abstract class LaserMessageConsumer {
 				+ Long.toString(onlineVersion));
 		onlineWriter = SequenceFile.createWriter(fs, conf, onlinePath,
 				Text.class, OnlineVectorWritable.class);
-		Path offlinePath = new Path(output, ONLINE_FOLDER + "/"
+		Path offlinePath = new Path(output, OFFLINE_FOLDER + "/"
 				+ Long.toString(offlineVersion));
 		offlineWriter = SequenceFile.createWriter(fs, conf, offlinePath,
 				Text.class, VectorWritable.class);
