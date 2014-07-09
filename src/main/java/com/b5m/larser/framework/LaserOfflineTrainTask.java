@@ -20,6 +20,7 @@ import org.slf4j.LoggerFactory;
 
 import com.b5m.admm.AdmmOptimizerDriver;
 import com.b5m.conf.Configuration;
+import com.b5m.couchbase.CouchbaseConfig;
 import com.b5m.larser.feature.LaserMessageConsumer;
 import com.b5m.larser.offline.precompute.Compute;
 import com.b5m.larser.offline.topn.LaserOfflineResultWriter;
@@ -52,12 +53,19 @@ public class LaserOfflineTrainTask implements Job {
 		} catch (IOException e1) {
 			e1.printStackTrace();
 		}
+
 		conf.set("mapred.job.queue.name", "sf1");
-		conf.set("com.b5m.laser.msgpack.collection", collection);
+		conf.set("com.b5m.laser.collection", collection);
 		conf.set("com.b5m.laser.msgpack.host", Configuration.getInstance()
 				.getMsgpackAddress(collection));
 		conf.setInt("com.b5m.laser.msgpack.port", Configuration.getInstance()
 				.getMsgpackPort(collection));
+		conf.set(CouchbaseConfig.CB_INPUT_CLUSTER, com.b5m.conf.Configuration
+				.getInstance().getCouchbaseCluster(collection));
+		conf.set(CouchbaseConfig.CB_INPUT_BUCKET, com.b5m.conf.Configuration
+				.getInstance().getCouchbaseBucket(collection));
+		conf.set(CouchbaseConfig.CB_INPUT_PASSWORD, com.b5m.conf.Configuration
+				.getInstance().getCouchbasePassword(collection));
 
 		final MsgpackClient client = new MsgpackClient(conf);
 
@@ -88,11 +96,9 @@ public class LaserOfflineTrainTask implements Job {
 				LOG.info("write orignal model to delivery");
 				writeOrigOfflineModel(Configuration.getInstance()
 						.getLaserOfflineOutput(collection), fs, conf, client);
-
-				LOG.info("finish offline model");
-				client.writeIgnoreRetValue(new Object[0],
-						"finish_offline_model");
 			}
+			LOG.info("finish offline model");
+			client.writeIgnoreRetValue(new Object[0], "finish_offline_model");
 
 		} catch (Exception e) {
 			LOG.info(e.getMessage());

@@ -76,7 +76,7 @@ public abstract class LaserMessageConsumer {
 	}
 
 	public abstract boolean write(B5MEvent b5mEvent) throws IOException;
-	
+
 	public abstract String modelType();
 
 	public abstract void flush() throws IOException;
@@ -119,22 +119,22 @@ public abstract class LaserMessageConsumer {
 		}
 	}
 
-	public double knownOffset(Request value) throws IOException {
-		synchronized (alpha) {
-			if (alpha == null || beta == null || quadratic == null) {
-				return 0;
-			}
-			Vector userFeature = value.getUserFeature();
-			double offset = alpha.dot(userFeature);
-			Vector itemFeature = value.getItemFeature();
-			offset += beta.dot(itemFeature);
+	public synchronized double knownOffset(Request value) throws IOException {
 
-			for (int row = 0; row < quadratic.numRows(); row++) {
-				offset += userFeature.get(row)
-						* quadratic.viewRow(row).dot(itemFeature);
-			}
-			return offset;
+		if (alpha == null || beta == null || quadratic == null) {
+			return 0;
 		}
+		Vector userFeature = value.getUserFeature();
+		double offset = alpha.dot(userFeature);
+		Vector itemFeature = value.getItemFeature();
+		offset += beta.dot(itemFeature);
+
+		for (int row = 0; row < quadratic.numRows(); row++) {
+			offset += userFeature.get(row)
+					* quadratic.viewRow(row).dot(itemFeature);
+		}
+		return offset;
+
 	}
 
 	public Path nextOnlinePath() throws IOException {

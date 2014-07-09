@@ -171,7 +171,7 @@ public class GeneralMesseageConsumer extends LaserMessageConsumer {
 		try {
 			Object[] req = new Object[1];
 			req[0] = title;
-			Value res = msgpackClient.read(req, "spliteTitle");
+			Value res = msgpackClient.read(req, "splitTitle");
 			Converter converter = new org.msgpack.unpacker.Converter(res);
 			SparseVector vec = converter.read(SparseVector.class);
 			converter.close();

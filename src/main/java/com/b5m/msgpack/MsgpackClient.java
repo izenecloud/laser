@@ -38,7 +38,7 @@ public class MsgpackClient {
 	public MsgpackClient(Configuration conf) {
 		this(conf.get("com.b5m.laser.msgpack.host"), conf.getInt(
 				"com.b5m.laser.msgpack.port", 0), conf
-				.get("com.b5m.laser.msgpack.collection"));
+				.get("com.b5m.laser.collection"));
 	}
 
 	public void close() {
@@ -132,8 +132,8 @@ public class MsgpackClient {
 		for (Client client : clients) {
 			try {
 				// client.callApply(method + "|" + collection, req);
-				client.notifyApply(method + "|" + collection, req);
-				// client.callAsyncApply(method + "|" + collection, req);
+				//client.notifyApply(method + "|" + collection, req);
+				client.callAsyncApply(method + "|" + collection, req);
 			} catch (Exception e) {
 				LOG.debug(e.getMessage());
 			}

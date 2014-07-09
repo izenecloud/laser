@@ -23,11 +23,8 @@ public class LrIterationDriver {
 			conf.setDouble("lr.iteration.regulariztion.factor",
 					regularizationFactor);
 		}
-		conf.set("com.b5m.msgpack.ip", com.b5m.conf.Configuration.getInstance()
-				.getMsgpackAddress(collection));
-		conf.setInt("com.b5m.msgpack.port", com.b5m.conf.Configuration
-				.getInstance().getMsgpackPort(collection));
-		conf.set("com.b5m.msgpack.method", "updateLaserOnlineModel");
+
+		conf.set("com.b5m.laser.msgpack.output.method", "update_online_model");
 
 		Job job = Job.getInstance(conf);
 		job.setJarByClass(LrIterationDriver.class);

@@ -16,6 +16,15 @@ public class SparseVector {
 	@Ignore
 	private Iterator<Float> vit = null;
 	
+	public SparseVector() {
+		
+	}
+	
+	public SparseVector(List<Integer> index, List<Float> value) {
+		this.index = index;
+		this.value = value;
+	}
+	
 	public boolean hasNext() {
 		if (null == iit || null == vit) {
 			iit = index.iterator();

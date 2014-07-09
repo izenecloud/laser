@@ -31,8 +31,6 @@ public class LaserOnlineModelTrainer {
 			throw e;
 		}
 		conf.setInt("mapred.task.timeout", 6000000);
-		conf.setInt("mapred.job.map.memory.mb", 4096);
-		conf.setInt("mapred.job.reduce.memory.mb", 4096);
 
 		Path lrOutput = new Path(output, "LR");
 		LrIterationDriver.run(collection, groupByIdendifier, lrOutput,

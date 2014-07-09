@@ -17,6 +17,7 @@ import com.b5m.larser.feature.UserProfileMap;
 import com.b5m.msgpack.AdClusteringsInfo;
 import com.b5m.msgpack.MsgpackClient;
 import com.b5m.msgpack.MsgpackOutputFormat;
+import com.b5m.msgpack.SparseVector;
 
 public class LaserOfflineTopNDriver {
 	public static int run(String collection, Integer topN,
@@ -24,19 +25,8 @@ public class LaserOfflineTopNDriver {
 			InterruptedException {
 		Configuration conf = new Configuration(baseConf);
 
-		conf.set(CouchbaseConfig.CB_INPUT_CLUSTER, com.b5m.conf.Configuration
-				.getInstance().getCouchbaseCluster(collection));
-		conf.set(CouchbaseConfig.CB_INPUT_BUCKET, com.b5m.conf.Configuration
-				.getInstance().getCouchbaseBucket(collection));
-		conf.set(CouchbaseConfig.CB_INPUT_PASSWORD, com.b5m.conf.Configuration
-				.getInstance().getCouchbasePassword(collection));
-		conf.setInt("laser.offline.topn.n", topN);
-		conf.set("com.b5m.msgpack.ip", com.b5m.conf.Configuration.getInstance()
-				.getMsgpackAddress(collection));
-
-		conf.setInt("com.b5m.msgpack.port", com.b5m.conf.Configuration
-				.getInstance().getMsgpackPort(collection));
-		conf.set("com.b5m.msgpack.method", "updateTopNCluster");
+		conf.setInt("laser.offline.topn.n", topN);		
+		conf.set("com.b5m.laser.msgpack.output.method", "update_topn_clustering");
 		conf.set(
 				"com.b5m.laser.offline.topn.offline.model",
 				com.b5m.conf.Configuration.getInstance()
@@ -72,20 +62,12 @@ public class LaserOfflineTopNDriver {
 		Job job = Job.getInstance(conf);
 		job.setJarByClass(LaserOfflineTopNDriver.class);
 		job.setJobName("calculate top n clusters for each user");
-		// TODO addCachFile
-		// job.addCacheFile(serializePath.toUri());
-		// job.addCacheFile(new Path(com.b5m.conf.Configuration.getInstance()
-		// .getLaserOfflineOutput(), "A").toUri());
-		// job.addCacheFile(new Path(com.b5m.conf.Configuration.getInstance()
-		// .getLaserOfflineOutput(), "alpha").toUri());
-		// job.addCacheFile(new Path(com.b5m.conf.Configuration.getInstance()
-		// .getLaserOfflineOutput(), "beta").toUri());
 
 		job.setInputFormatClass(CouchbaseInputFormat.class);
 		job.setOutputFormatClass(MsgpackOutputFormat.class);
 
-		job.setOutputKeyClass(NullWritable.class);
-		job.setOutputValueClass(PriorityQueue.class);
+		job.setOutputKeyClass(String.class);
+		job.setOutputValueClass(SparseVector.class);
 
 		job.setMapperClass(LaserOfflineTopNMapper.class);
 		job.setNumReduceTasks(0);

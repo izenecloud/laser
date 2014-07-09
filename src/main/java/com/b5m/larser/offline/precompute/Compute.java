@@ -17,7 +17,6 @@ public class Compute {
 		conf.set("com.b5m.laser.msgpack.input.method", "ad_feature");
 		conf.set("com.b5m.laser.msgpack.output.method", "precompute_ad_offline_model");
 		conf.set("com.b5m.laser.offline.model", model.toString());
-		conf.setClass("com.b5m.laser.msgpack.input.value.class", AdFeature.class, Object.class);
 		Job job = Job.getInstance(conf);
 		job.setJarByClass(Compute.class);
 		job.setJobName("per compute stable part from offline model for each user");

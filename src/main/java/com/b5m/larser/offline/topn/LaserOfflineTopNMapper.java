@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
@@ -25,9 +26,8 @@ import com.b5m.msgpack.SparseVector;
 import static com.b5m.HDFSHelper.readMatrix;
 import static com.b5m.HDFSHelper.readVector;
 
-public class LaserOfflineTopNMapper
-		extends
-		Mapper<BytesWritable, BytesWritable, NullWritable, com.b5m.msgpack.PriorityQueue> {
+public class LaserOfflineTopNMapper extends
+		Mapper<BytesWritable, BytesWritable, String, SparseVector> {
 	private Vector alpha;
 	private List<Double> CBeta;
 	private List<IntVector> AC;
@@ -106,7 +106,7 @@ public class LaserOfflineTopNMapper
 	protected void map(BytesWritable key, BytesWritable value, Context context)
 			throws IOException, InterruptedException {
 		queue.clear();
-		
+
 		UserProfile user = UserProfile
 				.createUserProfile(new String(value.get()));
 		user.setUserFeature(userFeature, helper, false);
@@ -129,8 +129,17 @@ public class LaserOfflineTopNMapper
 				queue.add(new IntDoublePairWritable(intVec.getInt(), res));
 			}
 		}
-
-		context.write(NullWritable.get(), new com.b5m.msgpack.PriorityQueue(
-				new String(key.get()), queue));
+		List<Integer> index = new java.util.Vector<Integer>();
+		List<Float> val = new java.util.Vector<Float>();
+		
+		Iterator<IntDoublePairWritable> iterator = queue.iterator();
+		while (iterator.hasNext()) {
+			IntDoublePairWritable v = iterator.next();
+			index.add(v.getKey());
+			val.add((float)v.getValue());
+		}
+		
+		SparseVector topClustering = new SparseVector(index, val);
+		context.write(new String(key.get()), topClustering);
 	}
 }
