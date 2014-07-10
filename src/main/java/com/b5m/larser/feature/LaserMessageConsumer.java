@@ -138,7 +138,9 @@ public abstract class LaserMessageConsumer {
 	}
 
 	public Path nextOnlinePath() throws IOException {
+		LOG.info("try to increse online writer...");
 		synchronized (onlineWriter) {
+			LOG.info("locked online writer");
 			onlineWriter.close();
 			Path ret = new Path(output, ONLINE_FOLDER + "/"
 					+ Long.toString(onlineVersion));

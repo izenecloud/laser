@@ -36,7 +36,7 @@
 				<include>args4j:args4j</include>
 				<include>org.msgpack:msgpack</include>
 				<include>com.google.guava:guava</include>
-				<include>quartz:quartz</include>
+				<include>org.quartz-scheduler:quartz</include>
 			</includes>
 		</dependencySet>
 	</dependencySets>

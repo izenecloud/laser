@@ -2,16 +2,28 @@ package com.b5m.larser.framework;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Vector;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.kohsuke.args4j.CmdLineException;
+import org.mortbay.log.Log;
 import org.quartz.CronExpression;
+import org.quartz.CronScheduleBuilder;
 import org.quartz.CronTrigger;
+import org.quartz.JobBuilder;
 import org.quartz.JobDetail;
+import org.quartz.JobKey;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
+import org.quartz.Trigger;
+import org.quartz.TriggerBuilder;
 import org.quartz.impl.DirectSchedulerFactory;
+import org.quartz.impl.StdSchedulerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,26 +45,46 @@ public class Laser {
 
 	private static final Logger LOG = LoggerFactory.getLogger(Laser.class);
 
+	private Map<JobDetail, CronTrigger> triggersAndJobs = new HashMap<JobDetail, CronTrigger>();
+
 	@SuppressWarnings("restriction")
 	public void run() throws CmdLineException, IOException, SchedulerException,
 			MetaClientException {
-		DirectSchedulerFactory factory = DirectSchedulerFactory.getInstance();
-		factory.createVolatileScheduler(10);
-		final Scheduler scheduler = factory.getScheduler();
+
 		final LaserMessageConsumeTask consumeTask = new LaserMessageConsumeTask();
 		for (String collection : Configuration.getInstance().getCollections()) {
 			try {
-				startCollection(scheduler, consumeTask, collection);
+				startCollection(consumeTask, collection);
+				LOG.info("collection {} has started", collection);
 			} catch (Exception e) {
 				LOG.error("error to start collection {}, reason: {}",
 						collection, e.getCause());
 				LOG.info("remove collecton {}", collection);
 			}
 		}
+		try {
+			LOG.info("start metaq task");
+			consumeTask.start();
+			LOG.info("start finish");
+		} catch (Exception e) {
+			LOG.error(e.getLocalizedMessage());
+		}
 
-		consumeTask.start();
+		StdSchedulerFactory factory = new StdSchedulerFactory();
+		// factory.createVolatileScheduler(10);
+		final Scheduler scheduler = factory.getScheduler();
 		scheduler.start();
-		LOG.info("Laser Training Frameworh has started");
+
+		Iterator<Map.Entry<JobDetail, CronTrigger>> iterator = triggersAndJobs
+				.entrySet().iterator();
+		while (iterator.hasNext()) {
+			Map.Entry<JobDetail, CronTrigger> job = iterator.next();
+			LOG.info(job.getKey().getKey().getName());
+			//LOG.info(job.getValue().getNextFireTime().toLocaleString());
+			LOG.info(job.getValue().getCronExpression());
+			scheduler.scheduleJob(job.getKey(), job.getValue());
+		}
+		LOG.info("Laser Training Framework has started");
 
 		Signal.handle(new Signal("INT"), new SignalHandler() {
 			public void handle(Signal sig) {
@@ -80,12 +112,12 @@ public class Laser {
 		});
 	}
 
-	private void startCollection(final Scheduler scheduler,
-			final LaserMessageConsumeTask consumeTask, String collection)
-			throws SchedulerException, IOException, MetaClientException,
-			ClassNotFoundException, InstantiationException,
-			IllegalAccessException, IllegalArgumentException,
-			InvocationTargetException, NoSuchMethodException, SecurityException {
+	private void startCollection(final LaserMessageConsumeTask consumeTask,
+			String collection) throws SchedulerException, IOException,
+			MetaClientException, ClassNotFoundException,
+			InstantiationException, IllegalAccessException,
+			IllegalArgumentException, InvocationTargetException,
+			NoSuchMethodException, SecurityException {
 		LOG.info("start collection {}", collection);
 		Path messageOutput = Configuration.getInstance().getMetaqOutput(
 				collection);
@@ -104,42 +136,61 @@ public class Laser {
 
 		LOG.info("Laser Message Consume Task, output = {}", messageOutput);
 
-		JobDetail laserOnlineTrainTask = new JobDetail("online train task",
-				collection, LaserOnlineTrainTask.class);
-		laserOnlineTrainTask.getJobDataMap().put(
-				"com.b5m.laser.message.consumer", consumer);
-		CronTrigger laserOnlineTrainTaskTrigger = new CronTrigger(
-				"online train task", collection);
 		try {
-			CronExpression cexp = new CronExpression(Configuration
-					.getInstance().getLaserOnlineRetrainingFreqency(collection));
-			laserOnlineTrainTaskTrigger.setCronExpression(cexp);
+			JobKey key = new JobKey("online train task", collection);
+			JobDetail laserOnlineTrainTask = JobBuilder
+					.newJob(LaserOnlineTrainTask.class).withIdentity(key)
+					.build();
+
+			laserOnlineTrainTask.getJobDataMap().put(
+					"com.b5m.laser.message.consumer", consumer);
+			CronTrigger laserOnlineTrainTaskTrigger = TriggerBuilder
+					.newTrigger()
+					.withIdentity("online train task", collection)
+					.withSchedule(
+							CronScheduleBuilder.cronSchedule(Configuration
+									.getInstance()
+									.getLaserOnlineRetrainingFreqency(
+											collection))).build();
+
+			LOG.info(Configuration.getInstance()
+					.getLaserOnlineRetrainingFreqency(collection));
+			triggersAndJobs.put(laserOnlineTrainTask,
+					laserOnlineTrainTaskTrigger);
+			// scheduler.scheduleJob(laserOnlineTrainTask,
+			// laserOnlineTrainTaskTrigger);
+			LOG.info("Laser Online Train Task add to scheduler's map");
+
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		LOG.info("Laser Online Train Task add to scheduler");
-		scheduler
-				.scheduleJob(laserOnlineTrainTask, laserOnlineTrainTaskTrigger);
 
-		JobDetail laserOfflineTrainTask = new JobDetail("offline train task",
-				collection, LaserOnlineTrainTask.class);
-		laserOfflineTrainTask.getJobDataMap().put(
-				"com.b5m.laser.message.consumer", consumer);
-
-		CronTrigger laserOfflineTrainTaskTrigger = new CronTrigger(
-				"offline train task", collection);
 		try {
-			CronExpression cexp = new CronExpression(Configuration
-					.getInstance()
+
+			JobKey key = new JobKey("offline train task", collection);
+			JobDetail laserOfflineTrainTask = JobBuilder
+					.newJob(LaserOfflineTrainTask.class).withIdentity(key)
+					.build();
+
+			laserOfflineTrainTask.getJobDataMap().put(
+					"com.b5m.laser.message.consumer", consumer);
+			CronTrigger laserOfflineTrainTaskTrigger = TriggerBuilder
+					.newTrigger()
+					.withIdentity("offline train task", collection)
+					.withSchedule(
+							CronScheduleBuilder.cronSchedule(Configuration
+									.getInstance()
+									.getLaserOfflineRetrainingFreqency(
+											collection))).build();
+
+			LOG.info(Configuration.getInstance()
 					.getLaserOfflineRetrainingFreqency(collection));
-			laserOfflineTrainTaskTrigger.setCronExpression(cexp);
+			triggersAndJobs.put(laserOfflineTrainTask,
+					laserOfflineTrainTaskTrigger);
+			LOG.info("Laser Offline Train Task add to scheduler' map");
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		LOG.info("Laser Offline Train Task add to scheduler");
-
-		scheduler.scheduleJob(laserOfflineTrainTask,
-				laserOfflineTrainTaskTrigger);
 	}
 
 	public void stopCollection(final Scheduler scheduler,
@@ -147,14 +198,18 @@ public class Laser {
 			throws SchedulerException, MetaClientException, IOException {
 		LOG.info("stop collection {}", collection);
 
-		consumeTask.removeTask(collection);
 		LOG.info("remove {}'s Message Consume Task ", collection);
 
-		scheduler.deleteJob("online train task", collection);
-		LOG.info("delete {}'s online train task", collection);
-
-		scheduler.deleteJob("offline train task", collection);
-		LOG.info("delete {}'s offline train task", collection);
+		{
+			JobKey key = new JobKey("online train task", collection);
+			scheduler.deleteJob(key);
+			LOG.info("delete {}'s online train task", collection);
+		}
+		{
+			JobKey key = new JobKey("offline train task", collection);
+			scheduler.deleteJob(key);
+			LOG.info("delete {}'s offline train task", collection);
+		}
 
 	}
 }

@@ -7,13 +7,12 @@ import java.util.List;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapreduce.Reducer;
-import org.apache.mahout.math.VectorWritable;
 
 import com.b5m.larser.feature.OnlineVectorWritable;
 import com.b5m.lr.ListWritable;
 
 public class OnlineFeatureReducer extends
-		Reducer<Text, VectorWritable, Text, ListWritable> {
+		Reducer<Text, OnlineVectorWritable, Text, ListWritable> {
 
 	protected void reduce(Text key, Iterable<OnlineVectorWritable> values,
 			Context context) throws IOException, InterruptedException {

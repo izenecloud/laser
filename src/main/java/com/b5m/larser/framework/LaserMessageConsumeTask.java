@@ -2,6 +2,7 @@ package com.b5m.larser.framework;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
 import com.b5m.larser.feature.LaserFeatureListenser;
@@ -26,21 +27,20 @@ public class LaserMessageConsumeTask {
 		consumer.subscribe(collection, listener);
 	}
 
-	public void removeTask(String collection) throws MetaClientException,
-			IOException {
-		if (consumeTask.containsKey(collection)) {
-			consumer.unsubscribe(collection);
-			LaserMessageConsumer task = consumeTask.get(collection);
-			consumeTask.remove(collection);
-			task.shutdown();
-		}
-	}
-
 	public void start() throws MetaClientException {
 		consumer.completeSubscribe();
 	}
 
 	public void stop() {
 		consumer.shutdown();
+		Iterator<Map.Entry<String, LaserMessageConsumer>> iterator = consumeTask.entrySet().iterator();
+		while (iterator.hasNext()) {
+			try {
+				iterator.next().getValue().shutdown();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
 	}
 }

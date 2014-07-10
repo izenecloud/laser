@@ -20,7 +20,7 @@ public class LaserOnlineTrainTask implements Job {
 	public void execute(JobExecutionContext context)
 			throws JobExecutionException {
 		try {
-			String collection = context.getJobDetail().getGroup();
+			String collection = context.getJobDetail().getKey().getGroup();
 
 			LOG.info("Online Train Task for {}", collection);
 

@@ -1,7 +1,5 @@
 package com.b5m.larser.framework;
 
-import static com.b5m.HDFSHelper.writeMatrix;
-import static com.b5m.HDFSHelper.writeVector;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -35,7 +33,7 @@ public class LaserOfflineTrainTask implements Job {
 
 	public void execute(JobExecutionContext context)
 			throws JobExecutionException {
-		String collection = context.getJobDetail().getGroup();
+		String collection = context.getJobDetail().getKey().getGroup();
 		LOG.info("Oline Train Task for {}", collection);
 
 		final Path outputPath = Configuration.getInstance()
