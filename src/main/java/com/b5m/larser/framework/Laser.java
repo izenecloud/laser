@@ -4,15 +4,11 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
-import java.util.Vector;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.kohsuke.args4j.CmdLineException;
-import org.mortbay.log.Log;
-import org.quartz.CronExpression;
 import org.quartz.CronScheduleBuilder;
 import org.quartz.CronTrigger;
 import org.quartz.JobBuilder;
@@ -20,9 +16,7 @@ import org.quartz.JobDetail;
 import org.quartz.JobKey;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
-import org.quartz.Trigger;
 import org.quartz.TriggerBuilder;
-import org.quartz.impl.DirectSchedulerFactory;
 import org.quartz.impl.StdSchedulerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -80,7 +74,6 @@ public class Laser {
 		while (iterator.hasNext()) {
 			Map.Entry<JobDetail, CronTrigger> job = iterator.next();
 			LOG.info(job.getKey().getKey().getName());
-			//LOG.info(job.getValue().getNextFireTime().toLocaleString());
 			LOG.info(job.getValue().getCronExpression());
 			scheduler.scheduleJob(job.getKey(), job.getValue());
 		}
@@ -157,8 +150,6 @@ public class Laser {
 					.getLaserOnlineRetrainingFreqency(collection));
 			triggersAndJobs.put(laserOnlineTrainTask,
 					laserOnlineTrainTaskTrigger);
-			// scheduler.scheduleJob(laserOnlineTrainTask,
-			// laserOnlineTrainTaskTrigger);
 			LOG.info("Laser Online Train Task add to scheduler's map");
 
 		} catch (Exception e) {
@@ -197,9 +188,6 @@ public class Laser {
 			final LaserMessageConsumeTask consumeTask, String collection)
 			throws SchedulerException, MetaClientException, IOException {
 		LOG.info("stop collection {}", collection);
-
-		LOG.info("remove {}'s Message Consume Task ", collection);
-
 		{
 			JobKey key = new JobKey("online train task", collection);
 			scheduler.deleteJob(key);
