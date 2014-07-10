@@ -7,6 +7,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.NullWritable;
+import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.RecordWriter;
@@ -25,7 +26,7 @@ import static com.b5m.admm.AdmmIterationHelper.*;
 
 public class AdmmIterationMapper
 		extends
-		Mapper<Writable, VectorWritable, NullWritable, AdmmReducerContextWritable> {
+		Mapper<Text, VectorWritable, NullWritable, AdmmReducerContextWritable> {
 
 	public static final Logger LOG = LoggerFactory
 			.getLogger(AdmmIterationMapper.class.getName());
@@ -75,8 +76,12 @@ public class AdmmIterationMapper
 		inputSplitData = new LinkedList<Vector>();
 	}
 
-	protected void map(Writable key, VectorWritable value, Context context)
+	protected void map(Text key, VectorWritable value, Context context)
 			throws IOException, InterruptedException {
+		// ignore per clustering records
+		if (key.toString().contains("|clustering")) {
+			return;
+		}
 		Vector v = value.get();
 		if (addIntercept) {
 			v.set(0, 1.0);

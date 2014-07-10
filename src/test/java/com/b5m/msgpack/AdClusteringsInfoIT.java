@@ -5,17 +5,15 @@ import java.net.UnknownHostException;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.msgpack.type.Value;
-import org.msgpack.unpacker.Converter;
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 
-import com.b5m.conf.Configuration;
-
 import static org.testng.Assert.*;
 
-public class SplitTitleIT {
+import com.b5m.conf.Configuration;
+
+public class AdClusteringsInfoIT {
 	private static final String PROPERTIES = "src/test/properties/";
 
 	@BeforeTest
@@ -34,12 +32,11 @@ public class SplitTitleIT {
 		String collection = conf.getCollections().get(0);
 		MsgpackClient client = new MsgpackClient(conf.getMsgpackAddress(collection),conf.getMsgpackPort(collection), collection);
 		try {
-			Object[] req = new Object[1];
-			req[0] = "十二结婚吧 i [http://446964573.qzone.qq.com]";
-			SparseVector res = (SparseVector) client.asyncRead(req, "splitTitle", SparseVector.class);
-			while (res.hasNext()) {
-				System.out.println(Integer.toString(res.getIndex()) + "\t" + res.get());
-			}
+			Object[] req = new Object[0];
+			AdClusteringsInfo res = (AdClusteringsInfo) client.asyncRead(req, "getClusteringInfos", AdClusteringsInfo.class);
+//			while (res.hasNext()) {
+//				System.out.println(Integer.toString(res.getIndex()) + "\t" + res.get());
+//			}
 		} catch (Exception e) {
 			e.printStackTrace();
 			assertTrue(false);

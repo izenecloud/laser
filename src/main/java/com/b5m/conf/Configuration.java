@@ -1,37 +1,23 @@
 package com.b5m.conf;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.hadoop.fs.FSDataInputStream;
+import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.GlobFilter;
 import org.apache.hadoop.fs.Path;
 import org.codehaus.jackson.annotate.JsonProperty;
 import org.codehaus.jackson.map.ObjectMapper;
 
+import com.b5m.larser.feature.LaserMessageConsumer;
+
 public class Configuration {
-	private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-	private static final String METAQ_FOLDER_NAME = "metaq_folder";
-	private static final String ONLINE_MODEL_FOLDER = "online_model_folder";
-	private static final String OFFLINE_MODEL_FOLDER = "offline_model_folder";
-
-	@JsonProperty
-	private Map<String, String> couchbase;
-
-	@JsonProperty
-	Map<String, String> metaq;
-
-	@JsonProperty
-	Map<String, String> msgpack;
-
-	@JsonProperty
-	Map<String, String> laser;
-
-	private Path metaqFolder;
-	private Path onlineModelFolder;
-	private Path offlineModelFolder;
-
-	private boolean isLoad;
 
 	private static Configuration conf = null;
 
@@ -43,115 +29,134 @@ public class Configuration {
 	}
 
 	public synchronized void load(Path path, FileSystem fs) throws IOException {
-		if (isLoad) {
-			return;
+		final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+		FileStatus[] fileStatus = fs.listStatus(path, new GlobFilter(
+				"*.properties"));
+		for (FileStatus file : fileStatus) {
+			if (file.isFile()) {
+				Path p = file.getPath();
+				FSDataInputStream in = fs.open(p);
+				Collection configuration = OBJECT_MAPPER.readValue(in,
+						Collection.class);
+				String collection = p.getName().substring(0,
+						p.getName().lastIndexOf(".properties"));
+				configuration.setCollecion(collection);
+				mapper.put(collection, configuration);
+			}
 		}
-		FSDataInputStream in = fs.open(path);
-		Configuration conf = OBJECT_MAPPER.readValue(in, Configuration.class);
-		this.couchbase = conf.couchbase;
-		this.metaq = conf.metaq;
-		this.laser = conf.laser;
-		this.msgpack = conf.msgpack;
-		String baseOutput = laser.get("output");
-		metaqFolder = new Path(baseOutput, METAQ_FOLDER_NAME);
-		onlineModelFolder = new Path(baseOutput, ONLINE_MODEL_FOLDER);
-		offlineModelFolder = new Path(baseOutput, OFFLINE_MODEL_FOLDER);
-		isLoad = true;
 	}
 
-	public String getLaserHDFSRoot() {
-		return laser.get("output");
-	}
+	private Map<String, Collection> mapper = new HashMap<String, Collection>();
 
-	public String getCouchbaseCluster() {
-		return couchbase.get("cluster");
-	}
-
-	public String getCouchbaseBucket() {
-		return couchbase.get("bucket");
-	}
-
-	public String getCouchbasePassword() {
-		return couchbase.get("passwd");
-	}
-
-	public String getMetaqZookeeper() {
-		return metaq.get("zookeeper");
-	}
-
-	public String getMetaqTopic() {
-		return metaq.get("topic");
-	}
-
-	public Path getMetaqOutput() {
-		return metaqFolder;
-	}
-
-	public Path getLaserOnlineOutput() {
-		return onlineModelFolder;
-	}
-
-	public Path getLaserOfflineOutput() {
-		return offlineModelFolder;
-	}
-
-	public Long getLaserOnlineRetrainingFreqency() {
-		return Long.valueOf(laser.get("online_retraining_frequency"));
-	}
-
-	public Long getLaserOfflineRetrainingFreqency() {
-		return Long.valueOf(laser.get("offline_retraining_frequency"));
-	}
-
-	public Integer getUserFeatureDimension() {
-		return Integer.valueOf(laser.get("user_feature_dimension"));
-	}
-
-	public Path getUserFeatureSerializePath() {
-		return new Path(metaqFolder, "USER_FEATURE_MAP");
-	}
-
-	public Integer getItemFeatureDimension() {
-		return Integer.valueOf(laser.get("item_feature_dimension"));
-	}
-
-	public Integer getTopNClustering() {
-		return Integer.valueOf(laser.get("top_n_clustering"));
-	}
-
-	public Float getRegularizationFactor() {
-		String regularization_factor = laser.get("regularization_factor");
-		if (null == regularization_factor) {
-			return null;
+	public List<String> getCollections() {
+		List<String> collectionList = new ArrayList<String>();
+		Iterator<Map.Entry<String, Collection>> iterator = mapper.entrySet()
+				.iterator();
+		while (iterator.hasNext()) {
+			String collection = iterator.next().getKey();
+			collectionList.add(collection);
 		}
-		return Float.valueOf(regularization_factor);
+		return collectionList;
 	}
 
-	public Boolean addIntercept() {
-		String add_intercept = laser.get("add_intercept");
-		if (null == add_intercept) {
-			return null;
-		}
-		return Boolean.valueOf(add_intercept);
+	public void removeCollection(String collection) {
+		mapper.remove(collection);
 	}
 
-	public Integer getMaxIteration() {
-		String offline_max_iteration = laser.get("offline_max_iteration");
-		if (null == offline_max_iteration) {
-			return null;
-		}
-		return Integer.valueOf(offline_max_iteration);
+	public Class<? extends LaserMessageConsumer> getMessageConsumer(
+			String collection) throws ClassNotFoundException {
+		return getCollection(collection).getMessageConsumer();
 	}
 
-	public String getMsgpackAddress() {
-		return msgpack.get("ip");
+	public Path getLaserHDFSRoot(String collection) {
+		return getCollection(collection).getLaserHDFSRoot();
+
 	}
 
-	public Integer getMsgpackPort() {
-		String port = msgpack.get("port");
-		if (null == port) {
-			return null;
-		}
-		return Integer.valueOf(port);
+	public String getCouchbaseCluster(String collection) {
+		return getCollection(collection).getCouchbaseCluster();
+	}
+
+	public String getCouchbaseBucket(String collection) {
+		return getCollection(collection).getCouchbaseBucket();
+
+	}
+
+	public String getCouchbasePassword(String collection) {
+		return getCollection(collection).getCouchbasePassword();
+	}
+
+	public String getMetaqZookeeper(String collection) {
+		return getCollection(collection).getMetaqZookeeper();
+	}
+
+	public String getMetaqTopic(String collection) {
+		return getCollection(collection).getMetaqTopic();
+	}
+
+	public Path getMetaqOutput(String collection) {
+		return getCollection(collection).getMetaqOutput();
+
+	}
+
+	public Path getLaserOnlineOutput(String collection) {
+		return getCollection(collection).getLaserOnlineOutput();
+	}
+
+	public Path getLaserOfflineOutput(String collection) {
+		return getCollection(collection).getLaserOfflineOutput();
+	}
+
+	public String getLaserOnlineRetrainingFreqency(String collection) {
+		return getCollection(collection).getLaserOnlineRetrainingFreqency();
+	}
+
+	public String getLaserOfflineRetrainingFreqency(String collection) {
+		return getCollection(collection).getLaserOfflineRetrainingFreqency();
+	}
+
+	public Integer getUserFeatureDimension(String collection) {
+		return getCollection(collection).getUserFeatureDimension();
+	}
+
+	public Path getUserFeatureSerializePath(String collection) {
+		return getCollection(collection).getUserFeatureSerializePath();
+	}
+
+	public Integer getItemFeatureDimension(String collection) {
+		return getCollection(collection).getItemFeatureDimension();
+	}
+
+	public Integer getTopNClustering(String collection) {
+		return getCollection(collection).getTopNClustering();
+	}
+
+	public Float getRegularizationFactor(String collection) {
+		return getCollection(collection).getRegularizationFactor();
+	}
+
+	public Boolean addIntercept(String collection) {
+		return getCollection(collection).addIntercept();
+	}
+
+	public Integer getMaxIteration(String collection) {
+		return getCollection(collection).getMaxIteration();
+	}
+
+	public String getMsgpackAddress(String collection) {
+		return getCollection(collection).getMsgpackAddress();
+	}
+
+	public Integer getMsgpackPort(String collection) {
+		return getCollection(collection).getMsgpackPort();
+	}
+
+	private Collection getCollection(String collection) {
+		return mapper.get(collection);
+	}
+
+	private String getProperty(Map<String, Map<String, String>> collection,
+			String property, String propertyName) {
+		return collection.get(property).get(propertyName);
 	}
 }

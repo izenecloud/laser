@@ -22,31 +22,31 @@ public class LaserOfflineTopNIT {
 	private org.apache.hadoop.conf.Configuration conf = new org.apache.hadoop.conf.Configuration();
 	private int topn = 3;
 
-	@BeforeTest
-	public void setup() throws IOException {
-		Path pro = new Path(PROPERTIES);
-		FileSystem fs = pro.getFileSystem(conf);
-		Configuration.getInstance().load(pro, fs);
-
-		Path output = Configuration.getInstance().getLaserOfflineOutput();
-		int rows = Configuration.getInstance().getUserFeatureDimension();
-		int cols = Configuration.getInstance().getItemFeatureDimension();
-		Vector alpha = new DenseVector(rows);
-		writeVector(alpha, new Path(output, "alpha"), fs, conf);
-		Vector beta = new DenseVector(cols);
-		writeVector(beta, new Path(output, "beta"), fs, conf);
-		Matrix A = new DenseMatrix(rows, cols);
-		writeMatrix(A, new Path(output, "A"), fs, conf);
-	}
-
-	@Test
-	public void topN() throws ClassNotFoundException, IOException,
-			InterruptedException {
-		LaserOfflineTopNDriver.run(topn, conf);
-	}
-
-	@AfterTest
-	public void close() {
-
-	}
+//	@BeforeTest
+//	public void setup() throws IOException {
+//		Path pro = new Path(PROPERTIES);
+//		FileSystem fs = pro.getFileSystem(conf);
+//		Configuration.getInstance().load(pro, fs);
+//
+//		Path output = Configuration.getInstance().getLaserOfflineOutput();
+//		int rows = Configuration.getInstance().getUserFeatureDimension();
+//		int cols = Configuration.getInstance().getItemFeatureDimension();
+//		Vector alpha = new DenseVector(rows);
+//		writeVector(alpha, new Path(output, "alpha"), fs, conf);
+//		Vector beta = new DenseVector(cols);
+//		writeVector(beta, new Path(output, "beta"), fs, conf);
+//		Matrix A = new DenseMatrix(rows, cols);
+//		writeMatrix(A, new Path(output, "A"), fs, conf);
+//	}
+//
+//	@Test
+//	public void topN() throws ClassNotFoundException, IOException,
+//			InterruptedException {
+//		LaserOfflineTopNDriver.run(topn, conf);
+//	}
+//
+//	@AfterTest
+//	public void close() {
+//
+//	}
 }

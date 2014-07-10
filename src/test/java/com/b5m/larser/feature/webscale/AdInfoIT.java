@@ -1,21 +1,18 @@
-package com.b5m.msgpack;
+package com.b5m.larser.feature.webscale;
+
+import static org.testng.Assert.assertTrue;
 
 import java.io.IOException;
-import java.net.UnknownHostException;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.msgpack.type.Value;
-import org.msgpack.unpacker.Converter;
-import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 
 import com.b5m.conf.Configuration;
+import com.b5m.msgpack.MsgpackClient;
 
-import static org.testng.Assert.*;
-
-public class SplitTitleIT {
+public class AdInfoIT {
 	private static final String PROPERTIES = "src/test/properties/";
 
 	@BeforeTest
@@ -28,25 +25,28 @@ public class SplitTitleIT {
 	}
 
 	@Test
-	public void test() throws ClassNotFoundException, IOException,
+	public void getAdInfoById() throws ClassNotFoundException, IOException,
 			InterruptedException {
 		Configuration conf = Configuration.getInstance();
 		String collection = conf.getCollections().get(0);
-		MsgpackClient client = new MsgpackClient(conf.getMsgpackAddress(collection),conf.getMsgpackPort(collection), collection);
+		MsgpackClient client = new MsgpackClient(
+				conf.getMsgpackAddress(collection),
+				conf.getMsgpackPort(collection), collection);
 		try {
 			Object[] req = new Object[1];
-			req[0] = "十二结婚吧 i [http://446964573.qzone.qq.com]";
-			SparseVector res = (SparseVector) client.asyncRead(req, "splitTitle", SparseVector.class);
-			while (res.hasNext()) {
-				System.out.println(Integer.toString(res.getIndex()) + "\t" + res.get());
-			}
+			req[0] = "b5fb08cb419fb83e1d5310ea7a94d5dd";
+			AdInfo adInfo = (AdInfo) client.asyncRead(req, "getAdInfoById",
+					AdInfo.class);
+			assertTrue(!adInfo.adId.isEmpty());
+			assertTrue(!adInfo.clusteringId.isEmpty());
+			while (adInfo.context.hasNext()) {
+				System.out.println("(" + Integer.toString(adInfo.context.getIndex()) + "," + Float.toString(adInfo.context.get()) + ")");
+			}			
+
 		} catch (Exception e) {
 			e.printStackTrace();
 			assertTrue(false);
 		}
 	}
 
-	@AfterTest
-	public void close() throws UnknownHostException {
-	}
 }
