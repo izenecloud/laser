@@ -37,7 +37,7 @@ public class AdInfoIT {
 			req[0] = "b5fb08cb419fb83e1d5310ea7a94d5dd";
 			AdInfo adInfo = (AdInfo) client.asyncRead(req, "getAdInfoById",
 					AdInfo.class);
-			assertTrue(!adInfo.adId.isEmpty());
+			assertTrue(!adInfo.DOCID.isEmpty());
 			assertTrue(!adInfo.clusteringId.isEmpty());
 			while (adInfo.context.hasNext()) {
 				System.out.println("(" + Integer.toString(adInfo.context.getIndex()) + "," + Float.toString(adInfo.context.get()) + ")");
